@@ -21,17 +21,19 @@ export default function CustomInput({ label, placeholder, type = "text", leftIco
 
     return (
         <Field.Root>
-            {label && <Field.Label fontSize="sm" fontWeight="bold" color="gray.700">{label}</Field.Label>}
+            {label && <Field.Label fontSize="sm" fontWeight="semibold" color="gray.700">{label}</Field.Label>}
             <InputGroup
                 flex="1"
                 startElement={
                     leftIcon && (
-                        <Icon as={leftIcon} color="gray.500" />
+                        <Icon as={leftIcon} color="gray.500" ms={5} />
                     )
                 }
                 endElement={
                     isPassword && (
-                        <Button h="1.75rem" size="sm" onClick={handleClick} variant="ghost" color="gray.500">
+                        <Button h="1.75rem" size="sm" onClick={handleClick} variant="ghost" color="gray.500" me={2} _hover={{
+                            bg: "transparent",
+                        }}>
                             {show ? <FiEyeOff /> : <FiEye />}
                         </Button>
                     )
@@ -45,10 +47,10 @@ export default function CustomInput({ label, placeholder, type = "text", leftIco
                     bg="white"
                     borderRadius="full"
                     height="12"
-                    _focus={{ borderColor: "teal.500" }}
+                    _focus={{ borderColor: "teal.500", bg: "white" }}
                     pl={leftIcon ? "10" : "4"}
                     color="gray.800"
-                    _placeholder={{ color: "gray.400" }} // Placeholder can be slightly lighter but typical is 500/400
+                    _placeholder={{ color: "gray.400" }}
                     borderColor="gray.300"
                 />
             </InputGroup>
