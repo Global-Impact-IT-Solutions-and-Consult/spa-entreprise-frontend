@@ -1,171 +1,250 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { FiArrowLeft, FiArrowRight, FiPlus } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
+import { FiArrowLeft, FiArrowRight, FiPlus, FiEdit2, FiTrash2, FiUser } from 'react-icons/fi';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
+import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
+import { cn } from '@/lib/utils';
+import { Scissors } from 'lucide-react';
 
-// Reusing part of StaffCard logic but adapting for selection as per design
-const StaffItem = ({ name, role, isSelected, onToggle }: { name: string; role: string; isSelected: boolean; onToggle: () => void }) => {
+// Refined Staff Card Component
+const StaffCard = ({ staff, onEdit, onDelete }: any) => {
     return (
-        <div
-            className={cn(
-                "relative cursor-pointer rounded-xl border p-4 transition-all duration-200",
-                isSelected ? "border-teal-500 bg-[#F0FDF9]" : "border-gray-200 bg-white"
-            )}
-            onClick={onToggle}
-        >
-            <div className="flex items-center gap-4">
-                <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={onToggle}
-                    className="h-5 w-5 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
-                />
+        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col gap-6 relative">
+            <div className="flex justify-between items-start">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                    <FiUser className="h-8 w-8 text-gray-400" />
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={onEdit} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                        <FiEdit2 size={14} />
+                    </button>
+                    <button onClick={onDelete} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <FiTrash2 size={14} />
+                    </button>
+                </div>
+            </div>
 
-                <Avatar className="h-10 w-10 bg-gray-200">
-                    <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-                </Avatar>
+            <div className="flex flex-col gap-2">
+                <h3 className="text-lg font-bold text-gray-900">{staff.name}</h3>
+                <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 bg-green-50 text-[10px] font-bold text-green-700 rounded-full uppercase tracking-wider">
+                        {staff.role}
+                    </span>
+                    {staff.tags && staff.tags.map((tag: string, i: number) => (
+                        <span key={i} className="px-3 py-1 bg-gray-50 text-[10px] font-bold text-gray-500 rounded-full uppercase tracking-wider">
+                            {tag}
+                        </span>
+                    ))}
+                </div>
+            </div>
 
-                <div>
-                    <p className="text-sm font-bold text-gray-900">{name}</p>
-                    <p className="text-xs text-gray-500">{role}</p>
+            <div className="space-y-3 pt-6 border-t border-gray-50 mt-auto">
+                <div className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-gray-400 w-20">Service</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                    <span className="text-xs font-bold text-gray-800">{staff.serviceName || "Global Spa"}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-gray-400 w-20">Experience</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                    <span className="text-xs font-bold text-gray-600">{staff.experience || "Expert"}</span>
                 </div>
             </div>
         </div>
     );
-}
+};
 
 const serviceTypes = [
+    { label: "Barbershop", value: "barbershop" },
     { label: "Spa & Massage", value: "spa_massage" },
     { label: "Hair Styling", value: "hair_styling" },
-    { label: "Manicure & Pedicure", value: "manicure_pedicure" },
 ];
 
 const experienceLevels = [
     { label: "Junior", value: "junior" },
-    { label: "Mid-Level", value: "mid" },
+    { label: "Intermediate", value: "intermediate" },
     { label: "Expert", value: "expert" },
 ];
 
 export default function StaffsPage() {
-    const [selectedStaffIds, setSelectedStaffIds] = useState<number[]>([]);
+    const router = useRouter();
+    const { services, businessId } = useOnboardingStore();
     const [open, setOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const staffList = [
-        { id: 1, name: "Amara Okeke", role: "Massage Therapist" },
-        { id: 2, name: "Amara Okeke", role: "Massage Therapist" }, // Duplicate name in design
-    ];
+    // Mock data for demo/onboarding
+    const [staffs, setStaffs] = useState<any[]>([
+        { id: 1, name: "John Doe", role: "Hair Stylist", serviceName: "Barbershop", experience: "Expert", tags: ["+3"] },
+        { id: 2, name: "John Doe 2", role: "Senior Massage Therapist", serviceName: "Full on Body M...", experience: "Expert" },
+    ]);
 
-    const toggleStaff = (id: number) => {
-        setSelectedStaffIds(prev =>
-            prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
-        );
+    // Form state (simplified for UI demonstration)
+    const [newStaff, setNewStaff] = useState({
+        name: '',
+        service: '',
+        role: '',
+        experience: 'expert'
+    });
+
+    const handleAddStaff = () => {
+        if (!newStaff.name || !newStaff.role) {
+            toaster.create({ title: "Validation Error", description: "Name and Role are required", type: "error" });
+            return;
+        }
+        const staff = {
+            id: Date.now(),
+            ...newStaff,
+            serviceName: serviceTypes.find(s => s.value === newStaff.service)?.label || "Global Spa",
+            experience: experienceLevels.find(e => e.value === newStaff.experience)?.label || "Expert"
+        };
+        setStaffs([...staffs, staff]);
+        setOpen(false);
+        setNewStaff({ name: '', service: '', role: '', experience: 'expert' });
+        toaster.create({ title: "Staff Added", type: "success" });
+    };
+
+    const handleFinish = async () => {
+        setIsLoading(true);
+        // Simulate completion and redirect to dashboard
+        setTimeout(() => {
+            toaster.create({ title: "Onboarding Complete!", description: "Welcome to WellnessPro!", type: "success" });
+            router.push('/dashboard');
+            setIsLoading(false);
+        }, 1500);
     };
 
     return (
-        <div className="mx-auto max-w-4xl px-4 py-10">
-            <div className="mb-8">
-                <h1 className="mb-2 text-2xl font-bold text-gray-800">Staffs</h1>
-                <p className="text-gray-500">Add number of staffs and Staff Info</p>
-            </div>
-
-            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-                {staffList.map(staff => (
-                    <StaffItem
-                        key={staff.id}
-                        name={staff.name}
-                        role={staff.role}
-                        isSelected={selectedStaffIds.includes(staff.id)}
-                        onToggle={() => toggleStaff(staff.id)}
-                    />
-                ))}
-            </div>
-
-            {/* Add Staff Trigger */}
-            <div
-                onClick={() => setOpen(true)}
-                className="flex mb-10 max-w-[300px] cursor-pointer items-center justify-center rounded-xl border border-dashed border-gray-300 p-4 text-center transition-colors hover:bg-gray-50 hover:border-teal-500"
-            >
-                <div className="flex h-full items-center gap-2 text-gray-500">
-                    <div className="rounded-full bg-teal-100 p-1">
-                        <FiPlus className="h-4 w-4 text-teal-700" />
+        <div className="w-full max-w-[1100px]">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 md:p-12 min-h-[600px] flex flex-col">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Add a staff</h1>
+                        <p className="text-gray-500 font-medium">Add staffs to services</p>
                     </div>
-                    <p className="text-sm font-medium">Add Staff</p>
+                    <Button
+                        onClick={() => setOpen(true)}
+                        className="bg-[#E59622] hover:bg-[#d48a1f] text-white font-bold h-12 px-6 rounded-lg flex items-center gap-2"
+                    >
+                        <FiPlus className="h-5 w-5" />
+                        Add Staff
+                    </Button>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
+                    {staffs.map(staff => (
+                        <StaffCard
+                            key={staff.id}
+                            staff={staff}
+                            onEdit={() => toaster.create({ title: "Coming soon", description: "Edit functionality will be available in the dashboard." })}
+                            onDelete={() => setStaffs(staffs.filter(s => s.id !== staff.id))}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            <div className="flex justify-between mt-12">
+                <Button
+                    variant="outline"
+                    className="h-[56px] px-10 border-gray-200 text-gray-500 font-bold rounded-lg flex items-center gap-2 hover:bg-gray-50"
+                    onClick={() => router.back()}
+                >
+                    <FiArrowLeft className="h-5 w-5" />
+                    Back
+                </Button>
+                <Button
+                    className="h-[56px] rounded-lg bg-[#E59622] px-10 text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white flex items-center gap-2"
+                    onClick={handleFinish}
+                    disabled={isLoading}
+                >
+                    {isLoading ? "Saving..." : "Finish & Submit"}
+                    {!isLoading && <FiArrowRight className="h-5 w-5" />}
+                </Button>
             </div>
 
             {/* Add Staff Dialog */}
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-gray-800 text-center">Add Staff</DialogTitle>
-                        <p className="text-center text-sm font-normal text-gray-500">Add staff and services offerd</p>
-                    </DialogHeader>
+                <DialogContent className="bg-white rounded-2xl sm:max-w-2xl p-0 overflow-hidden border-none text-left h-[calc(100vh-4rem)]">
+                    <div className="p-8">
+                        <DialogHeader className="mb-8">
+                            <DialogTitle className="text-3xl font-bold text-gray-900">Add New Staff</DialogTitle>
+                            <p className="text-sm font-normal text-gray-500">Add new staffs and their specialized roles</p>
+                        </DialogHeader>
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Staff Name</Label>
-                            <Input placeholder="John Doe" />
+                        <div className="space-y-6 h-[calc(100vh-20rem)] overflow-y-auto">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-400">Staff Name</Label>
+                                <Input
+                                    placeholder="John Doe"
+                                    value={newStaff.name}
+                                    onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
+                                    className="h-[56px] rounded-lg border-gray-200 bg-white"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-400">Role</Label>
+                                <Input
+                                    placeholder="Hair Stylist"
+                                    value={newStaff.role}
+                                    onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
+                                    className="h-[56px] rounded-lg border-gray-200 bg-white"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-400">Staff Experience</Label>
+                                <Select
+                                    placeholder="Select experience level"
+                                    options={experienceLevels}
+                                    value={newStaff.experience}
+                                    onChange={(e) => setNewStaff({ ...newStaff, experience: e.target.value })}
+                                    className="h-[56px] rounded-lg border-gray-200"
+                                />
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label className="text-sm font-medium text-gray-400">Services Associated To</Label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {staffs.map((staff, i) => (
+                                        <div key={i} className="border border-gray-100 rounded-xl p-4 flex flex-col gap-3 relative bg-white shadow-sm">
+                                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                                                <Scissors className="h-5 w-5 text-gray-500" />
+                                            </div>
+                                            <span className="text-sm font-bold text-gray-900 leading-tight">{staff.serviceName}</span>
+                                            <input type="checkbox" className="absolute top-4 right-4 h-5 w-5 rounded border-gray-300 text-[#E59622] focus:ring-[#E59622]" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label>Service</Label>
-                            <Select
-                                placeholder="Spa & Massage"
-                                options={serviceTypes}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Role</Label>
-                            <Input placeholder="Relaxation, therapeutic massage" />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Experience</Label>
-                            <Select
-                                placeholder="Expert"
-                                options={experienceLevels}
-                            />
+                        <div className="flex items-center justify-center gap-4 mt-10">
+                            <Button
+                                variant="outline"
+                                onClick={() => setOpen(false)}
+                                className="h-[56px] flex-1 rounded-lg border-gray-200 text-gray-500 font-bold text-lg"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleAddStaff}
+                                className="h-[56px] flex-1 rounded-lg bg-[#E59622] hover:bg-[#d48a1f] text-white font-bold text-lg"
+                            >
+                                Save Staff
+                            </Button>
                         </div>
                     </div>
-
-                    <DialogFooter className="mt-8">
-                        <Button
-                            className="w-full rounded-full bg-[#2D5B5E] hover:bg-[#254E50]"
-                            size="lg"
-                        >
-                            Add Staff
-                        </Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-
-            <div className="flex justify-between mt-8">
-                <Link href="/onboarding/business-hours">
-                    <Button variant="outline" className="rounded-full px-8 text-gray-600">
-                        <FiArrowLeft className="mr-2" /> Back
-                    </Button>
-                </Link>
-                <Link href="/onboarding/services">
-                    <Button
-                        className="rounded-full bg-[#2D5B5E] px-8 hover:bg-[#254E50]"
-                        size="lg"
-                    >
-                        Continue <FiArrowRight className="ml-2" />
-                    </Button>
-                </Link>
-            </div>
         </div>
     );
 }

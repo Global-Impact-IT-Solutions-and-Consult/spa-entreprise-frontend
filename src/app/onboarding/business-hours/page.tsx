@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiArrowRight } from 'react-icons/fi';
+import { FiArrowRight, FiArrowLeft, FiClock } from 'react-icons/fi';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService } from '@/services/business.service';
 
@@ -10,42 +10,44 @@ import { Button } from "@/components/ui/button";
 import { Select } from '@/components/ui/select';
 import { Switch } from "@/components/ui/switch";
 import { toaster } from "@/components/ui/toaster";
-import { cn } from '@/lib/utils';
 import { Label } from "@/components/ui/label";
 
 const DAYS = [
+    { id: 'sunday', label: 'Sunday' },
     { id: 'monday', label: 'Monday' },
     { id: 'tuesday', label: 'Tuesday' },
     { id: 'wednesday', label: 'Wednesday' },
     { id: 'thursday', label: 'Thursday' },
     { id: 'friday', label: 'Friday' },
     { id: 'saturday', label: 'Saturday' },
-    { id: 'sunday', label: 'Sunday' },
 ];
 
 const TIME_SLOTS = Array.from({ length: 24 * 2 }).map((_, i) => {
-    const hour = Math.floor(i / 2);
+    const hourNum = Math.floor(i / 2);
     const minute = i % 2 === 0 ? '00' : '30';
-    const time = `${hour.toString().padStart(2, '0')}:${minute}`;
-    return { value: time, label: time };
+    const ampm = hourNum >= 12 ? 'PM' : 'AM';
+    const hour12 = hourNum % 12 || 12;
+    const time = `${hour12.toString().padStart(2, '0')}:${minute}${ampm}`;
+    const value = `${hourNum.toString().padStart(2, '0')}:${minute}`;
+    return { value: value, label: time };
 });
 
 export default function BusinessHoursPage() {
     const router = useRouter();
-    const { businessId, setOperatingHours } = useOnboardingStore();
+    const { businessId, setOperatingHours, operatingHours } = useOnboardingStore();
     const [isLoading, setIsLoading] = useState(false);
 
-    // Initial State: Monday-Friday 9-5, Sat 10-4, Sun Closed
+    // Initial State
     const [schedule, setSchedule] = useState<any>(
-        DAYS.reduce((acc: any, day) => {
-            const isWeekend = day.id === 'saturday' || day.id === 'sunday';
-            acc[day.id] = {
-                open: isWeekend && day.id === 'saturday' ? '10:00' : '09:00',
-                close: isWeekend && day.id === 'saturday' ? '16:00' : '17:00',
-                closed: day.id === 'sunday'
-            };
-            return acc;
-        }, {})
+        Object.keys(operatingHours).length > 0 ? operatingHours :
+            DAYS.reduce((acc: any, day) => {
+                acc[day.id] = {
+                    open: '09:00',
+                    close: '21:00',
+                    closed: day.id === 'sunday'
+                };
+                return acc;
+            }, {})
     );
 
     const handleDayChange = (dayId: string, field: string, value: any) => {
@@ -73,8 +75,7 @@ export default function BusinessHoursPage() {
             await businessService.updateProfile(businessId, payload);
             setOperatingHours(schedule);
 
-            // router.push('/onboarding/services');
-            router.push('/dashboard')
+            router.push('/onboarding/services');
         } catch (error: any) {
             toaster.create({
                 title: "Failed to update hours",
@@ -87,65 +88,78 @@ export default function BusinessHoursPage() {
     };
 
     return (
-        <div className="mx-auto max-w-4xl px-4 py-10">
-            <div className="mb-8 text-center">
-                <h1 className="mb-2 text-2xl font-bold text-teal-800">Business Hours</h1>
-                <p className="text-gray-600">Set your operating hours so clients know when they can book.</p>
-            </div>
+        <div className="w-full max-w-[1100px]">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 md:p-12">
+                <div className="mb-10">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Set Up Working Hours</h1>
+                    <p className="text-gray-500 font-medium">Select days you open and hours of the day you will be available</p>
+                </div>
 
-            <div className="mb-10 rounded-xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
-                <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {DAYS.map((day) => (
-                        <div
-                            key={day.id}
-                            className="grid grid-cols-1 gap-4 items-center sm:grid-cols-[120px_1fr_1fr_auto]"
-                        >
-                            <Label className={cn("text-base font-medium text-gray-700", schedule[day.id].closed && "text-gray-400")}>
-                                {day.label}
-                            </Label>
-
-                            <Select
-                                disabled={schedule[day.id].closed}
-                                value={schedule[day.id].open}
-                                onChange={(e) => handleDayChange(day.id, 'open', e.target.value)}
-                                options={TIME_SLOTS}
-                                className={cn(schedule[day.id].closed && "opacity-50")}
-                            />
-
-                            <Select
-                                disabled={schedule[day.id].closed}
-                                value={schedule[day.id].close}
-                                onChange={(e) => handleDayChange(day.id, 'close', e.target.value)}
-                                options={TIME_SLOTS}
-                                className={cn(schedule[day.id].closed && "opacity-50")}
-                            />
-
-                            <div className="flex items-center justify-end gap-2 sm:w-[100px]">
+                        <div key={day.id} className="border border-gray-200 rounded-xl p-5 flex flex-col gap-4 bg-white">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-gray-400">
+                                    <FiClock className="h-4 w-4" />
+                                    <span className="text-xs font-semibold uppercase tracking-wider">Day and Time</span>
+                                </div>
                                 <Switch
                                     checked={!schedule[day.id].closed}
                                     onCheckedChange={(checked) => handleDayChange(day.id, 'closed', !checked)}
                                 />
-                                <span className={cn("text-sm font-medium w-[40px]", !schedule[day.id].closed ? "text-teal-600" : "text-gray-400")}>
-                                    {!schedule[day.id].closed ? "Open" : "Closed"}
-                                </span>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center justify-between gap-4">
+                                    <Label className="text-sm font-medium text-gray-400 min-w-[40px]">Day</Label>
+                                    <div className="flex-1 h-11 px-4 border border-gray-100 bg-gray-50/50 rounded-lg flex items-center text-sm font-medium text-gray-700">
+                                        {day.label}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between gap-4">
+                                    <Label className="text-sm font-medium text-gray-400 min-w-[40px]">From</Label>
+                                    <Select
+                                        disabled={schedule[day.id].closed}
+                                        value={schedule[day.id].open}
+                                        onChange={(e) => handleDayChange(day.id, 'open', e.target.value)}
+                                        options={TIME_SLOTS}
+                                        className="h-11 rounded-lg border-gray-100 flex-1 hover:border-[#E59622] transition-colors"
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between gap-4">
+                                    <Label className="text-sm font-medium text-gray-400 min-w-[40px]">To</Label>
+                                    <Select
+                                        disabled={schedule[day.id].closed}
+                                        value={schedule[day.id].close}
+                                        onChange={(e) => handleDayChange(day.id, 'close', e.target.value)}
+                                        options={TIME_SLOTS}
+                                        className="h-11 rounded-lg border-gray-100 flex-1 hover:border-[#E59622] transition-colors"
+                                    />
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-between mt-12">
                 <Button
-                    className="rounded-full bg-[#2D5B5E] px-10 hover:bg-[#254E50]"
-                    size="lg"
+                    variant="outline"
+                    className="h-[56px] px-10 border-gray-200 text-gray-500 font-bold rounded-lg flex items-center gap-2 hover:bg-gray-50"
+                    onClick={() => router.back()}
+                >
+                    <FiArrowLeft className="h-5 w-5" />
+                    Back
+                </Button>
+                <Button
+                    className="h-[56px] rounded-lg bg-[#E59622] px-10 text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white flex items-center gap-2"
                     onClick={handleContinue}
                     disabled={isLoading}
                 >
-                    {isLoading ? "Saving..." : (
-                        <>
-                            Continue to Services <FiArrowRight className="ml-2" />
-                        </>
-                    )}
+                    {isLoading ? "Saving..." : "Continue"}
+                    {!isLoading && <FiArrowRight className="h-5 w-5" />}
                 </Button>
             </div>
         </div>

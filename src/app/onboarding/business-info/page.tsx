@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiUpload, FiBriefcase, FiMapPin, FiPhone, FiArrowLeft, FiArrowRight } from 'react-icons/fi';
+import { FiArrowRight } from 'react-icons/fi';
 
 import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
@@ -16,9 +14,21 @@ import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService } from '@/services/business.service';
 
 const businessTypes = [
+    { label: "Select business type", value: "" },
     { label: "Spa", value: "spa" },
     { label: "Salon", value: "salon" },
-    { label: "Gym", value: "gym" }
+    { label: "Gym", value: "gym" },
+    { label: "Wellness Center", value: "wellness_center" }
+];
+
+const countries = [
+    { label: "Nigeria", value: "nigeria" },
+];
+
+const states = [
+    { label: "Lagos", value: "lagos" },
+    { label: "Abuja", value: "abuja" },
+    { label: "Port Harcourt", value: "port_harcourt" }
 ];
 
 export default function BusinessInfoPage() {
@@ -26,50 +36,31 @@ export default function BusinessInfoPage() {
     const { businessInfo, setBusinessInfo, setBusinessId } = useOnboardingStore();
     const [isLoading, setIsLoading] = useState(false);
 
-    // File Upload State
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
     // Local state for form inputs
     const [formData, setFormData] = useState({
         businessName: businessInfo.businessName || '',
         phone: businessInfo.phone || '',
-        city: businessInfo.city || 'Abuja',
+        city: businessInfo.city || '',
         address: businessInfo.address || '',
         businessTypeCode: businessInfo.businessTypeCode || '',
         description: businessInfo.description || '',
-        email: businessInfo.email || ''
+        email: businessInfo.email || '',
+        cacRegNo: (businessInfo as any).cacRegNo || '',
+        country: (businessInfo as any).country || 'nigeria',
+        state: (businessInfo as any).state || 'lagos',
     });
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                toaster.create({ title: "File too large", description: "Maximum size is 5MB", type: "error" });
-                return;
-            }
-            setSelectedFile(file);
-            const url = URL.createObjectURL(file);
-            setPreviewUrl(url);
-        }
-    };
-
-    const triggerFileSelect = () => {
-        fileInputRef.current?.click();
     };
 
     const handleSubmit = async () => {
         setIsLoading(true);
         try {
             // Validate inputs
-            if (!formData.businessName || !formData.businessTypeCode) {
-                toaster.create({ title: "Validation Error", description: "Business Name and Type are required", type: "error" });
+            if (!formData.businessName || !formData.businessTypeCode || !formData.phone || !formData.address) {
+                toaster.create({ title: "Validation Error", description: "Please fill all required fields", type: "error" });
                 return;
             }
 
@@ -80,18 +71,7 @@ export default function BusinessInfoPage() {
             setBusinessId(result.id);
             setBusinessInfo(formData);
 
-            // Upload Logo if selected
-            if (selectedFile) {
-                try {
-                    await businessService.uploadImage(result.id, selectedFile, true);
-                    toaster.create({ title: "Logo Uploaded", type: "success" });
-                } catch (uploadError) {
-                    console.error("Logo upload failed", uploadError);
-                    toaster.create({ title: "Warning", description: "Business created but logo upload failed.", type: "warning" });
-                }
-            }
-
-            toaster.create({ title: "Success", description: "Business Info Saved", type: "success" });
+            toaster.create({ title: "Success", description: "Business Information Saved", type: "success" });
             router.push('/onboarding/business-hours');
         } catch (error: any) {
             toaster.create({ title: "Error", description: error.response?.data?.message || "Failed to register business", type: "error" });
@@ -101,131 +81,114 @@ export default function BusinessInfoPage() {
     };
 
     return (
-        <div className="mx-auto max-w-2xl px-4 py-10">
-            <div className="mb-8 text-center md:text-left">
-                <h1 className="mb-2 text-2xl font-bold text-gray-800">Business Info</h1>
-                <p className="text-gray-500">Fill correct business information here</p>
-            </div>
-
-            <div className="mb-10 flex flex-col gap-5">
-                {/* Business Type */}
-                <div className="flex flex-col gap-2">
-                    <Label>Business Type *</Label>
-                    <Select
-                        className="h-10 text-base md:text-sm"
-                        placeholder="Select Business Type"
-                        options={businessTypes}
-                        value={formData.businessTypeCode}
-                        onChange={(e) => setFormData({ ...formData, businessTypeCode: e.target.value })}
-                    />
+        <div className="w-full max-w-[900px]">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 md:p-12">
+                <div className="mb-10">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Add Business Information</h1>
+                    <p className="text-gray-500 font-medium">Please fill in the correct information of your business</p>
                 </div>
 
-                {/* Business Name */}
-                <CustomInput
-                    label="Business Name"
-                    placeholder="ZTX Spar LTD"
-                    leftIcon={FiBriefcase}
-                    name="businessName"
-                    value={formData.businessName}
-                    onChange={handleInputChange}
-                />
-
-                {/* Phone Number */}
-                <CustomInput
-                    label="Phone Number"
-                    placeholder="000 000 00 00"
-                    type="tel"
-                    leftIcon={FiPhone}
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                />
-
-                {/* Email */}
-                <CustomInput
-                    label="Business Email"
-                    placeholder="contact@business.com"
-                    leftIcon={FiBriefcase}
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                />
-
-                {/* Business Location */}
-                <CustomInput
-                    label="Business Address"
-                    placeholder="No. 5 Block Street, Wuse zone 5, Abuja Nigeria"
-                    leftIcon={FiMapPin}
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                />
-
-                {/* Upload Logo */}
-                <div className="flex flex-col gap-2">
-                    <Label>Upload Logo (Optional)</Label>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        style={{ display: 'none' }}
-                        accept="image/png, image/jpeg"
-                        onChange={handleFileSelect}
-                    />
-                    <div
-                        className="flex w-full cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 p-8 text-center transition-colors hover:bg-gray-50 hover:border-teal-500"
-                        onClick={triggerFileSelect}
-                    >
-                        {previewUrl ? (
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="relative h-[150px] w-[150px] overflow-hidden rounded-md">
-                                    <img
-                                        src={previewUrl}
-                                        alt="Logo Preview"
-                                        className="h-full w-full object-cover"
-                                    />
-                                </div>
-                                <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    className="rounded-full px-5"
-                                    onClick={(e) => { e.stopPropagation(); triggerFileSelect(); }}
-                                >
-                                    Change file
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center gap-2">
-                                <FiUpload className="h-8 w-8 text-gray-400" />
-                                <div>
-                                    <p className="text-base font-bold text-gray-600">Drag and Drop Here</p>
-                                    <p className="text-xs text-gray-400">File Supported (PNG & JPEG)</p>
-                                </div>
-                                <Button size="sm" variant="secondary" className="rounded-full px-5 pointer-events-none">
-                                    Choose file
-                                </Button>
-                                <p className="text-xs text-gray-400">Maximum Size 5MB</p>
-                            </div>
-                        )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    {/* Business Type */}
+                    <div className="flex flex-col gap-1.5">
+                        <Label className="text-sm font-medium text-gray-400">Business Type *</Label>
+                        <Select
+                            className="h-[56px] rounded-lg border-gray-200 focus:border-[#E59622] transition-colors"
+                            options={businessTypes}
+                            value={formData.businessTypeCode}
+                            onChange={(e) => setFormData({ ...formData, businessTypeCode: e.target.value })}
+                        />
                     </div>
+
+                    {/* Business Name */}
+                    <CustomInput
+                        label="Business Name *"
+                        placeholder="wellnesspro"
+                        name="businessName"
+                        value={formData.businessName}
+                        onChange={handleInputChange}
+                    />
+
+                    {/* Phone Number */}
+                    <CustomInput
+                        label="Phone Number *"
+                        placeholder="000 000 000"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                    />
+
+                    {/* CAC Reg No */}
+                    <CustomInput
+                        label="CAC Reg No *"
+                        placeholder="RC1254323"
+                        name="cacRegNo"
+                        value={formData.cacRegNo}
+                        onChange={handleInputChange}
+                    />
+
+                    {/* Business Description */}
+                    <div className="md:col-span-2 flex flex-col gap-1.5">
+                        <Label className="text-sm font-medium text-gray-400">Business Description*</Label>
+                        <textarea
+                            name="description"
+                            className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-300 focus:border-[#E59622] focus:ring-1 focus:ring-[#E59622] transition-all outline-none"
+                            placeholder="A premium wellness center offering therapeutic massages, facial treatments, and holistic body therapies. Located in the heart of Lagos with certified therapists and relaxing ambiance."
+                            value={formData.description}
+                            onChange={handleInputChange}
+                        />
+                    </div>
+
+                    {/* Country */}
+                    <div className="flex flex-col gap-1.5">
+                        <Label className="text-sm font-medium text-gray-400">Country*</Label>
+                        <Select
+                            className="h-[56px] rounded-lg border-gray-200 focus:border-[#E59622]"
+                            options={countries}
+                            value={formData.country}
+                            onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                        />
+                    </div>
+
+                    {/* State */}
+                    <div className="flex flex-col gap-1.5">
+                        <Label className="text-sm font-medium text-gray-400">State*</Label>
+                        <Select
+                            className="h-[56px] rounded-lg border-gray-200 focus:border-[#E59622]"
+                            options={states}
+                            value={formData.state}
+                            onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                        />
+                    </div>
+
+                    {/* City */}
+                    <CustomInput
+                        label="City"
+                        placeholder="IKEJA"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                    />
+
+                    {/* Address */}
+                    <CustomInput
+                        label="Address"
+                        placeholder="No. 82 Yaya Abatan Rd, College Rd, Ogba"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                    />
                 </div>
             </div>
 
-            <div className="flex justify-between mt-8">
-                <Button variant="outline" className="rounded-full px-8 text-gray-400" disabled>
-                    <FiArrowLeft className="mr-2" /> Back
-                </Button>
-
+            <div className="flex justify-end mt-12">
                 <Button
-                    className="rounded-full bg-[#2D5B5E] px-8 hover:bg-[#254E50]"
-                    size="lg"
+                    className="h-[60px] rounded-lg bg-[#E59622] px-10 text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white flex items-center gap-2"
                     onClick={handleSubmit}
                     disabled={isLoading}
                 >
-                    {isLoading ? "Saving..." : (
-                        <>
-                            Continue <FiArrowRight className="ml-2" />
-                        </>
-                    )}
+                    {isLoading ? "Saving..." : "Continue"}
+                    {!isLoading && <FiArrowRight className="h-5 w-5" />}
                 </Button>
             </div>
         </div>
