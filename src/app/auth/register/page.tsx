@@ -1,19 +1,29 @@
 'use client';
 
-import { Box, Flex, Heading, Text, Button, Link as ChakraLink, Image, VStack, Checkbox, Icon, Separator, HStack, List } from '@chakra-ui/react';
-// import { Checkbox } from "@/components/ui/checkbox"
-import CustomInput from '@/components/ui/InputGroup';
-import { FiMail, FiLock, FiUser, FiCheckCircle } from 'react-icons/fi';
-import { FcGoogle } from 'react-icons/fc';
-import { FaFacebook } from 'react-icons/fa';
-import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { FiMail, FiLock } from 'react-icons/fi';
+
+import { Button } from "@/components/ui/button";
+import CustomInput from '@/components/ui/InputGroup';
+import { toaster } from "@/components/ui/toaster";
+import { authService } from '@/services/auth.service';
+import { useOnboardingStore } from '@/store/onboarding.store';
+import { cn } from '@/lib/utils';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import { SocialButtons } from '@/components/auth/SocialButtons';
 
 export default function RegisterPage() {
-    const [fullName, setFullName] = useState('');
+    const router = useRouter();
+    const { setTempCredentials } = useOnboardingStore();
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [strength, setStrength] = useState({
         length: false,
@@ -31,175 +41,165 @@ export default function RegisterPage() {
 
     const strengthPercent = Object.values(strength).filter(Boolean).length * 33.33;
 
+    const handleRegister = async () => {
+        if (!firstName || !lastName || !email || !password || !confirmPassword) {
+            toaster.create({ title: "Please fill all fields", type: "error" });
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            toaster.create({ title: "Passwords do not match", type: "error" });
+            return;
+        }
+
+        if (!acceptedTerms) {
+            toaster.create({ title: "Please accept the Terms of Service", type: "error" });
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await authService.register({
+                email,
+                password,
+                first_name: firstName,
+                last_name: lastName,
+                role: 'business'
+            });
+
+            toaster.create({
+                title: "Account created",
+                description: "Please check your email for verification.",
+                type: "success",
+            });
+
+            setTempCredentials({ email: email, password: password });
+            router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&redirectTo=login`);
+
+        } catch (error: any) {
+            const message = error.response?.data?.message || "Registration failed. Please try again.";
+            toaster.create({ title: "Error", description: message, type: "error" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
-        <Flex minH="100vh" direction={{ base: 'column-reverse', md: 'row' }}>
-            {/* Left Side - Form */}
-            <Flex
-                flex="1"
-                align="top"
-                justify="center"
-                bg="white"
-                p={{ base: 8, md: 16 }}
-            >
-                <VStack gap={5} w="full" maxW="md" align="stretch">
-                    <Box textAlign="center" mb={2}>
-                        <Heading size="lg" color="teal.900" mb={1}>Logo</Heading>
-                    </Box>
+        <AuthLayout>
+            <div className="flex flex-col text-center mb-8">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an account</h1>
+                <p className="text-sm text-gray-500">
+                    Already have an account?{' '}
+                    <Link href="/auth/login" className="text-[#E59622] hover:underline">
+                        Sign In
+                    </Link>
+                </p>
+            </div>
 
-                    <Box textAlign="center" mb={4}>
-                        <Heading size="2xl" fontWeight="bold" color="gray.800" mb={2}>
-                            Register Your Business
-                        </Heading>
-                        <Text color="gray.500">
-                            Join Nigeria's leading services market place
-                        </Text>
-                    </Box>
+            <div className="flex flex-col gap-5">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <CustomInput
+                        label="First Name"
+                        type="text"
+                        placeholder="John"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                    />
+                    <CustomInput
+                        label="Last Name"
+                        type="text"
+                        placeholder="John"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                    />
+                </div>
 
-                    <VStack gap={4}>
-                        <CustomInput
-                            label="Full Name*"
-                            type="text"
-                            placeholder="Full Name"
-                            leftIcon={FiUser}
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                        />
-                        <CustomInput
-                            label="Email *"
-                            type="email"
-                            placeholder="example.com"
-                            leftIcon={FiMail}
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                        <CustomInput
-                            label="Password*"
-                            type="password"
-                            placeholder="**********"
-                            leftIcon={FiLock}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-
-                        {/* Password Strength */}
-                        <Box w="full">
-                            <Text fontSize="xs" fontWeight="bold" color="gray.700" mb={1}>Password Strength</Text>
-                            <Box w="full" h="1" bg="gray.200" borderRadius="full" mb={2}>
-                                <Box h="full" bg={strengthPercent < 50 ? "red.500" : strengthPercent < 100 ? "yellow.500" : "green.500"} width={`${strengthPercent}%`} borderRadius="full" transition="width 0.3s" />
-                            </Box>
-                            <List.Root gap="1" variant="plain">
-                                <List.Item display="flex" alignItems="center">
-                                    <List.Indicator asChild>
-                                        <Icon as={FiCheckCircle} color={strength.length ? "green.500" : "gray.400"} mr={2} boxSize={3} />
-                                    </List.Indicator>
-                                    <Text fontSize="xs" color={strength.length ? "green.600" : "gray.500"}>At least 8 characters</Text>
-                                </List.Item>
-                                <List.Item display="flex" alignItems="center">
-                                    <List.Indicator asChild>
-                                        <Icon as={FiCheckCircle} color={strength.number ? "green.500" : "gray.400"} mr={2} boxSize={3} />
-                                    </List.Indicator>
-                                    <Text fontSize="xs" color={strength.number ? "green.600" : "gray.500"}>Contains a number</Text>
-                                </List.Item>
-                                <List.Item display="flex" alignItems="center">
-                                    <List.Indicator asChild>
-                                        <Icon as={FiCheckCircle} color={strength.special ? "green.500" : "gray.400"} mr={2} boxSize={3} />
-                                    </List.Indicator>
-                                    <Text fontSize="xs" color={strength.special ? "green.600" : "gray.500"}>Contains a special character</Text>
-                                </List.Item>
-                            </List.Root>
-                        </Box>
-
-                        <CustomInput
-                            label="Confirm Password*"
-                            type="password"
-                            placeholder="**********"
-                            leftIcon={FiLock}
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
-                    </VStack>
-
-                    <Checkbox.Root colorPalette="teal" variant="subtle" mt={2}>
-                        <Checkbox.HiddenInput />
-                        <Checkbox.Control />
-                        <Checkbox.Label color="gray.500" fontSize="xs" lineHeight="short">
-                            I agree to the <Link href="/terms"><Text as="span" color="teal.600">Terms</Text></Link> of <Link href="/service"><Text as="span" color="teal.600">Service</Text></Link> and Privacy Policy. I confirm that I have the authority to register this business.
-                        </Checkbox.Label>
-                    </Checkbox.Root>
-
-                    <Button
-                        colorPalette="teal"
-                        size="xl"
-                        borderRadius="full"
-                        w="full"
-                        fontSize="md"
-                        bg="#2D5B5E"
-                        _hover={{ bg: "#254E50" }}
-                        mt={2}
-                    >
-                        Create Business Account
-                    </Button>
-
-                    <HStack width="full" my={4}>
-                        <Separator flex="1" />
-                        <Text fontSize="xs" color="gray.400">or sign up with either accoutns</Text>
-                        <Separator flex="1" />
-                    </HStack>
-
-                    <Flex gap={4} wrap="wrap" justifyContent="center">
-                        <Button
-                            variant="outline"
-                            w="fit"
-                            borderRadius="full"
-                            borderColor="gray.200"
-                            color="gray.600"
-                            fontWeight="normal"
-                            px={5}
-                        >
-                            <Icon as={FcGoogle} mr={2} /> Google
-                        </Button>
-                        <Button
-                            variant="outline"
-                            w="fit"
-                            borderRadius="full"
-                            borderColor="gray.200"
-                            color="gray.600"
-                            fontWeight="normal"
-                            px={5}
-                        >
-                            <Icon as={FaFacebook} color="#1877F2" mr={2} /> facebook
-                        </Button>
-                    </Flex>
-
-                    <Box textAlign="center" mt={6}>
-                        <Text fontSize="sm" color="gray.600">
-                            Already have an account?{' '}
-                            <Link href="/auth/login">
-                                <Text as="span" color="teal.600" fontWeight="medium">
-                                    Sign In
-                                </Text>
-                            </Link>
-                        </Text>
-                    </Box>
-                </VStack>
-            </Flex>
-
-            {/* Right Side - Image */}
-            <Box
-                flex="1"
-                bg="teal.600"
-                position="relative"
-                display={{ base: 'none', md: 'block' }}
-            >
-                <Image
-                    src="/assets/auth/register-bg.jpg"
-                    alt="Abstract Background"
-                    objectFit="cover"
-                    w="full"
-                    h="full"
-                    opacity="0.9"
+                <CustomInput
+                    label="Email"
+                    type="email"
+                    placeholder="example@example.com"
+                    leftIcon={FiMail}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                 />
-            </Box>
-        </Flex>
+
+                <CustomInput
+                    label="Password"
+                    type="password"
+                    placeholder="********"
+                    leftIcon={FiLock}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+
+                {/* Password Strength Indicator */}
+                <div className="flex flex-col gap-2">
+                    <p className="text-sm font-medium text-gray-400">Password Strength</p>
+                    <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                            className={cn(
+                                "h-full transition-all duration-300",
+                                strengthPercent < 66 ? "bg-red-500" : strengthPercent < 100 ? "bg-yellow-500" : "bg-green-500"
+                            )}
+                            style={{ width: `${strengthPercent}%` }}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                        <div className={cn("w-4 h-4 rounded-full flex items-center justify-center border", strength.length && strength.number && strength.special ? "bg-green-500 border-green-500" : "border-gray-200")}>
+                            {(strength.length && strength.number && strength.special) && <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                        </div>
+                        <span className="text-xs text-gray-500">
+                            At least 8 characters, Contains a number and a special charachter
+                        </span>
+                    </div>
+                </div>
+
+                <CustomInput
+                    label="Confirm Password"
+                    type="password"
+                    placeholder="********"
+                    leftIcon={FiLock}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+
+                <div className="flex items-start gap-3">
+                    <div className="relative flex items-center mt-0.5">
+                        <input
+                            type="checkbox"
+                            className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-gray-300 transition-all checked:bg-[#E59622] checked:border-[#E59622]"
+                            checked={acceptedTerms}
+                            onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        />
+                        <svg
+                            className="absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <label className="text-[13px] leading-relaxed text-gray-500">
+                        I agree to the <Link href="/terms" className="text-[#E59622] font-semibold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-[#E59622] font-semibold hover:underline">Privacy Policy</Link>. I confirm that i have the authority to register this business.
+                    </label>
+                </div>
+
+                <Button
+                    size="lg"
+                    className="w-full h-[56px] rounded-lg bg-[#E59622] text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white mt-2"
+                    onClick={handleRegister}
+                    disabled={isLoading}
+                >
+                    {isLoading ? "Creating..." : "Create Business Account"}
+                </Button>
+
+                <SocialButtons />
+            </div>
+        </AuthLayout>
     );
 }

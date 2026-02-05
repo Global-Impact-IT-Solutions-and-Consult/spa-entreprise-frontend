@@ -1,63 +1,60 @@
 'use client';
 
-import { Box, Heading, Text, VStack, Button, Flex, Icon, SimpleGrid, HStack, Checkbox, Avatar, Center, Dialog, Input, Stack, createListCollection, Select } from '@chakra-ui/react';
-import { FiArrowLeft, FiArrowRight, FiPlus } from 'react-icons/fi';
-import Link from 'next/link';
 import { useState } from 'react';
+import Link from 'next/link';
+import { FiArrowLeft, FiArrowRight, FiPlus } from 'react-icons/fi';
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import { useOnboardingStore } from '@/store/onboarding.store';
 
 // Reusing part of StaffCard logic but adapting for selection as per design
 const StaffItem = ({ name, role, isSelected, onToggle }: { name: string; role: string; isSelected: boolean; onToggle: () => void }) => {
     return (
-        <Box
-            borderWidth="1px"
-            borderColor={isSelected ? "teal.500" : "gray.200"}
-            borderRadius="xl"
-            p={4}
-            bg={isSelected ? "#F0FDF9" : "white"}
-            position="relative"
-            cursor="pointer"
+        <div
+            className={cn(
+                "relative cursor-pointer rounded-xl border p-4 transition-all duration-200",
+                isSelected ? "border-teal-500 bg-[#F0FDF9]" : "border-gray-200 bg-white"
+            )}
             onClick={onToggle}
-            transition="all 0.2s"
         >
-            <Flex align="center" gap={4}>
-                <Checkbox.Root
+            <div className="flex items-center gap-4">
+                <Checkbox
                     checked={isSelected}
-                    onCheckedChange={onToggle} // Toggle on checkbox click too
-                    colorPalette="teal"
-                    variant="outline"
-                >
-                    <Checkbox.HiddenInput />
-                    <Checkbox.Control borderRadius="md" boxSize={5} />
-                </Checkbox.Root>
+                    onCheckedChange={onToggle}
+                    className="h-5 w-5 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
+                />
 
-                <Avatar.Root size="md" bg="gray.200">
-                    <Avatar.Fallback name={name} />
-                </Avatar.Root>
+                <Avatar className="h-10 w-10 bg-gray-200">
+                    <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                </Avatar>
 
-                <Box>
-                    <Text fontWeight="bold" fontSize="sm" color="gray.900">{name}</Text>
-                    <Text fontSize="xs" color="gray.500">{role}</Text>
-                </Box>
-            </Flex>
-        </Box>
+                <div>
+                    <p className="text-sm font-bold text-gray-900">{name}</p>
+                    <p className="text-xs text-gray-500">{role}</p>
+                </div>
+            </div>
+        </div>
     );
 }
 
-const serviceTypes = createListCollection({
-    items: [
-        { label: "Spa & Massage", value: "spa_massage" },
-        { label: "Hair Styling", value: "hair_styling" },
-        { label: "Manicure & Pedicure", value: "manicure_pedicure" },
-    ]
-});
+const serviceTypes = [
+    { label: "Spa & Massage", value: "spa_massage" },
+    { label: "Hair Styling", value: "hair_styling" },
+    { label: "Manicure & Pedicure", value: "manicure_pedicure" },
+];
 
-const experienceLevels = createListCollection({
-    items: [
-        { label: "Junior", value: "junior" },
-        { label: "Mid-Level", value: "mid" },
-        { label: "Expert", value: "expert" },
-    ]
-});
+const experienceLevels = [
+    { label: "Junior", value: "junior" },
+    { label: "Mid-Level", value: "mid" },
+    { label: "Expert", value: "expert" },
+];
 
 export default function StaffsPage() {
     const [selectedStaffIds, setSelectedStaffIds] = useState<number[]>([]);
@@ -75,13 +72,13 @@ export default function StaffsPage() {
     };
 
     return (
-        <Box maxW="800px" mx="auto">
-            <Box mb={8}>
-                <Heading size="xl" fontWeight="bold" mb={2} color="gray.800">Staffs</Heading>
-                <Text color="gray.500">Add number of staffs and Staff Info</Text>
-            </Box>
+        <div className="mx-auto max-w-4xl px-4 py-10">
+            <div className="mb-8">
+                <h1 className="mb-2 text-2xl font-bold text-gray-800">Staffs</h1>
+                <p className="text-gray-500">Add number of staffs and Staff Info</p>
+            </div>
 
-            <SimpleGrid columns={{ base: 1, md: 2 }} gap={6} mb={8}>
+            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
                 {staffList.map(staff => (
                     <StaffItem
                         key={staff.id}
@@ -91,117 +88,84 @@ export default function StaffsPage() {
                         onToggle={() => toggleStaff(staff.id)}
                     />
                 ))}
-            </SimpleGrid>
+            </div>
+
+            {/* Add Staff Trigger */}
+            <div
+                onClick={() => setOpen(true)}
+                className="flex mb-10 max-w-[300px] cursor-pointer items-center justify-center rounded-xl border border-dashed border-gray-300 p-4 text-center transition-colors hover:bg-gray-50 hover:border-teal-500"
+            >
+                <div className="flex h-full items-center gap-2 text-gray-500">
+                    <div className="rounded-full bg-teal-100 p-1">
+                        <FiPlus className="h-4 w-4 text-teal-700" />
+                    </div>
+                    <p className="text-sm font-medium">Add Staff</p>
+                </div>
+            </div>
 
             {/* Add Staff Dialog */}
-            <Dialog.Root open={open} onOpenChange={(e) => setOpen(e.open)}>
-                <Dialog.Trigger asChild>
-                    <Box
-                        borderWidth="1px"
-                        borderStyle="dashed"
-                        borderColor="gray.300"
-                        borderRadius="xl"
-                        p={4}
-                        textAlign="center"
-                        _hover={{ borderColor: "teal.500", bg: "gray.50" }}
-                        cursor="pointer"
-                        mb={10}
-                        maxW="300px"
-                    >
-                        <Center h="full">
-                            <HStack gap={2} color="gray.500">
-                                <CircleIcon />
-                                <Text fontSize="sm" fontWeight="medium">Add Staff</Text>
-                            </HStack>
-                        </Center>
-                    </Box>
-                </Dialog.Trigger>
-                <Dialog.Backdrop />
-                <Dialog.Positioner>
-                    <Dialog.Content borderRadius="2xl" p={8} maxW="500px" mt={20}>
-                        <Dialog.Header textAlign="center" mb={6} p={0}>
-                            <Dialog.Title fontSize="2xl" fontWeight="bold" color="gray.800">Add Staff</Dialog.Title>
-                            <Text fontSize="sm" color="gray.500" fontWeight="normal">Add staff and services offerd</Text>
-                        </Dialog.Header>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold text-gray-800 text-center">Add Staff</DialogTitle>
+                        <p className="text-center text-sm font-normal text-gray-500">Add staff and services offerd</p>
+                    </DialogHeader>
 
-                        <Dialog.Body p={0}>
-                            <Stack gap={5}>
-                                <Box>
-                                    <Text mb={2} fontWeight="medium" color="gray.700">Staff Name</Text>
-                                    <Input placeholder="John Doe" borderRadius="md" size="lg" px={3} />
-                                </Box>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Staff Name</Label>
+                            <Input placeholder="John Doe" />
+                        </div>
 
-                                <Box>
-                                    <Text mb={2} fontWeight="medium" color="gray.700">Service</Text>
-                                    <Select.Root collection={serviceTypes} size="lg" variant="outline">
-                                        <Select.Trigger px={3}>
-                                            <Select.ValueText placeholder="Spa & Massage" />
-                                        </Select.Trigger>
-                                        <Select.Positioner>
-                                            <Select.Content color="gray.600" px={2} py={2}>
-                                                {serviceTypes.items.map((item) => (
-                                                    <Select.Item item={item} key={item.value} px={1} py={1}>
-                                                        {item.label}
-                                                    </Select.Item>
-                                                ))}
-                                            </Select.Content>
-                                        </Select.Positioner>
-                                    </Select.Root>
-                                </Box>
+                        <div className="space-y-2">
+                            <Label>Service</Label>
+                            <Select
+                                placeholder="Spa & Massage"
+                                options={serviceTypes}
+                            />
+                        </div>
 
-                                <Box>
-                                    <Text mb={2} fontWeight="medium" color="gray.700">Role</Text>
-                                    <Input placeholder="Relaxation, therapeutic massage" borderRadius="md" size="lg" px={3} />
-                                </Box>
+                        <div className="space-y-2">
+                            <Label>Role</Label>
+                            <Input placeholder="Relaxation, therapeutic massage" />
+                        </div>
 
-                                <Box>
-                                    <Text mb={2} fontWeight="medium" color="gray.700">Experience</Text>
-                                    <Select.Root collection={experienceLevels} size="lg" variant="outline">
-                                        <Select.Trigger px={3}>
-                                            <Select.ValueText placeholder="Expert" />
-                                        </Select.Trigger>
-                                        <Select.Positioner>
-                                            <Select.Content color="gray.600" px={2} py={2}>
-                                                {experienceLevels.items.map((item) => (
-                                                    <Select.Item item={item} key={item.value} px={1} py={1}>
-                                                        {item.label}
-                                                    </Select.Item>
-                                                ))}
-                                            </Select.Content>
-                                        </Select.Positioner>
-                                    </Select.Root>
-                                </Box>
-                            </Stack>
-                        </Dialog.Body>
+                        <div className="space-y-2">
+                            <Label>Experience</Label>
+                            <Select
+                                placeholder="Expert"
+                                options={experienceLevels}
+                            />
+                        </div>
+                    </div>
 
-                        <Dialog.Footer p={0} mt={8} justifyContent="center" width="full">
-                            <Button bg="#2D5B5E" color="white" borderRadius="full" size="lg" width="full" _hover={{ bg: "#254E50" }}>
-                                Add Staff
-                            </Button>
-                        </Dialog.Footer>
-                    </Dialog.Content>
-                </Dialog.Positioner>
-            </Dialog.Root>
+                    <DialogFooter className="mt-8">
+                        <Button
+                            className="w-full rounded-full bg-[#2D5B5E] hover:bg-[#254E50]"
+                            size="lg"
+                        >
+                            Add Staff
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
 
-            <Flex justify="space-between" mt={8}>
+            <div className="flex justify-between mt-8">
                 <Link href="/onboarding/business-hours">
-                    <Button variant="outline" borderRadius="full" px={8} color="gray.600">
-                        <Icon as={FiArrowLeft} mr={2} /> Back
+                    <Button variant="outline" className="rounded-full px-8 text-gray-600">
+                        <FiArrowLeft className="mr-2" /> Back
                     </Button>
                 </Link>
                 <Link href="/onboarding/services">
-                    <Button colorPalette="teal" bg="#2D5B5E" borderRadius="full" px={8} size="lg">
-                        Continue <Icon as={FiArrowRight} ml={2} />
+                    <Button
+                        className="rounded-full bg-[#2D5B5E] px-8 hover:bg-[#254E50]"
+                        size="lg"
+                    >
+                        Continue <FiArrowRight className="ml-2" />
                     </Button>
                 </Link>
-            </Flex>
-        </Box>
+            </div>
+        </div>
     );
 }
-
-const CircleIcon = () => (
-    <Box bg="teal.100" borderRadius="full" p={1}>
-        <Icon as={FiPlus} color="teal.700" boxSize={4} />
-    </Box>
-)

@@ -1,59 +1,76 @@
-"use client";
-
-import { Input, InputGroup, Button, Field, Icon } from "@chakra-ui/react";
-import { useState } from "react";
+import * as React from "react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { IconType } from "react-icons"
+import { cn } from "@/lib/utils"
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { IconType } from "react-icons";
 
-interface CustomInputProps {
+interface CustomInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
-    placeholder?: string;
-    type?: string;
     leftIcon?: IconType;
-    value?: string;
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error?: string;
+    labelClassName?: string;
 }
 
-export default function CustomInput({ label, placeholder, type = "text", leftIcon, value, onChange }: CustomInputProps) {
-    const [show, setShow] = useState(false);
-    const isPassword = type === "password";
-    const handleClick = () => setShow(!show);
+const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
+    ({ className, label, leftIcon: LeftIcon, error, type, labelClassName, ...props }, ref) => {
+        const [showPassword, setShowPassword] = React.useState(false);
+        const isPassword = type === 'password';
 
-    return (
-        <Field.Root>
-            {label && <Field.Label fontSize="sm" fontWeight="semibold" color="gray.700">{label}</Field.Label>}
-            <InputGroup
-                flex="1"
-                startElement={
-                    leftIcon && (
-                        <Icon as={leftIcon} color="gray.500" ms={5} />
-                    )
-                }
-                endElement={
-                    isPassword && (
-                        <Button h="1.75rem" size="sm" onClick={handleClick} variant="ghost" color="gray.500" me={2} _hover={{
-                            bg: "transparent",
-                        }}>
-                            {show ? <FiEyeOff /> : <FiEye />}
-                        </Button>
-                    )
-                }
-            >
-                <Input
-                    type={isPassword ? (show ? "text" : "password") : type}
-                    placeholder={placeholder}
-                    value={value}
-                    onChange={onChange}
-                    bg="white"
-                    borderRadius="full"
-                    height="12"
-                    _focus={{ borderColor: "teal.500", bg: "white" }}
-                    pl={leftIcon ? "10" : "4"}
-                    color="gray.800"
-                    _placeholder={{ color: "gray.400" }}
-                    borderColor="gray.300"
-                />
-            </InputGroup>
-        </Field.Root>
-    );
-}
+        const togglePasswordVisibility = () => {
+            setShowPassword(!showPassword);
+        };
+
+        const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
+        return (
+            <div className="space-y-1.5 w-full">
+                {label && (
+                    <Label className={cn("text-sm font-medium text-gray-400", labelClassName)}>
+                        {label}
+                    </Label>
+                )}
+                <div className="relative group">
+                    {LeftIcon && !isPassword && (
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#E59622] transition-colors">
+                            <LeftIcon size={20} />
+                        </div>
+                    )}
+
+                    {isPassword && (
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#E59622] transition-colors">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        </div>
+                    )}
+
+                    <Input
+                        type={inputType}
+                        className={cn(
+                            "h-[56px] w-full rounded-lg border border-gray-200 bg-white px-4 py-1 text-base text-gray-900 placeholder:text-gray-300 focus:border-[#E59622] focus:ring-1 focus:ring-[#E59622] transition-all outline-none",
+                            (LeftIcon || isPassword) && "pl-12",
+                            isPassword && "pr-12",
+                            error && "border-red-500 focus:border-red-500 focus:ring-red-500",
+                            className
+                        )}
+                        ref={ref}
+                        {...props}
+                    />
+
+                    {isPassword && (
+                        <button
+                            type="button"
+                            onClick={togglePasswordVisibility}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            {showPassword ? <FiEyeOff size={15} /> : <FiEye size={15} />}
+                        </button>
+                    )}
+                </div>
+                {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+            </div>
+        )
+    }
+)
+CustomInput.displayName = "CustomInput"
+
+export default CustomInput

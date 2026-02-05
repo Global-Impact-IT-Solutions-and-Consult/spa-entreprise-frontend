@@ -1,56 +1,109 @@
 'use client';
 
-import { Box, Flex, Heading, Text, Button, VStack, Link as ChakraLink, Icon, Separator } from '@chakra-ui/react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FiChevronLeft, FiLock, FiCheckCircle } from 'react-icons/fi';
-import CustomInput from '@/components/ui/InputGroup';
 
-export default function ResetPasswordPage() {
+import { Button } from "@/components/ui/button";
+import CustomInput from '@/components/ui/InputGroup';
+import { cn } from '@/lib/utils';
+import { authService } from '@/services/auth.service';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import { toaster } from "@/components/ui/toaster";
+import Image from 'next/image';
+
+function ResetPasswordContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const email = searchParams.get('email') || '';
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [isValid, setIsValid] = useState(false);
+    const [otp, setOtp] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [strength, setStrength] = useState({
+        length: false,
+        number: false,
+        special: false,
+    });
 
     useEffect(() => {
-        const hasLength = password.length >= 8;
-        const hasNumber = /\d/.test(password);
-        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-        setIsValid(hasLength && hasNumber && hasSpecial);
+        setStrength({
+            length: password.length >= 8,
+            number: /\d/.test(password),
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+        });
     }, [password]);
 
+    const handleReset = async () => {
+        if (!otp || !password || !confirmPassword) {
+            toaster.create({ title: "Please fill all fields", type: "error" });
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            toaster.create({ title: "Passwords do not match", type: "error" });
+            return;
+        }
+
+        if (!strength.length || !strength.number || !strength.special) {
+            toaster.create({ title: "Password does not meet requirements", type: "error" });
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await authService.resetPassword({
+                email,
+                otp,
+                newPassword: password
+            });
+            toaster.create({ title: "Password reset successful", description: "You can now login with your new password.", type: "success" });
+            router.push(`/auth/login?email=${encodeURIComponent(email)}`);
+        } catch (error: any) {
+            const message = error.response?.data?.message || "Reset password failed.";
+            toaster.create({ title: "Error", description: message, type: "error" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
-        <Flex minH="100vh" direction="column" bg="white" p={8}>
-            <Box mb={8}>
-                <Link href="/auth/login">
-                    <Flex align="center" color="teal.700" fontWeight="medium" fontSize="sm">
-                        <Icon as={FiChevronLeft} boxSize={5} />
-                        <Text ml={1}>Back To Login</Text>
-                    </Flex>
-                </Link>
-            </Box>
+        <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-[#D4A373]">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+                <Image
+                    src="/auth-bg.jpg" // We'll save the generated image here
+                    alt="Auth Background"
+                    fill
+                    className="object-cover blur-xl"
+                    priority
+                />
+                {/* Semi-transparent overlay to match the warm tone in the screenshot if needed */}
+                <div className="absolute inset-0 bg-black/5" />
+            </div>
+        
+            <div className="relative z-10 w-full max-w-[1440px] px-4 md:px-32 flex items-center justify-center min-h-screen py-12">
+                <div className="w-full flex justify-center">
+                    <div className="bg-white rounded-lg shadow-2xl p-8 md:p-12 w-full max-w-lg">
 
-            <Flex flex="1" align="center" justify="center">
-                <Box
-                    w="full"
-                    maxW="lg"
-                    bg="white"
-                    p={8}
-                    borderWidth="1px"
-                    borderColor="gray.100"
-                    borderRadius="2xl"
-                    boxShadow="sm"
-                >
-                    <VStack gap={6} align="stretch" textAlign="center">
-                        <Box>
-                            <Heading size="xl" fontWeight="bold" color="gray.800" mb={3}>
-                                Create New Password
-                            </Heading>
-                            <Text color="gray.500" fontSize="sm" px={4}>
+                        <div className="flex flex-col text-center mb-8">
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Password</h1>
+                            <p className="text-sm text-gray-500">
                                 Your password must be different from previous passwords
-                            </Text>
-                        </Box>
+                            </p>
+                        </div>
 
-                        <VStack gap={2} align="stretch" textAlign="left">
+                        <div className="flex flex-col gap-5">
+                            <CustomInput
+                                label="OTP"
+                                type="text"
+                                placeholder="Enter otp"
+                                leftIcon={FiLock}
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value)}
+                            />
+
                             <CustomInput
                                 label="New Password"
                                 type="password"
@@ -60,38 +113,42 @@ export default function ResetPasswordPage() {
                                 onChange={(e) => setPassword(e.target.value)}
                             />
 
-                            <Flex align="center" gap={2} mt={1}>
-                                <Icon as={FiCheckCircle} color={isValid ? "green.500" : "gray.400"} boxSize={3} />
-                                <Text fontSize="xs" color={isValid ? "green.500" : "gray.500"}>
-                                    Must be at least 8 characters with a number and special character
-                                </Text>
-                            </Flex>
-                        </VStack>
+                            <div className="flex items-start gap-2">
+                                <FiCheckCircle className={cn("h-4 w-4 mt-0.5 shrink-0", (strength.length && strength.number && strength.special) ? "text-green-500" : "text-gray-300")} />
+                                <p className="text-xs text-gray-500 leading-tight">
+                                    At least 8 characters, Contains a number and a special charachter
+                                </p>
+                            </div>
 
-                        <CustomInput
-                            label="Confirm New Password"
-                            type="password"
-                            placeholder="Re-enter new password"
-                            leftIcon={FiLock}
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
+                            <CustomInput
+                                label="Confirm New Password"
+                                type="password"
+                                placeholder="Re-enter new password"
+                                leftIcon={FiLock}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                            />
 
-                        <Button
-                            colorPalette="teal"
-                            size="xl"
-                            borderRadius="full"
-                            w="full"
-                            fontSize="md"
-                            bg="#2D5B5E"
-                            _hover={{ bg: "#254E50" }}
-                            mt={4}
-                        >
-                            Reset password and sign in
-                        </Button>
-                    </VStack>
-                </Box>
-            </Flex>
-        </Flex>
+                            <Button
+                                size="lg"
+                                className="w-full h-[56px] rounded-lg bg-[#E59622] text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white mt-4"
+                                onClick={handleReset}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Resetting..." : "Reset password and sign in"}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+            <ResetPasswordContent />
+        </Suspense>
     );
 }

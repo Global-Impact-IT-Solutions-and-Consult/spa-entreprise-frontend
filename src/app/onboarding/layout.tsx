@@ -1,14 +1,14 @@
 'use client';
 
-import { Box, Flex, Heading, Text, VStack, Circle, Separator, HStack } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
-import { FiCheck } from 'react-icons/fi';
+import { cn } from '@/lib/utils';
+// import { FiCheck } from 'react-icons/fi';
 
 const steps = [
     { id: 1, path: '/onboarding/business-info', title: 'Business Info' },
     { id: 2, path: '/onboarding/business-hours', title: 'Business Hours' },
     { id: 3, path: '/onboarding/staff', title: 'Staffs' },
-    { id: 4, path: '/onboarding/services', title: 'Services' },
+    // { id: 4, path: '/onboarding/services', title: 'Services' },
 ];
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
@@ -16,103 +16,80 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
     // Determine current step index (1-based)
     const currentStepIndex = steps.findIndex(step => pathname.includes(step.path)) + 1 || 1;
-    const progress = Math.min((currentStepIndex / steps.length) * 100, 100);
 
     return (
-        <Flex minH="100vh" direction={{ base: 'column', md: 'row' }}>
+        <div className="flex min-h-screen flex-col md:flex-row">
             {/* Left Sidebar */}
-            <Box
-                w={{ base: 'full', md: '400px' }}
-                bg="#2D5B5E"
-                color="white"
-                p={10}
-                display="flex"
-                flexDirection="column"
-                justifyContent="space-between"
-                position="relative"
-            >
-                <Box>
-                    <Heading size="lg" mb={12}>Logo</Heading>
+            <div className="relative flex w-full flex-col justify-between bg-[#2D5B5E] p-10 text-white md:w-[400px]">
+                <div>
+                    <h2 className="mb-12 text-lg font-bold">Logo</h2>
 
-                    <VStack align="start" gap={4}>
-                        {/* Dynamic Content could go here based on step, but for now hardcoded based on screenshots or generic */}
-                        <Heading size="4xl" fontWeight="bold" lineHeight="1.2">
+                    <div className="flex flex-col items-start gap-4">
+                        <h1 className="text-4xl font-bold leading-tight">
                             {currentStepIndex === 1 && "Solutions Tailored For You"}
                             {currentStepIndex === 2 && "Tell Us When You Are Available"}
                             {currentStepIndex === 3 && "Offer More Than One Service?"}
-                            {currentStepIndex === 4 && "Offer More Than One Service?"} {/* Screenshot 3 and 4 show similar left side? No, screenshot 3 shows just logo. Let's use generic text or switch based on step */}
-                        </Heading>
-                        <Text fontSize="lg" opacity={0.9}>
+                            {/* {currentStepIndex === 4 && "Offer More Than One Service?"} */}
+                        </h1>
+                        <p className="text-lg opacity-90">
                             {currentStepIndex === 1 && "Connecting you to more people while managing all the hassle for your business"}
                             {currentStepIndex === 2 && "Help us understand your business hours"}
                             {currentStepIndex >= 3 && "No Problem we’ve got you covered on that"}
-                        </Text>
-                    </VStack>
-                </Box>
+                        </p>
+                    </div>
+                </div>
 
                 {/* Decorative Diamonds */}
-                <HStack gap={4} mb={8}>
-                    <Box transform="rotate(45deg)" bg="pink.200" w="8" h="8" borderRadius="sm" />
-                    <Box transform="rotate(45deg)" bg="pink.200" w="8" h="8" borderRadius="sm" opacity={0.8} />
-                    <Box transform="rotate(45deg)" bg="pink.200" w="8" h="8" borderRadius="sm" opacity={0.6} />
-                    <Box transform="rotate(45deg)" bg="pink.200" w="8" h="8" borderRadius="sm" opacity={0.4} />
-                </HStack>
-            </Box>
+                <div className="mb-8 flex gap-4">
+                    <div className="h-8 w-8 rotate-45 rounded-sm bg-pink-200 opacity-100" />
+                    <div className="h-8 w-8 rotate-45 rounded-sm bg-pink-200 opacity-80" />
+                    <div className="h-8 w-8 rotate-45 rounded-sm bg-pink-200 opacity-60" />
+                    <div className="h-8 w-8 rotate-45 rounded-sm bg-pink-200 opacity-40" />
+                </div>
+            </div>
 
             {/* Right Content */}
-            <Flex flex="1" direction="column" bg="white">
+            <div className="flex flex-1 flex-col bg-white">
                 {/* Progress Bar */}
-                <Box px={10} py={8}>
-                    <Box position="relative" w="full">
-                        <Box
-                            position="absolute"
-                            top="50%"
-                            left="0"
-                            transform="translateY(-50%)"
-                            w="full"
-                            h="1px"
-                            bg="gray.200"
-                            zIndex={0}
-                        />
-                        <Box
-                            position="absolute"
-                            top="50%"
-                            left="0"
-                            transform="translateY(-50%)"
-                            w={`${((currentStepIndex - 1) / (steps.length - 1)) * 100}%`}
-                            h="1px"
-                            bg="teal.600"
-                            zIndex={0}
-                            transition="width 0.3s"
+                <div className="px-10 py-8">
+                    <div className="relative w-full">
+                        {/* Background Line */}
+                        <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-gray-200 z-0" />
+
+                        {/* Active Progress Line */}
+                        <div
+                            className="absolute left-0 top-1/2 h-px -translate-y-1/2 bg-teal-600 transition-all duration-300 z-0"
+                            style={{ width: `${((currentStepIndex - 1) / (steps.length - 1)) * 100}%` }}
                         />
 
-                        <Flex justify="space-between" position="relative" zIndex={1}>
+                        {/* Steps Circles */}
+                        <div className="relative z-10 flex justify-between">
                             {steps.map((step, index) => {
                                 const stepNum = index + 1;
                                 const isCompleted = stepNum < currentStepIndex;
                                 const isCurrent = stepNum === currentStepIndex;
 
                                 return (
-                                    <Circle
+                                    <div
                                         key={step.id}
-                                        size="4"
-                                        bg={isCompleted || isCurrent ? "teal.600" : "white"}
-                                        borderWidth="1px"
-                                        borderColor={isCompleted || isCurrent ? "teal.600" : "gray.200"}
+                                        className={cn(
+                                            "h-4 w-4 rounded-full border bg-white transition-colors duration-300",
+                                            (isCompleted || isCurrent) ? "border-teal-600 bg-teal-600" : "border-gray-200"
+                                        )}
                                     >
-                                        {/* {isCompleted && <FiCheck color="white" size={10} />} */}
-                                    </Circle>
+                                        {/* {isCompleted && <FiCheck className="text-white h-2 w-2 m-auto mt-[1px]" />} */}
+                                    </div>
                                 );
                             })}
-                        </Flex>
-                    </Box>
-                </Box>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Scrollable Content Area */}
-                <Box flex="1" px={{ base: 6, md: 20 }} py={4} overflowY="auto">
+                <div className="flex-1 overflow-y-auto px-6 py-4 md:px-20">
                     {children}
-                </Box>
-            </Flex>
-        </Flex>
+                </div>
+            </div>
+        </div>
     );
 }

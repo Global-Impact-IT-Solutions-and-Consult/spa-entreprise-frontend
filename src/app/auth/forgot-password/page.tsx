@@ -1,87 +1,77 @@
 'use client';
 
-import { Box, Flex, Heading, Text, Button, VStack, Link as ChakraLink, Icon, Separator } from '@chakra-ui/react';
-import Link from 'next/link';
 import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FiChevronLeft, FiMail, FiInfo } from 'react-icons/fi';
+
+import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
+import { authService } from '@/services/auth.service';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import Image from 'next/image';
 
 export default function ForgotPasswordPage() {
+    const router = useRouter(); // Correction: used location.href in original, better to use router or just native link if outside app, but this looks internal.
     const [email, setEmail] = useState('');
 
-    const handleSendVerificationCode = () => {
+    const handleSendVerificationCode = async () => {
+        const response = await authService.forgotPassword(email)
         //navigate to verify email page
-        location.href = '/auth/verify-email';
+        router.push(`/auth/reset-password?email=${email}&redirectTo=reset`);
     };
 
     return (
-        <Flex minH="100vh" direction="column" bg="white" p={8}>
-            <Box mb={8}>
-                <Link href="/auth/login">
-                    <Flex align="center" color="teal.700" fontWeight="medium" fontSize="sm">
-                        <Icon as={FiChevronLeft} boxSize={5} />
-                        <Text ml={1}>Back To Login</Text>
-                    </Flex>
-                </Link>
-            </Box>
+        <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-[#D4A373]">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+                <Image
+                    src="/auth-bg.jpg" // We'll save the generated image here
+                    alt="Auth Background"
+                    fill
+                    className="object-cover blur-xl"
+                    priority
+                />
+                {/* Semi-transparent overlay to match the warm tone in the screenshot if needed */}
+                <div className="absolute inset-0 bg-black/5" />
+            </div>
 
-            <Flex flex="1" align="center" justify="center">
-                <Box
-                    w="full"
-                    maxW="lg"
-                    bg="white"
-                    p={8}
-                    borderWidth="1px"
-                    borderColor="gray.100"
-                    borderRadius="2xl"
-                    boxShadow="sm"
-                >
-                    <VStack gap={6} align="stretch" textAlign="center">
-                        <Box>
-                            <Heading size="xl" fontWeight="bold" color="gray.800" mb={3}>
-                                Reset Your Password
-                            </Heading>
-                            <Text color="gray.500" fontSize="sm" px={4}>
-                                Enter your business email to receive a reset code
-                            </Text>
-                        </Box>
+            <div className="relative z-10 w-full max-w-[1440px] px-4 md:px-32 flex flex-col md:flex-row items-center justify-center py-12">
+                <div className="w-full flex justify-center">
+                    <div className="bg-white rounded-lg shadow-2xl p-8 md:p-12 w-full max-w-lg overflow-y-auto">
+                        <div className="mb-6 flex flex-col gap-6 text-center">
+                            <div>
+                                <h1 className="mb-3 text-2xl font-bold text-gray-800">
+                                    Forgot Password
+                                </h1>
+                                <p className="px-4 text-sm text-gray-500">
+                                    Enter your email address and we'll send you a verification code to reset your password.
+                                </p>
+                            </div>
 
-                        <CustomInput
-                            label="Email *"
-                            type="email"
-                            placeholder="example.com"
-                            leftIcon={FiMail}
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+                            <CustomInput
+                                type="email"
+                                placeholder="example.com"
+                                leftIcon={FiMail}
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
 
-                        <Button
-                            colorPalette="teal"
-                            size="xl"
-                            borderRadius="full"
-                            w="full"
-                            fontSize="md"
-                            bg="#2D5B5E"
-                            _hover={{ bg: "#254E50" }}
-                            onClick={handleSendVerificationCode}
-                        >
-                            Send Verification Code
-                        </Button>
-
-                        <Separator />
-
-                        <Flex align="start" gap={2} textAlign="left">
-                            <Icon as={FiInfo} color="teal.700" mt={1} />
-                            <Box>
-                                <Text fontSize="sm" fontWeight="bold" color="gray.700">Can't access your email or phone?</Text>
-                                <Text fontSize="sm" color="gray.500">
-                                    Contact our business support team at <Link href="mailto:support@servicehub.ng"><Text as="span" color="teal.700">support@servicehub.ng</Text></Link> for assistance.
-                                </Text>
-                            </Box>
-                        </Flex>
-                    </VStack>
-                </Box>
-            </Flex>
-        </Flex>
+                            <Button
+                                className="w-full h-[56px] rounded-lg bg-[#E59622] text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white mt-4"
+                                size="lg"
+                                onClick={handleSendVerificationCode}
+                            >
+                                Send Verification Code
+                            </Button>
+                            <Link href="/auth/login" className="text-sm text-gray-500 flex items-center justify-center">
+                                <FiChevronLeft className="inline-block mr-2" />
+                                Back to Login
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }

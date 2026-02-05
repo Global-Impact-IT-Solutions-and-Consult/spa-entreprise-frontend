@@ -1,57 +1,77 @@
 "use client";
 
-import { Box, VStack, HStack, Text, Icon, Link } from "@chakra-ui/react";
-import { FiHome, FiBriefcase, FiCalendar, FiUsers, FiBarChart2, FiGrid } from "react-icons/fi";
-import { IconType } from "react-icons";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+    LayoutDashboard,
+    Store,
+    Briefcase,
+    Calendar,
+    Users,
+    BarChart3,
+    Home
+} from "lucide-react";
 
-interface SidebarItemProps {
-    icon: IconType;
-    label: string;
-    isActive?: boolean;
-}
+const sidebarItems = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: Store, label: "Business Profile", href: "/dashboard/profile" }, // Placeholder route
+    { icon: Briefcase, label: "Services", href: "/dashboard/services" }, // Placeholder route
+    { icon: Calendar, label: "Bookings", href: "/dashboard/bookings" }, // Placeholder route
+    { icon: Users, label: "Staff", href: "/dashboard/staff" }, // Placeholder route
+    { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" }, // Placeholder route
+];
 
-const SidebarItem = ({ icon, label, isActive }: SidebarItemProps) => {
+export function Sidebar() {
+    const pathname = usePathname();
+
     return (
-        <HStack
-            spacing={4}
-            w="100%"
-            p={3}
-            borderRadius="md"
-            bg={isActive ? "teal.50" : "transparent"}
-            color={isActive ? "teal.700" : "gray.600"}
-            _hover={{ bg: "gray.50", cursor: "pointer" }}
-        >
-            <Icon as={icon} boxSize={5} />
-            <Text fontSize="md" fontWeight={isActive ? "medium" : "normal"}>{label}</Text>
-        </HStack>
-    );
-};
+        <div className="flex h-screen w-64 flex-col border-r bg-white">
+            {/* Logo Section */}
+            <div className="p-6">
+                <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded bg-[#2D5B5E] text-white font-bold">W</div>
+                    <div>
+                        <h1 className="text-lg font-bold text-gray-900">WellnessPro</h1>
+                        <p className="text-xs text-gray-500">Business Portal</p>
+                    </div>
+                </div>
+            </div>
 
-export default function Sidebar() {
-    return (
-        <Box w="250px" h="100vh" bg="white" borderRight="1px" borderColor="gray.100" p={6}>
-            <VStack spacing={2} align="stretch" mt={10}>
-                <SidebarItem icon={FiGrid} label="Dashboard" isActive />
-                <SidebarItem icon={FiBriefcase} label="Business Profile" />
-                <SidebarItem icon={FiBriefcase} label="Services" />
-                <SidebarItem icon={FiCalendar} label="Bookings" />
-                <SidebarItem icon={FiUsers} label="Staff" />
-                <SidebarItem icon={FiBarChart2} label="Analytics" />
-            </VStack>
+            {/* Navigation Items */}
+            <nav className="flex-1 space-y-1 px-4 py-4">
+                {sidebarItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={cn(
+                                "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                                isActive
+                                    ? "bg-[#DAE5E5] text-[#2D5B5E]" // Active State from screenshot (light teal bg)
+                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            )}
+                        >
+                            <item.icon className={cn("h-5 w-5", isActive ? "text-[#2D5B5E]" : "text-gray-400")} />
+                            {item.label}
+                        </Link>
+                    );
+                })}
+            </nav>
 
-            <Box mt="auto">
-                <VStack spacing={2} align="stretch">
-                    <SidebarItem icon={FiUsers} label="Settings" />
-                    <SidebarItem icon={FiHome} label="Logout" />
-                    <HStack spacing={3} mt={4} pt={4} borderTopWidth="1px" borderColor="gray.100">
-                        <Box w={8} h={8} borderRadius="full" bg="#1D4044" /> {/* User avatar placeholder */}
-                        <Box>
-                            <Text fontSize="sm" fontWeight="bold" color="gray.900">David Carter</Text>
-                            <Text fontSize="xs" color="gray.500">Owner</Text>
-                        </Box>
-                    </HStack>
-                </VStack>
-            </Box>
-        </Box>
+            {/* Bottom Business Card */}
+            <div className="border-t p-4">
+                <div className="flex items-center gap-3 rounded-xl bg-gray-100 p-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#cbdad9] text-[#2D5B5E]">
+                        <Store className="h-5 w-5" />
+                    </div>
+                    <div className="overflow-hidden">
+                        <p className="truncate text-sm font-bold text-gray-900">Serenity Spa</p>
+                        <p className="truncate text-xs text-gray-500">Lagos, Nigeria</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
