@@ -1,21 +1,44 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { FiCheck } from 'react-icons/fi';
+import { FiCheck, FiLogOut } from 'react-icons/fi';
+import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store/auth.store';
+import { toaster } from '@/components/ui/toaster';
+import { Button } from '@/components/ui/button';
 
 const steps = [
     { id: 1, path: '/onboarding/business-info', title: 'Business Information' },
-    { id: 2, path: '/onboarding/business-hours', title: 'Operating Hours' },
-    { id: 3, path: '/onboarding/services', title: 'Create Services' },
-    { id: 4, path: '/onboarding/staff', title: 'Add Staffs' },
+    { id: 2, path: '/onboarding/services', title: 'Create Services' },
+    { id: 3, path: '/onboarding/staff', title: 'Add Staffs' },
 ];
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { logout: logoutStore } = useAuthStore();
 
     // Determine current step index (1-based)
     const currentStepIndex = steps.findIndex(step => pathname.includes(step.path)) + 1 || 1;
+
+    const handleLogout = async () => {
+        try {
+            await authService.logout();
+            logoutStore();
+            toaster.create({ 
+                title: "Logged out", 
+                description: "You have been successfully logged out.", 
+                type: "success" 
+            });
+            router.push('/auth/login');
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Even if API call fails, clear local state and redirect
+            logoutStore();
+            router.push('/auth/login');
+        }
+    };
 
     return (
         <div className="flex min-h-screen bg-[#F9FAFB]">
@@ -33,7 +56,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
                 </div>
 
                 {/* Steps Navigation */}
-                <nav className="flex flex-col gap-2">
+                <nav className="flex flex-col gap-2 flex-1">
                     {steps.map((step, index) => {
                         const stepNum = index + 1;
                         const isCompleted = stepNum < currentStepIndex;
@@ -56,7 +79,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
                                 {isCurrent ? (
                                     <span className="text-xs font-medium opacity-80">
-                                        {stepNum} of 4
+                                        {stepNum} of 3
                                     </span>
                                 ) : isCompleted ? (
                                     <FiCheck className="text-green-500 h-5 w-5" />
@@ -65,6 +88,18 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
                         );
                     })}
                 </nav>
+
+                {/* Logout Button */}
+                <div className="px-8 pb-8 mt-auto">
+                    <Button
+                        onClick={handleLogout}
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2 h-10 text-sm font-medium text-gray-300 hover:text-white hover:bg-red-600/20 border-gray-600 hover:border-red-500 transition-colors"
+                    >
+                        <FiLogOut className="h-4 w-4" />
+                        Logout
+                    </Button>
+                </div>
             </div>
 
             {/* Main Content Area */}
@@ -75,7 +110,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
                         <div className="bg-[#E59622] text-white p-1.5 rounded-lg font-bold text-sm">WP</div>
                         <span className="font-bold">WellnessPro</span>
                     </div>
-                    <span className="text-xs font-medium bg-[#E59622] px-2 py-1 rounded">Step {currentStepIndex} of 4</span>
+                    <span className="text-xs font-medium bg-[#E59622] px-2 py-1 rounded">Step {currentStepIndex} of 3</span>
                 </div>
 
                 {/* Scrollable Content Area */}

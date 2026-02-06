@@ -1,20 +1,51 @@
 import apiClient from '@/lib/api-client';
 
-export interface RegisterBusinessDto {
-    businessName: string;
-    email: string;
-    phone: string;
-    city: string;
-    address: string;
-    businessTypeCode: string;
-    description: string;
+export interface Country {
+    isoCode: string;
+    name: string;
+    phonecode: string;
+    flag: string;
+    currency: string;
+    latitude: string;
+    longitude: string;
+    timezones: Array<{
+        zoneName: string;
+        gmtOffset: number;
+        gmtOffsetName: string;
+        abbreviation: string;
+        tzName: string;
+    }>;
+}
+
+export interface State {
+    name: string;
+    isoCode: string;
+    countryCode: string;
+    latitude: string;
+    longitude: string;
+}
+
+export interface City {
+    name: string;
+    countryCode: string;
+    stateCode: string;
+    latitude: string;
+    longitude: string;
 }
 
 export interface UpdateProfileDto {
+    businessTypeCode?: string;
+    businessName?: string;
+    phone?: string;
+    cacNumber?: string;
     description?: string;
+    country?: Country;
+    state?: State;
+    city?: City;
     address?: string;
+    addressNote?: string;
     amenities?: string[];
-    operatingHours?: any; // Define strict type if needed
+    operatingHours?: any;
 }
 
 export interface CreateServiceDto {
@@ -23,13 +54,51 @@ export interface CreateServiceDto {
     categoryId: string;
     price: number;
     duration: number;
-    deliveryType: 'in_location_only' | 'home_service' | 'both';
+    bufferTime?: number;
+    deliveryType: 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH';
+    homeServicePrice?: number;
+    maxServiceRadius?: number;
+}
+
+export interface CreateStaffDto {
+    name: string;
+    serviceIds: string[];
+    role: string;
+    experience: string;
+}
+
+export interface AddressRelation {
+    id: string;
+    businessId: string;
+    country: Country;
+    state: State;
+    city: City;
+    address: string;
+    note?: string | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Business {
     id: string;
     businessName: string;
-    status: string;
+    status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+    userId: string;
+    businessTypeCode?: string;
+    phone?: string;
+    cacNumber?: string;
+    description?: string;
+    // New addressRelation structure (preferred)
+    addressRelation?: AddressRelation | null;
+    // Legacy fields (for backward compatibility)
+    country?: Country;
+    state?: State;
+    city?: City;
+    address?: string;
+    addressNote?: string;
+    // Onboarding completion tracking (from backend)
+    onboardingCompleted?: boolean;
+    onboardingCompletedAt?: string | null;
 }
 
 export interface ServiceCategory {
@@ -37,10 +106,43 @@ export interface ServiceCategory {
     name: string;
 }
 
+export interface Service {
+    id: string;
+    name: string;
+    description: string;
+    categoryId: string;
+    price: number;
+    duration: number;
+    bufferTime?: number;
+    deliveryType: 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH';
+    homeServicePrice?: number;
+    serviceRadius?: number;
+}
+
+export interface Staff {
+    id: string;
+    name: string;
+    role: string;
+    experience: string;
+    serviceIds?: string[];
+}
+
 export const businessService = {
-    // Register Business
-    register: async (data: RegisterBusinessDto) => {
-        const response = await apiClient.post<Business>('/spas/register', data);
+    // Get My Businesses
+    getMyBusinesses: async () => {
+        const response = await apiClient.get<Business[]>('/spas/my-businesses');
+        return response.data;
+    },
+
+    // Get Business by ID
+    getBusiness: async (id: string) => {
+        const response = await apiClient.get<Business>(`/spas/${id}`);
+        return response.data;
+    },
+
+    // Get Business Status
+    getBusinessStatus: async (id: string) => {
+        const response = await apiClient.get<{ status: string }>(`/spas/${id}/status`);
         return response.data;
     },
 
@@ -56,24 +158,92 @@ export const businessService = {
         return response.data;
     },
 
+    // Get Services for a Business
+    getServices: async (businessId: string) => {
+        const response = await apiClient.get<Service[]>(`/spas/${businessId}/services`);
+        return response.data;
+    },
+
     // Create Service
     createService: async (businessId: string, data: CreateServiceDto) => {
         const response = await apiClient.post(`/spas/${businessId}/services`, data);
         return response.data;
     },
 
+    // Update Service
+    updateService: async (businessId: string, serviceId: string, data: Partial<CreateServiceDto>) => {
+        const response = await apiClient.put(`/spas/${businessId}/services/${serviceId}`, data);
+        return response.data;
+    },
+
+    // Delete Service
+    deleteService: async (businessId: string, serviceId: string) => {
+        const response = await apiClient.delete(`/spas/${businessId}/services/${serviceId}`);
+        return response.data;
+    },
+
+    // Get Staff for a Service
+    getServiceStaff: async (businessId: string, serviceId: string) => {
+        const response = await apiClient.get<Staff[]>(`/spas/${businessId}/services/${serviceId}/staff`);
+        return response.data;
+    },
+
+    // Get All Staff for a Business
+    getAllStaff: async (businessId: string) => {
+        const response = await apiClient.get<Staff[]>(`/spas/${businessId}/staff`);
+        return response.data;
+    },
+
+    // Create Staff Member (new endpoint - staff can be assigned to multiple services)
+    createStaff: async (businessId: string, data: CreateStaffDto) => {
+        const response = await apiClient.post(`/spas/${businessId}/staff`, data);
+        return response.data;
+    },
+
+    // Update Staff Member
+    updateStaff: async (businessId: string, staffId: string, data: Partial<CreateStaffDto>) => {
+        const response = await apiClient.put(`/spas/${businessId}/staff/${staffId}`, data);
+        return response.data;
+    },
+
+    // Delete Staff Member
+    deleteStaff: async (businessId: string, staffId: string) => {
+        const response = await apiClient.delete(`/spas/${businessId}/staff/${staffId}`);
+        return response.data;
+    },
+
     // Upload Image
-    uploadImage: async (businessId: string, file: File, isPrimary: boolean = false) => {
+    uploadImage: async (businessId: string, file: File, isPrimary: boolean = false, caption?: string) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('isPrimary', isPrimary.toString());
-        formData.append('caption', 'Business Logo');
+        formData.append('caption', caption || 'Business Image');
 
         const response = await apiClient.post(`/spas/${businessId}/images`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        return response.data;
+    },
+
+    // Upload Document
+    uploadDocument: async (businessId: string, file: File, documentType: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('documentType', documentType);
+
+        const response = await apiClient.post(`/spas/${businessId}/documents`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // Set Availability
+    setAvailability: async (businessId: string, availability: any) => {
+        const response = await apiClient.post(`/spas/${businessId}/availability`, availability);
         return response.data;
     }
 };

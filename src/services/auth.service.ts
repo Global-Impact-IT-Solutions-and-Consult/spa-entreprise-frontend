@@ -51,8 +51,16 @@ export const authService = {
         // If login successful (and not just an MFA challenge intermediate step if API worked that way, 
         // but here standard login returns tokens directly)
         if (response.data.accessToken) {
-            Cookies.set('accessToken', response.data.accessToken, { secure: true, sameSite: 'strict' });
-            Cookies.set('refreshToken', response.data.refreshToken!, { secure: true, sameSite: 'strict' });
+            // Only use secure flag in production (HTTPS), not in development (HTTP localhost)
+            const isProduction = process.env.NODE_ENV === 'production' && window.location.protocol === 'https:';
+            Cookies.set('accessToken', response.data.accessToken, { 
+                secure: isProduction, 
+                sameSite: 'strict' 
+            });
+            Cookies.set('refreshToken', response.data.refreshToken!, { 
+                secure: isProduction, 
+                sameSite: 'strict' 
+            });
         }
         return response.data;
     },
@@ -144,5 +152,11 @@ export const authService = {
     googleLogin: () => {
         // Redirect to backend Google OAuth endpoint
         window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+    },
+
+    // Get Current User
+    getCurrentUser: async () => {
+        const response = await apiClient.get<User>('/users/me');
+        return response.data;
     }
 };

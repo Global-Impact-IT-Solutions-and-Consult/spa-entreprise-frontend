@@ -45,27 +45,41 @@ apiClient.interceptors.response.use(
 
                     if (response.status === 200 || response.status === 201) {
                         const { accessToken, refreshToken: newRefreshToken } = response.data;
-                        Cookies.set('accessToken', accessToken, { secure: true, sameSite: 'strict' });
-                        Cookies.set('refreshToken', newRefreshToken, { secure: true, sameSite: 'strict' });
+                        // Only use secure flag in production (HTTPS), not in development (HTTP localhost)
+                        const isProduction = typeof window !== 'undefined' && process.env.NODE_ENV === 'production' && window.location.protocol === 'https:';
+                        Cookies.set('accessToken', accessToken, { secure: isProduction, sameSite: 'strict' });
+                        Cookies.set('refreshToken', newRefreshToken, { secure: isProduction, sameSite: 'strict' });
 
                         // Retry original request with new token
                         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
                         return apiClient(originalRequest);
                     }
                 } catch (refreshError) {
-                    // Token refresh failed, redirect to login or handle logout
+                    // Token refresh failed, clear tokens and redirect to login
+                    console.error('Token refresh failed:', refreshError);
                     Cookies.remove('accessToken');
                     Cookies.remove('refreshToken');
-                    window.location.href = '/auth/login';
+                    // Clear auth store if available
+                    if (typeof window !== 'undefined') {
+                        // Redirect to login with a message about session expiration
+                        const currentPath = window.location.pathname;
+                        if (!currentPath.includes('/auth/login')) {
+                            window.location.href = '/auth/login?expired=true';
+                        }
+                    }
                     return Promise.reject(refreshError);
                 }
             } else {
-                // No refresh token available
+                // No refresh token available - token expired
+                console.warn('No refresh token available, redirecting to login');
                 Cookies.remove('accessToken');
                 Cookies.remove('refreshToken');
                 // Redirect to login only if not already there to avoid loops
-                if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
-                    window.location.href = '/auth/login';
+                if (typeof window !== 'undefined') {
+                    const currentPath = window.location.pathname;
+                    if (!currentPath.includes('/auth/login') && !currentPath.includes('/auth/register')) {
+                        window.location.href = '/auth/login?expired=true';
+                    }
                 }
             }
         }

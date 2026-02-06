@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiArrowRight, FiPlus, FiEdit2, FiTrash2, FiUser } from 'react-icons/fi';
 
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
+import { businessService, Service, Staff } from '@/services/business.service';
 import { cn } from '@/lib/utils';
 import { Scissors } from 'lucide-react';
 
@@ -48,10 +49,10 @@ const StaffCard = ({ staff, onEdit, onDelete }: any) => {
             </div>
 
             <div className="space-y-3 pt-6 border-t border-gray-50 mt-auto">
-                <div className="flex items-center gap-3">
-                    <span className="text-xs font-medium text-gray-400 w-20">Service</span>
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                    <span className="text-xs font-bold text-gray-800">{staff.serviceName || "Global Spa"}</span>
+                <div className="flex items-start gap-3">
+                    <span className="text-xs font-medium text-gray-400 w-20">Services</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5" />
+                    <span className="text-xs font-bold text-gray-800 flex-1">{staff.serviceName || "No services"}</span>
                 </div>
                 <div className="flex items-center gap-3">
                     <span className="text-xs font-medium text-gray-400 w-20">Experience</span>
@@ -63,63 +64,154 @@ const StaffCard = ({ staff, onEdit, onDelete }: any) => {
     );
 };
 
-const serviceTypes = [
-    { label: "Barbershop", value: "barbershop" },
-    { label: "Spa & Massage", value: "spa_massage" },
-    { label: "Hair Styling", value: "hair_styling" },
-];
-
 const experienceLevels = [
-    { label: "Junior", value: "junior" },
-    { label: "Intermediate", value: "intermediate" },
-    { label: "Expert", value: "expert" },
+    { label: "Select experience level", value: "" },
+    { label: "Junior", value: "Junior" },
+    { label: "Intermediate", value: "Intermediate" },
+    { label: "Expert", value: "Expert" },
 ];
 
 export default function StaffsPage() {
     const router = useRouter();
-    const { services, businessId } = useOnboardingStore();
+    const { businessId } = useOnboardingStore();
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(true);
+    const [services, setServices] = useState<Service[]>([]);
+    const [staffs, setStaffs] = useState<Staff[]>([]);
 
-    // Mock data for demo/onboarding
-    const [staffs, setStaffs] = useState<any[]>([
-        { id: 1, name: "John Doe", role: "Hair Stylist", serviceName: "Barbershop", experience: "Expert", tags: ["+3"] },
-        { id: 2, name: "John Doe 2", role: "Senior Massage Therapist", serviceName: "Full on Body M...", experience: "Expert" },
-    ]);
-
-    // Form state (simplified for UI demonstration)
+    // Form state
     const [newStaff, setNewStaff] = useState({
         name: '',
-        service: '',
+        serviceIds: [] as string[],
         role: '',
-        experience: 'expert'
+        experience: ''
     });
 
-    const handleAddStaff = () => {
-        if (!newStaff.name || !newStaff.role) {
-            toaster.create({ title: "Validation Error", description: "Name and Role are required", type: "error" });
+    // Load services and staff
+    useEffect(() => {
+        const loadData = async () => {
+            if (!businessId) {
+                toaster.create({ title: "Error", description: "Business ID not found", type: "error" });
+                setIsLoadingData(false);
+                return;
+            }
+
+            try {
+                const [servicesData, staffsData] = await Promise.all([
+                    businessService.getServices(businessId),
+                    businessService.getAllStaff(businessId)
+                ]);
+                setServices(servicesData);
+                setStaffs(staffsData);
+            } catch (error: any) {
+                console.error("Failed to load data", error);
+                toaster.create({ 
+                    title: "Error", 
+                    description: error.response?.data?.message || "Failed to load data", 
+                    type: "error" 
+                });
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
+
+        loadData();
+    }, [businessId]);
+
+    const handleAddStaff = async () => {
+        if (!businessId) {
+            toaster.create({ title: "Error", description: "Business ID not found", type: "error" });
             return;
         }
-        const staff = {
-            id: Date.now(),
-            ...newStaff,
-            serviceName: serviceTypes.find(s => s.value === newStaff.service)?.label || "Global Spa",
-            experience: experienceLevels.find(e => e.value === newStaff.experience)?.label || "Expert"
-        };
-        setStaffs([...staffs, staff]);
-        setOpen(false);
-        setNewStaff({ name: '', service: '', role: '', experience: 'expert' });
-        toaster.create({ title: "Staff Added", type: "success" });
+
+        if (!newStaff.name || !newStaff.role || newStaff.serviceIds.length === 0 || !newStaff.experience) {
+            toaster.create({ title: "Validation Error", description: "Please fill all required fields and select at least one service", type: "error" });
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const newStaffMember = await businessService.createStaff(businessId, {
+                name: newStaff.name,
+                serviceIds: newStaff.serviceIds,
+                role: newStaff.role,
+                experience: newStaff.experience
+            });
+
+            setStaffs([...staffs, newStaffMember]);
+            setOpen(false);
+            setNewStaff({ name: '', serviceIds: [], role: '', experience: '' });
+            toaster.create({ title: "Staff Added", type: "success" });
+        } catch (error: any) {
+            toaster.create({
+                title: "Failed to add staff",
+                description: error.response?.data?.message || "Please try again.",
+                type: "error"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleServiceToggle = (serviceId: string) => {
+        setNewStaff(prev => {
+            if (prev.serviceIds.includes(serviceId)) {
+                return { ...prev, serviceIds: prev.serviceIds.filter(id => id !== serviceId) };
+            } else {
+                return { ...prev, serviceIds: [...prev.serviceIds, serviceId] };
+            }
+        });
+    };
+
+    const handleDeleteStaff = async (staffId: string) => {
+        if (!businessId) return;
+
+        if (!confirm('Are you sure you want to delete this staff member?')) return;
+
+        try {
+            await businessService.deleteStaff(businessId, staffId);
+            setStaffs(staffs.filter(s => s.id !== staffId));
+            toaster.create({ title: "Staff Deleted", type: "success" });
+        } catch (error: any) {
+            toaster.create({
+                title: "Failed to delete staff",
+                description: error.response?.data?.message || "Please try again.",
+                type: "error"
+            });
+        }
     };
 
     const handleFinish = async () => {
         setIsLoading(true);
-        // Simulate completion and redirect to dashboard
-        setTimeout(() => {
-            toaster.create({ title: "Onboarding Complete!", description: "Welcome to WellnessPro!", type: "success" });
+        try {
+            // Check if business has at least one service and one staff
+            if (services.length === 0) {
+                toaster.create({ 
+                    title: "Incomplete Onboarding", 
+                    description: "Please create at least one service before finishing.", 
+                    type: "error" 
+                });
+                setIsLoading(false);
+                return;
+            }
+
+            // Onboarding is complete - redirect to dashboard
+            toaster.create({ 
+                title: "Onboarding Complete!", 
+                description: "Your business profile is set up. Waiting for admin approval.", 
+                type: "success" 
+            });
             router.push('/dashboard');
+        } catch (error: any) {
+            toaster.create({ 
+                title: "Error", 
+                description: error.response?.data?.message || "An error occurred", 
+                type: "error" 
+            });
+        } finally {
             setIsLoading(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -132,23 +224,50 @@ export default function StaffsPage() {
                     </div>
                     <Button
                         onClick={() => setOpen(true)}
-                        className="bg-[#E59622] hover:bg-[#d48a1f] text-white font-bold h-12 px-6 rounded-lg flex items-center gap-2"
+                        disabled={services.length === 0}
+                        className="bg-[#E59622] hover:bg-[#d48a1f] text-white font-bold h-12 px-6 rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <FiPlus className="h-5 w-5" />
                         Add Staff
                     </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
-                    {staffs.map(staff => (
-                        <StaffCard
-                            key={staff.id}
-                            staff={staff}
-                            onEdit={() => toaster.create({ title: "Coming soon", description: "Edit functionality will be available in the dashboard." })}
-                            onDelete={() => setStaffs(staffs.filter(s => s.id !== staff.id))}
-                        />
-                    ))}
-                </div>
+                    {isLoadingData ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="text-gray-500">Loading staff...</div>
+                    </div>
+                ) : services.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center py-20">
+                        <div className="text-gray-500 mb-4">Please create services first before adding staff.</div>
+                        <Button
+                            onClick={() => router.push('/onboarding/services')}
+                            className="bg-[#E59622] hover:bg-[#d48a1f] text-white"
+                        >
+                            Go to Services
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
+                        {staffs.map(staff => {
+                            // Get service names for this staff member
+                            const staffServiceIds = staff.serviceIds || [];
+                            const staffServices = services.filter(s => staffServiceIds.includes(s.id));
+                            const serviceNames = staffServices.map(s => s.name).join(', ') || 'No services assigned';
+                            
+                            return (
+                                <StaffCard
+                                    key={staff.id}
+                                    staff={{
+                                        ...staff,
+                                        serviceName: serviceNames
+                                    }}
+                                    onEdit={() => toaster.create({ title: "Coming soon", description: "Edit functionality will be available in the dashboard." })}
+                                    onDelete={() => handleDeleteStaff(staff.id)}
+                                />
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             <div className="flex justify-between mt-12">
@@ -201,7 +320,39 @@ export default function StaffsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-400">Staff Experience</Label>
+                                <Label className="text-sm font-medium text-gray-400">Services * (Select one or more)</Label>
+                                <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto">
+                                    {services.map((service) => (
+                                        <div 
+                                            key={service.id} 
+                                            className={cn(
+                                                "border rounded-xl p-4 flex flex-col gap-3 relative bg-white shadow-sm cursor-pointer transition-all",
+                                                newStaff.serviceIds.includes(service.id) 
+                                                    ? "border-[#E59622] bg-[#FEF5E7]" 
+                                                    : "border-gray-100 hover:border-gray-200"
+                                            )}
+                                            onClick={() => handleServiceToggle(service.id)}
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                                                <Scissors className="h-5 w-5 text-gray-500" />
+                                            </div>
+                                            <span className="text-sm font-bold text-gray-900 leading-tight">{service.name}</span>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={newStaff.serviceIds.includes(service.id)}
+                                                onChange={() => handleServiceToggle(service.id)}
+                                                className="absolute top-4 right-4 h-5 w-5 rounded border-gray-300 text-[#E59622] focus:ring-[#E59622] cursor-pointer" 
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                                {newStaff.serviceIds.length === 0 && (
+                                    <p className="text-xs text-red-500">Please select at least one service</p>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-400">Staff Experience *</Label>
                                 <Select
                                     placeholder="Select experience level"
                                     options={experienceLevels}
@@ -209,21 +360,6 @@ export default function StaffsPage() {
                                     onChange={(e) => setNewStaff({ ...newStaff, experience: e.target.value })}
                                     className="h-[56px] rounded-lg border-gray-200"
                                 />
-                            </div>
-
-                            <div className="space-y-4">
-                                <Label className="text-sm font-medium text-gray-400">Services Associated To</Label>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {staffs.map((staff, i) => (
-                                        <div key={i} className="border border-gray-100 rounded-xl p-4 flex flex-col gap-3 relative bg-white shadow-sm">
-                                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                                                <Scissors className="h-5 w-5 text-gray-500" />
-                                            </div>
-                                            <span className="text-sm font-bold text-gray-900 leading-tight">{staff.serviceName}</span>
-                                            <input type="checkbox" className="absolute top-4 right-4 h-5 w-5 rounded border-gray-300 text-[#E59622] focus:ring-[#E59622]" />
-                                        </div>
-                                    ))}
-                                </div>
                             </div>
                         </div>
 
@@ -237,9 +373,10 @@ export default function StaffsPage() {
                             </Button>
                             <Button
                                 onClick={handleAddStaff}
-                                className="h-[56px] flex-1 rounded-lg bg-[#E59622] hover:bg-[#d48a1f] text-white font-bold text-lg"
+                                disabled={isLoading}
+                                className="h-[56px] flex-1 rounded-lg bg-[#E59622] hover:bg-[#d48a1f] text-white font-bold text-lg disabled:opacity-50"
                             >
-                                Save Staff
+                                {isLoading ? "Adding..." : "Save Staff"}
                             </Button>
                         </div>
                     </div>

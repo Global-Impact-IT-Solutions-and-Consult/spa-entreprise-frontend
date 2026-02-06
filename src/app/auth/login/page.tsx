@@ -9,12 +9,18 @@ import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
 import { toaster } from "@/components/ui/toaster";
 import { authService } from '@/services/auth.service';
+import { businessService } from '@/services/business.service';
+import { useAuthStore } from '@/store/auth.store';
+import { useOnboardingStore } from '@/store/onboarding.store';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { SocialButtons } from '@/components/auth/SocialButtons';
+import { determineOnboardingStep } from '@/lib/onboarding-utils';
 
 function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { login: setAuthStore } = useAuthStore();
+    const { setBusinessId } = useOnboardingStore();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -23,6 +29,16 @@ function LoginContent() {
         const emailParam = searchParams.get('email');
         if (emailParam) {
             setEmail(emailParam);
+        }
+        
+        // Check if redirected due to token expiration
+        const expired = searchParams.get('expired');
+        if (expired === 'true') {
+            toaster.create({ 
+                title: "Session Expired", 
+                description: "Your session has expired. Please log in again to continue.", 
+                type: "warning" 
+            });
         }
     }, [searchParams]);
 
@@ -36,12 +52,49 @@ function LoginContent() {
         try {
             const data = await authService.login({ email, password });
 
-            toaster.create({ title: "Login successful", type: "success" });
+            if (data.accessToken && data.user) {
+                // Store user in auth store
+                setAuthStore(data.user, data.accessToken, data.refreshToken || '');
 
-            if (data.user?.businesses && data.user.businesses.length > 0) {
-                router.push('/dashboard');
+                // Small delay to ensure cookies are set before making API calls
+                // This is especially important on localhost where cookie setting might be async
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // Fetch user's businesses
+                try {
+                    const businesses = await businessService.getMyBusinesses();
+                    
+                    if (businesses && businesses.length > 0) {
+                        const business = businesses[0];
+                        setBusinessId(business.id);
+
+                        // Check business status
+                        if (business.status === 'REJECTED' || business.status === 'SUSPENDED') {
+                            toaster.create({ 
+                                title: "Account Status", 
+                                description: `Your business is ${business.status.toLowerCase()}. Please contact support.`, 
+                                type: "error" 
+                            });
+                            return;
+                        }
+
+                        // Determine the correct onboarding step based on completion status
+                        // Pass the business object directly instead of just the ID to avoid extra API call
+                        const nextStep = await determineOnboardingStep(business);
+                        router.push(nextStep);
+                    } else {
+                        // No business found, start onboarding
+                        router.push('/onboarding/business-info');
+                    }
+                } catch (error: any) {
+                    // If we can't fetch businesses, still try to proceed
+                    console.error('Failed to fetch businesses:', error);
+                    router.push('/onboarding/business-info');
+                }
+
+                toaster.create({ title: "Login successful", type: "success" });
             } else {
-                router.push('/onboarding/business-info');
+                toaster.create({ title: "Login failed", description: "Invalid response from server", type: "error" });
             }
 
         } catch (error: any) {
