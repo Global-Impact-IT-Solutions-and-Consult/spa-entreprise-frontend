@@ -1,118 +1,123 @@
 'use client';
 
-import { Box, Flex, Heading, Text, VStack, Circle, Separator, HStack } from '@chakra-ui/react';
-import { usePathname } from 'next/navigation';
-import { FiCheck } from 'react-icons/fi';
+import { usePathname, useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { FiCheck, FiLogOut } from 'react-icons/fi';
+import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store/auth.store';
+import { toaster } from '@/components/ui/toaster';
+import { Button } from '@/components/ui/button';
 
 const steps = [
-    { id: 1, path: '/onboarding/business-info', title: 'Business Info' },
-    { id: 2, path: '/onboarding/business-hours', title: 'Business Hours' },
-    { id: 3, path: '/onboarding/staff', title: 'Staffs' },
-    { id: 4, path: '/onboarding/services', title: 'Services' },
+    { id: 1, path: '/onboarding/business-info', title: 'Business Information' },
+    { id: 2, path: '/onboarding/services', title: 'Create Services' },
+    { id: 3, path: '/onboarding/staff', title: 'Add Staffs' },
 ];
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { logout: logoutStore } = useAuthStore();
 
     // Determine current step index (1-based)
     const currentStepIndex = steps.findIndex(step => pathname.includes(step.path)) + 1 || 1;
-    const progress = Math.min((currentStepIndex / steps.length) * 100, 100);
+
+    const handleLogout = async () => {
+        try {
+            await authService.logout();
+            logoutStore();
+            toaster.create({ 
+                title: "Logged out", 
+                description: "You have been successfully logged out.", 
+                type: "success" 
+            });
+            router.push('/auth/login');
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Even if API call fails, clear local state and redirect
+            logoutStore();
+            router.push('/auth/login');
+        }
+    };
 
     return (
-        <Flex minH="100vh" direction={{ base: 'column', md: 'row' }}>
+        <div className="flex min-h-screen bg-[#F9FAFB]">
             {/* Left Sidebar */}
-            <Box
-                w={{ base: 'full', md: '400px' }}
-                bg="#2D5B5E"
-                color="white"
-                p={10}
-                display="flex"
-                flexDirection="column"
-                justifyContent="space-between"
-                position="relative"
-            >
-                <Box>
-                    <Heading size="lg" mb={12}>Logo</Heading>
+            <div className="hidden md:flex w-[320px] bg-[#111827] flex-col py-10 px-0 text-white shrink-0">
+                {/* Logo & Brand */}
+                <div className="px-8 mb-16 flex items-center gap-3">
+                    <div className="bg-[#E59622] text-white p-2 rounded-lg font-bold text-xl w-10 h-10 flex items-center justify-center shadow-lg">
+                        WP
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-bold leading-none">WellnessPro</h2>
+                        <p className="text-[10px] opacity-70">Connecting Businesses</p>
+                    </div>
+                </div>
 
-                    <VStack align="start" gap={4}>
-                        {/* Dynamic Content could go here based on step, but for now hardcoded based on screenshots or generic */}
-                        <Heading size="4xl" fontWeight="bold" lineHeight="1.2">
-                            {currentStepIndex === 1 && "Solutions Tailored For You"}
-                            {currentStepIndex === 2 && "Tell Us When You Are Available"}
-                            {currentStepIndex === 3 && "Offer More Than One Service?"}
-                            {currentStepIndex === 4 && "Offer More Than One Service?"} {/* Screenshot 3 and 4 show similar left side? No, screenshot 3 shows just logo. Let's use generic text or switch based on step */}
-                        </Heading>
-                        <Text fontSize="lg" opacity={0.9}>
-                            {currentStepIndex === 1 && "Connecting you to more people while managing all the hassle for your business"}
-                            {currentStepIndex === 2 && "Help us understand your business hours"}
-                            {currentStepIndex >= 3 && "No Problem we’ve got you covered on that"}
-                        </Text>
-                    </VStack>
-                </Box>
+                {/* Steps Navigation */}
+                <nav className="flex flex-col gap-2 flex-1">
+                    {steps.map((step, index) => {
+                        const stepNum = index + 1;
+                        const isCompleted = stepNum < currentStepIndex;
+                        const isCurrent = stepNum === currentStepIndex;
 
-                {/* Decorative Diamonds */}
-                <HStack gap={4} mb={8}>
-                    <Box transform="rotate(45deg)" bg="pink.200" w="8" h="8" borderRadius="sm" />
-                    <Box transform="rotate(45deg)" bg="pink.200" w="8" h="8" borderRadius="sm" opacity={0.8} />
-                    <Box transform="rotate(45deg)" bg="pink.200" w="8" h="8" borderRadius="sm" opacity={0.6} />
-                    <Box transform="rotate(45deg)" bg="pink.200" w="8" h="8" borderRadius="sm" opacity={0.4} />
-                </HStack>
-            </Box>
+                        return (
+                            <div
+                                key={step.id}
+                                className={cn(
+                                    "px-8 py-4 flex items-center justify-between transition-all duration-300",
+                                    isCurrent ? "bg-[#E59622] text-white" : "text-gray-400"
+                                )}
+                            >
+                                <span className={cn(
+                                    "text-sm font-semibold",
+                                    isCurrent ? "text-white" : "text-gray-400"
+                                )}>
+                                    {step.title}
+                                </span>
 
-            {/* Right Content */}
-            <Flex flex="1" direction="column" bg="white">
-                {/* Progress Bar */}
-                <Box px={10} py={8}>
-                    <Box position="relative" w="full">
-                        <Box
-                            position="absolute"
-                            top="50%"
-                            left="0"
-                            transform="translateY(-50%)"
-                            w="full"
-                            h="1px"
-                            bg="gray.200"
-                            zIndex={0}
-                        />
-                        <Box
-                            position="absolute"
-                            top="50%"
-                            left="0"
-                            transform="translateY(-50%)"
-                            w={`${((currentStepIndex - 1) / (steps.length - 1)) * 100}%`}
-                            h="1px"
-                            bg="teal.600"
-                            zIndex={0}
-                            transition="width 0.3s"
-                        />
+                                {isCurrent ? (
+                                    <span className="text-xs font-medium opacity-80">
+                                        {stepNum} of 3
+                                    </span>
+                                ) : isCompleted ? (
+                                    <FiCheck className="text-green-500 h-5 w-5" />
+                                ) : null}
+                            </div>
+                        );
+                    })}
+                </nav>
 
-                        <Flex justify="space-between" position="relative" zIndex={1}>
-                            {steps.map((step, index) => {
-                                const stepNum = index + 1;
-                                const isCompleted = stepNum < currentStepIndex;
-                                const isCurrent = stepNum === currentStepIndex;
+                {/* Logout Button */}
+                <div className="px-8 pb-8 mt-auto">
+                    <Button
+                        onClick={handleLogout}
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2 h-10 text-sm font-medium text-gray-300 hover:text-white hover:bg-red-600/20 border-gray-600 hover:border-red-500 transition-colors"
+                    >
+                        <FiLogOut className="h-4 w-4" />
+                        Logout
+                    </Button>
+                </div>
+            </div>
 
-                                return (
-                                    <Circle
-                                        key={step.id}
-                                        size="4"
-                                        bg={isCompleted || isCurrent ? "teal.600" : "white"}
-                                        borderWidth="1px"
-                                        borderColor={isCompleted || isCurrent ? "teal.600" : "gray.200"}
-                                    >
-                                        {/* {isCompleted && <FiCheck color="white" size={10} />} */}
-                                    </Circle>
-                                );
-                            })}
-                        </Flex>
-                    </Box>
-                </Box>
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col h-screen overflow-hidden">
+                {/* Mobile Header (Simplified) */}
+                <div className="md:hidden bg-[#111827] text-white p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="bg-[#E59622] text-white p-1.5 rounded-lg font-bold text-sm">WP</div>
+                        <span className="font-bold">WellnessPro</span>
+                    </div>
+                    <span className="text-xs font-medium bg-[#E59622] px-2 py-1 rounded">Step {currentStepIndex} of 3</span>
+                </div>
 
                 {/* Scrollable Content Area */}
-                <Box flex="1" px={{ base: 6, md: 20 }} py={4} overflowY="auto">
+                <div className="flex-1 overflow-y-auto bg-[#F9FAFB] flex flex-col items-center justify-start py-12 px-4 md:px-8">
                     {children}
-                </Box>
-            </Flex>
-        </Flex>
+                </div>
+            </div>
+        </div>
     );
 }
