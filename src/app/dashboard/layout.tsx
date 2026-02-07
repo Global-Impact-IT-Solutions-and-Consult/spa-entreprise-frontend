@@ -16,14 +16,14 @@ export default function DashboardLayout({
     const isPending = status === 'pending_approval' || status === 'pending';
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
             {/* Sidebar */}
             <Sidebar />
 
             {/* Main Content */}
-            <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col h-full overflow-hidden">
                 {/* Header */}
-                <header className="flex h-20 items-center justify-between border-b bg-white px-8">
+                <header className="flex h-20 min-h-[5rem] items-center justify-between border-b bg-white px-8 shrink-0">
                     <div>
                         <h1 className="text-xl font-bold text-gray-900 leading-tight">Dashboard</h1>
                         {isPending ? (

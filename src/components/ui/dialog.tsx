@@ -15,8 +15,13 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
     if (!open) return null
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0">
-            {children}
+        <div
+            className="fixed top-0 inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0 h-full"
+            onClick={() => onOpenChange(false)}
+        >
+            <div onClick={(e) => e.stopPropagation()} className="w-full h-full flex items-center justify-center">
+                {children}
+            </div>
         </div>
     )
 }

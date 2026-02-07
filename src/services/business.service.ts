@@ -127,6 +127,16 @@ export interface Staff {
     serviceIds?: string[];
 }
 
+export interface BusinessImage {
+    id: string;
+    businessId: string;
+    url: string;
+    caption?: string;
+    displayOrder: number;
+    isPrimary: boolean;
+    createdAt: string;
+}
+
 export const businessService = {
     // Get My Businesses
     getMyBusinesses: async () => {
@@ -224,6 +234,24 @@ export const businessService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        return response.data;
+    },
+
+    // Get Business Images
+    getImages: async (businessId: string) => {
+        const response = await apiClient.get<BusinessImage[]>(`/spas/${businessId}/images`);
+        return response.data;
+    },
+
+    // Delete Image
+    deleteImage: async (businessId: string, imageId: string) => {
+        const response = await apiClient.delete(`/spas/${businessId}/images/${imageId}`);
+        return response.data;
+    },
+
+    // Set Primary Image
+    setPrimaryImage: async (businessId: string, imageId: string) => {
+        const response = await apiClient.put(`/spas/${businessId}/images/${imageId}/set-primary`);
         return response.data;
     },
 
