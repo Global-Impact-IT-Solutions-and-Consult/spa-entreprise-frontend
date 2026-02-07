@@ -1,57 +1,62 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/auth.store";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
     Banknote,
     CalendarCheck,
     Star,
     Users,
-    ArrowRight,
+    Clock,
+    Plus,
+    UserPlus,
+    CalendarClock,
+    Eye,
+    ChevronRight,
     Search,
     MapPin,
-    Clock
+    Calendar
 } from "lucide-react";
 import Link from "next/link";
 
-// Mock Data
+// Mock Data for Approved State
 const stats = [
     {
         label: "Today's Revenue",
         value: "₦84,500",
         change: "12% from yesterday",
         icon: Banknote,
-        iconBg: "bg-teal-100",
-        iconColor: "text-teal-700",
+        iconBg: "bg-teal-50",
+        iconColor: "text-teal-600",
         changeColor: "text-teal-600"
     },
     {
-        label: "Today's Booking's",
-        value: "8",
-        change: "2 pending, 6 confirmed",
-        icon: CalendarCheck,
-        iconBg: "bg-blue-100",
-        iconColor: "text-blue-700",
-        changeColor: "text-blue-600"
+        label: "Today's Booking",
+        value: "12",
+        change: "6 Booking Completed",
+        icon: Calendar,
+        iconBg: "bg-blue-50",
+        iconColor: "text-blue-500",
+        changeColor: "text-gray-400"
     },
     {
         label: "Average Rating",
-        value: "4.7",
-        change: "12% from yesterday",
+        value: "4.3",
+        change: "Good Rating",
         icon: Star,
-        iconBg: "bg-yellow-100",
-        iconColor: "text-yellow-700",
-        changeColor: "text-yellow-600"
+        iconBg: "bg-orange-50",
+        iconColor: "text-orange-400",
+        changeColor: "text-green-500"
     },
     {
-        label: "Staff online",
-        value: "3/5",
-        change: "Two staff on home service",
+        label: "Staff Online",
+        value: "1/3",
+        change: "2 staff on Home Service",
         icon: Users,
-        iconBg: "bg-purple-100",
-        iconColor: "text-purple-700",
-        changeColor: "text-purple-600"
+        iconBg: "bg-purple-50",
+        iconColor: "text-purple-400",
+        changeColor: "text-gray-400"
     }
 ];
 
@@ -62,42 +67,80 @@ const bookings = [
         service: "Therapeutic Massage",
         duration: "60 mins",
         time: "2:00 PM - 3:00 PM",
-        location: "Ikeja", // inferred
         price: "₦15,000",
-        status: "confirmed"
+        status: "Confirmed"
     },
     {
         id: 2,
         client: "Chinedu Okoro",
-        service: "Haircut", // "Home Service • Haircut"
-        duration: "",
-        type: "Home Service",
+        service: "Home Service • Haircut",
         time: "4:30 PM",
-        location: "Ikeja",
-        price: "₦10,000",
-        status: "pending"
+        price: "₦8,500",
+        status: "Pending"
     },
     {
         id: 3,
         client: "Funke Adebayo",
-        service: "Facial Treatment",
-        duration: "45 mins",
-        time: "4:30 PM",
-        location: "Ikeja",
+        service: "Facial Treatment • 45 mins",
+        time: "5:00 PM - 5:45 PM",
         price: "₦12,000",
-        status: "confirmed"
+        status: "Confirmed"
     }
 ];
 
 export default function DashboardPage() {
+    const { user } = useAuthStore();
+    const business = user?.businesses?.[0];
+    const status = business?.status?.toLowerCase();
+    const isPending = status === 'pending_approval' || status === 'pending';
+
+    if (isPending) {
+        return (
+            <div className="space-y-6">
+                {/* Pending Alert */}
+                <div className="rounded-xl bg-[#FDF8E6] p-6 border border-[#FBECC5]">
+                    <div className="flex items-start gap-4">
+                        <div className="mt-1">
+                            <Clock className="h-6 w-6 text-[#F59E0B]" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-[#F59E0B]">Business Verification in Progress</h2>
+                            <p className="mt-2 text-sm text-gray-600 max-w-2xl leading-relaxed">
+                                Waiting for admin to verify business, while waiting you can go on to add more services,
+                                staffs and so on. Bookings will remain locked untill admin's verification.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="space-y-6">
+                    <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[
+                            { title: "Add Service", sub: "Create new service offering", icon: Plus, bgColor: "bg-orange-50", iconColor: "text-orange-400" },
+                            { title: "Add Staff", sub: "New team member", icon: UserPlus, bgColor: "bg-blue-50", iconColor: "text-blue-400" },
+                            { title: "Set Hours", sub: "Business schedule", icon: CalendarClock, bgColor: "bg-green-50", iconColor: "text-green-400" },
+                            { title: "View Profile", sub: "Create new service offering", icon: Eye, bgColor: "bg-gray-50", iconColor: "text-gray-400" },
+                        ].map((action, i) => (
+                            <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                                <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                                    <div className={cn("mb-6 flex h-12 w-12 items-center justify-center rounded-lg", action.bgColor)}>
+                                        <action.icon className={cn("h-6 w-6", action.iconColor)} />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900">{action.title}</h3>
+                                    <p className="mt-1 text-xs text-gray-400">{action.sub}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8">
-            {/* Header Text - Screenshot: "Dashboard \n Welcome back, David" */}
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-500">Welcome back, David</p>
-            </div>
-
             {/* Stats Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {stats.map((stat, i) => (
@@ -105,14 +148,14 @@ export default function DashboardPage() {
                         <CardContent className="p-6">
                             <div className="flex items-start justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                                    <h3 className="mt-2 text-3xl font-bold text-gray-900">{stat.value}</h3>
+                                    <p className="text-xs font-medium text-gray-400">{stat.label}</p>
+                                    <h3 className="mt-2 text-3xl font-bold text-gray-900 tracking-tight">{stat.value}</h3>
                                 </div>
-                                <div className={cn("rounded-lg p-2", stat.iconBg)}>
+                                <div className={cn("rounded-lg p-2.5", stat.iconBg)}>
                                     <stat.icon className={cn("h-5 w-5", stat.iconColor)} />
                                 </div>
                             </div>
-                            <p className={cn("mt-4 text-xs font-medium", stat.changeColor)}>
+                            <p className={cn("mt-4 text-[10px] font-medium", stat.changeColor)}>
                                 {stat.change}
                             </p>
                         </CardContent>
@@ -120,89 +163,104 @@ export default function DashboardPage() {
                 ))}
             </div>
 
-            {/* Bottom Section */}
+            {/* Middle Section: Chart & Bookings */}
             <div className="grid gap-8 lg:grid-cols-3">
-                {/* Today's Booking - Spans 2 columns if space allows, or 1 and 1 */}
-                <div className="lg:col-span-2 space-y-4">
+                {/* Weekly Revenue Chart */}
+                <div className="lg:col-span-2">
+                    <Card className="border-none shadow-sm overflow-hidden h-full">
+                        <CardContent className="p-8">
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="text-xl font-bold text-gray-900">Weekly Revenue</h2>
+                                <select className="text-xs font-medium bg-gray-50 border-none rounded-lg px-2 py-1 text-gray-500 outline-none">
+                                    <option>This Month</option>
+                                </select>
+                            </div>
+
+                            <div className="relative h-64 flex items-end justify-between gap-4 mt-8">
+                                {/* Simple Bar Chart */}
+                                {[
+                                    { day: "Mon", height: "h-12" },
+                                    { day: "Tue", height: "h-24" },
+                                    { day: "Wed", height: "h-32" },
+                                    { day: "Thu", height: "h-20" },
+                                    { day: "Fri", height: "h-28" },
+                                    { day: "Sat", height: "h-40" },
+                                    { day: "Sun", height: "h-26" },
+                                ].map((item, i) => (
+                                    <div key={i} className="flex-1 flex flex-col items-center gap-4 group">
+                                        <div className={cn(
+                                            "w-full rounded-md transition-all duration-300",
+                                            item.height,
+                                            item.day === "Sat" ? "bg-[#1A1F2C]" : "bg-gray-100 group-hover:bg-gray-200"
+                                        )} />
+                                        <span className="text-xs text-gray-400 font-medium">{item.day}</span>
+                                    </div>
+                                ))}
+
+                                {/* Y-axis Labels Placeholder */}
+                                <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] text-gray-300 -ml-12 pointer-events-none">
+                                    <span>150k</span>
+                                    <span>120k</span>
+                                    <span>80k</span>
+                                    <span>60k</span>
+                                    <span>45k</span>
+                                    <span>0</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Upcoming Bookings */}
+                <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-gray-900">Today's Booking</h2>
-                        <Link href="#" className="text-sm font-medium text-teal-600 hover:text-teal-700">View All</Link>
+                        <h2 className="text-xl font-bold text-gray-900">Upcoming Bookings</h2>
+                        <Link href="/dashboard/bookings" className="text-xs font-medium text-[#F59E0B] hover:underline">View All</Link>
                     </div>
 
                     <div className="space-y-4">
                         {bookings.map((booking) => (
-                            <div key={booking.id} className="flex flex-col sm:flex-row items-center justify-between rounded-xl border bg-white p-4 shadow-sm transition-all hover:shadow-md">
-                                <div className="flex items-start gap-4 w-full sm:w-auto">
-                                    {/* Avatar Placeholder or Icon */}
-                                    {/* <div className="h-10 w-10 rounded-full bg-gray-200"></div> */}
-
-                                    <div>
-                                        <h3 className="font-bold text-gray-900">{booking.client}</h3>
-                                        <p className="text-sm text-gray-500">
-                                            {booking.type ? `${booking.type} • ` : ""}{booking.service} {booking.duration ? `• ${booking.duration}` : ""}
-                                        </p>
-                                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
-                                            <div className="flex items-center gap-1">
-                                                <Clock className="h-3 w-3" /> {booking.time}
-                                            </div>
-                                            {booking.location && (
-                                                <div className="flex items-center gap-1">
-                                                    {/* <MapPin className="h-3 w-3" /> {booking.location} */}
-                                                </div>
-                                            )}
-                                        </div>
+                            <div key={booking.id} className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-50 shadow-sm">
+                                <div className="flex-1">
+                                    <h3 className="text-sm font-bold text-gray-900 leading-none">{booking.client}</h3>
+                                    <p className="text-[10px] text-gray-400 mt-1">{booking.service}</p>
+                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-400 mt-1.5">
+                                        <Clock className="h-3 w-3" />
+                                        <span>{booking.time}</span>
                                     </div>
                                 </div>
-
-                                <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-4 mt-4 sm:mt-0">
-                                    <span className={cn(
-                                        "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                                        booking.status === "confirmed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                                    )}>
-                                        {booking.status}
-                                    </span>
-                                    <span className="font-bold text-gray-900">{booking.price}</span>
+                                <div className={cn(
+                                    "min-w-20 rounded-lg p-2 text-center transition-all",
+                                    booking.status === "Confirmed" ? "bg-[#1A1F2C] text-white" : "bg-orange-50 text-[#F59E0B]"
+                                )}>
+                                    <p className="text-[10px] font-bold opacity-90">{booking.status}</p>
+                                    <p className="text-xs font-bold mt-0.5">{booking.price}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
+            </div>
 
-                {/* Weekly Performance - Chart Placeholder */}
-                <div className="space-y-4">
-                    <h2 className="text-lg font-bold text-gray-900">Weekly Performance</h2>
-
-                    <Card className="h-full border-none shadow-sm">
-                        <CardContent className="flex h-[300px] flex-col items-center justify-end gap-4 p-6">
-                            {/* Simple CSS Bar Chart Visualization */}
-                            <div className="flex w-full items-end justify-between gap-2 h-40">
-                                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, i) => {
-                                    // Randomized heights for demo visualization
-                                    const heights = ["h-12", "h-20", "h-16", "h-32", "h-24", "h-36", "h-28"];
-                                    // Highlight Saturday as per screenshot seems roughly high or just generic
-                                    const isHigh = i === 5;
-
-                                    return (
-                                        <div key={day} className="flex flex-col items-center gap-2 w-full">
-                                            <div className={cn(
-                                                "w-full rounded-t-sm transition-all hover:opacity-80",
-                                                heights[i],
-                                                isHigh ? "bg-[#2D5B5E]" : "bg-gray-100"
-                                            )} />
-                                            <span className="text-xs text-gray-400">{day}</span>
-                                        </div>
-                                    );
-                                })}
+            {/* Bottom Quick Actions */}
+            <div className="space-y-6">
+                <h2 className="text-xl font-bold text-gray-900">Quick Action's</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 opacity-80">
+                    {/* We can reuse the same quick action cards from pending state here if needed */}
+                    <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-orange-50">
+                                <Plus className="h-6 w-6 text-orange-400" />
                             </div>
-
-                            <div className="mt-4 w-full border-t pt-4">
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                    <div className="flex h-5 w-5 items-center justify-center rounded-full border border-gray-300">
-                                        <span className="text-xs font-bold">i</span>
-                                    </div>
-                                    <p>32% more bookings than last week</p>
-                                </div>
+                            <h3 className="text-lg font-bold text-gray-900">Add Service</h3>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
+                                <UserPlus className="h-6 w-6 text-blue-400" />
                             </div>
+                            <h3 className="text-lg font-bold text-gray-900">Add Staff</h3>
                         </CardContent>
                     </Card>
                 </div>
