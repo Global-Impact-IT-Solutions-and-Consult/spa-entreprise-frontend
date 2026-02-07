@@ -51,6 +51,9 @@ export function Sidebar() {
         }
     };
 
+    const status = business?.status?.toLowerCase();
+    const isPending = status === "pending_approval" || status === "pending";
+
     return (
         <div className="flex h-screen w-64 flex-col bg-[#1A1F2C] text-gray-400">
             {/* Logo Section */}
@@ -68,6 +71,21 @@ export function Sidebar() {
             <nav className="flex-1 space-y-1 px-3 py-4">
                 {sidebarItems.map((item) => {
                     const isActive = pathname === item.href;
+                    const isDisabled = isPending && item.label === "Bookings";
+
+                    if (isDisabled) {
+                        return (
+                            <div
+                                key={item.href}
+                                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-gray-600 cursor-not-allowed opacity-50"
+                                title="Pending business verification"
+                            >
+                                <item.icon className="h-5 w-5 text-gray-600" />
+                                {item.label}
+                            </div>
+                        );
+                    }
+
                     return (
                         <Link
                             key={item.href}

@@ -62,6 +62,15 @@ export function DialogTitle({ className, children, ...props }: React.HTMLAttribu
     )
 }
 
-// Helper for close button if needed inside content, but usually handled by parent.
-// For this MVP, we will let the parent handle the close via onOpenChange passed to Dialog 
-// but we really need a close button inside Content often.
+export function DialogClose({ className, children, ...props }: React.HTMLAttributes<HTMLButtonElement>) {
+    return (
+        <button
+            type="button"
+            className={cn("absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground", className)}
+            {...props}
+        >
+            {children}
+            <span className="sr-only">Close</span>
+        </button>
+    )
+}
