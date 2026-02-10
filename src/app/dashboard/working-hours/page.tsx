@@ -120,9 +120,9 @@ export default function WorkingHoursPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {DAYS.map((day) => (
-                    <div key={day.id} className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm space-y-6">
+                    <div key={day.id} className="bg-white rounded p-8 border border-gray-100 shadow-sm space-y-6">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-gray-300 uppercase tracking-widest text-[10px] font-bold">
+                            <div className="flex items-center gap-2 text-gray-500 tracking-widest text-sm font-medium">
                                 <Clock className="h-4 w-4" />
                                 Day and Time
                             </div>
@@ -132,34 +132,37 @@ export default function WorkingHoursPage() {
                                 className="data-[state=checked]:bg-emerald-500"
                             />
                         </div>
-
+                        <hr className="border-gray-100" />
                         <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Day</Label>
-                                <div className="h-14 bg-gray-50 rounded-2xl flex items-center px-6 font-bold text-gray-900">
+                            <div className="grid grid-cols-6 items-center justify-between gap-4">
+                                <Label className="text-xs font-medium text-gray-400 uppercase tracking-wider col-span-1">Day</Label>
+                                <div className="rounded border border-gray-100 flex items-center px-4 text-gray-500 w-full col-span-5 h-11">
                                     {day.label}
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold text-gray-400 uppercase tracking-wider">From</Label>
+                            <div className="grid grid-cols-6 items-center justify-between gap-4">
+                                <Label className="text-xs font-medium text-gray-400 uppercase tracking-wider col-span-1">From</Label>
+                                <div className="col-span-5">
                                     <CustomSelect
                                         disabled={schedule[day.id]?.closed}
                                         value={schedule[day.id]?.open}
                                         onChange={(e) => handleDayChange(day.id, 'open', e.target.value)}
                                         options={TIME_SLOTS}
-                                        className="h-14 bg-white border-2 border-gray-50 rounded-2xl font-bold px-4"
+                                        className="rounded border border-gray-100 text-gray-500 w-full h-11"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold text-gray-400 uppercase tracking-wider">To</Label>
+                            </div>
+
+                            <div className="grid grid-cols-6 items-center justify-between gap-4">
+                                <Label className="text-xs font-medium text-gray-400 uppercase tracking-wider col-span-1">To</Label>
+                                <div className="col-span-5">
                                     <CustomSelect
                                         disabled={schedule[day.id]?.closed}
                                         value={schedule[day.id]?.close}
                                         onChange={(e) => handleDayChange(day.id, 'close', e.target.value)}
                                         options={TIME_SLOTS}
-                                        className="h-14 bg-white border-2 border-gray-50 rounded-2xl font-bold px-4"
+                                        className="rounded border border-gray-100 text-gray-500 w-full h-11"
                                     />
                                 </div>
                             </div>

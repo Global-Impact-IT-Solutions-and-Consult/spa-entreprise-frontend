@@ -2,6 +2,7 @@
 
 import { FiEdit2, FiTrash2, FiClock, FiHome } from 'react-icons/fi';
 import { Service } from '@/services/business.service';
+import { Store } from 'lucide-react';
 
 interface ServiceCardProps {
     service: Service;
@@ -52,14 +53,13 @@ export const ServiceCard = ({ service, categoryName, onDelete, onEdit }: Service
                     <span className="text-xs font-bold text-gray-800">{service.bufferTime || 0}min</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-400">
-                    <FiHome className="h-4 w-4" />
+                    <Store className="h-4 w-4" />
                     <span className="text-xs font-medium text-gray-400">
-                        {service.deliveryType === 'HOME_SERVICE_ONLY' ? 'Home Service' : service.deliveryType === 'BOTH' ? 'Both' : 'On Site'}
+                        {service.deliveryType.toLowerCase() === 'home_service_only' ? 'Home Service' : 'On Site'}
                     </span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-400 pl-4 border-l border-gray-50">
-                    {/* Empty for spacing or second icon if 'BOTH' */}
-                    {service.deliveryType === 'BOTH' && (
+                    {service.deliveryType.toLowerCase() === 'both' && (
                         <>
                             <FiHome className="h-4 w-4" />
                             <span className="text-xs font-medium text-gray-400">Home Service</span>
@@ -70,7 +70,7 @@ export const ServiceCard = ({ service, categoryName, onDelete, onEdit }: Service
                     <p className="text-lg font-bold text-gray-900 leading-none">₦{(service.price || 0).toLocaleString()}</p>
                 </div>
                 <div className="col-span-1 pl-4 border-l border-gray-50">
-                    {(service.deliveryType === 'BOTH' || service.deliveryType === 'HOME_SERVICE_ONLY') && service.homeServicePrice && (
+                    {(service.deliveryType.toLowerCase() === 'both' || service.deliveryType.toLowerCase() === 'home_service_only') && service.homeServicePrice && (
                         <p className="text-lg font-bold text-gray-900 leading-none">₦{(service.homeServicePrice || 0).toLocaleString()}</p>
                     )}
                 </div>
