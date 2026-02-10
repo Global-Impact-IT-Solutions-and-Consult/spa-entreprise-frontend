@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
     Search,
     Filter,
@@ -11,13 +11,10 @@ import {
     Clock,
     User,
     Phone,
-    Edit2,
     X,
-    CheckCircle2,
     AlertCircle,
     CalendarCheck,
     Banknote,
-    MoreVertical,
     Users,
     Loader2
 } from "lucide-react";
@@ -50,7 +47,7 @@ export default function BookingsPage() {
         "Canceled": ["cancelled", "expired"]
     };
 
-    const fetchBookings = async () => {
+    const fetchBookings = useCallback(async () => {
         if (!businessId) return;
         setIsLoading(true);
         try {
@@ -86,11 +83,12 @@ export default function BookingsPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [businessId, activeTab]);
 
     useEffect(() => {
         fetchBookings();
-    }, [businessId, activeTab]);
+    }, [fetchBookings]);
 
     const handleConfirm = async (id: string) => {
         try {

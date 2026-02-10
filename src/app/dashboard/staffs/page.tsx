@@ -40,7 +40,7 @@ export default function StaffsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery] = useState("");
 
     const [formData, setFormData] = useState({
         name: "",
@@ -145,7 +145,7 @@ export default function StaffsPage() {
                     <User className="h-16 w-16 text-gray-200 mb-4" />
                     <h3 className="text-xl font-bold text-gray-900">No staffs found</h3>
                     <p className="text-gray-500 mt-2 max-w-sm">
-                        You haven't added any staff members yet or no results match your search.
+                        You haven&apos;t added any staff members yet or no results match your search.
                     </p>
                     <Button
                         variant="link"

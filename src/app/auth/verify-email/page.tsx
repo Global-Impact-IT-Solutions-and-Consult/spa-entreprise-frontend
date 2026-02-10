@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
 import { toaster } from "@/components/ui/toaster";
 import { authService } from '@/services/auth.service';
-import { AuthLayout } from '@/components/auth/AuthLayout';
+
 import Image from 'next/image';
 
 function VerifyEmailContent() {
@@ -55,11 +55,12 @@ function VerifyEmailContent() {
             } else {
                 router.push('/auth/login');
             }
-        } catch (error: any) {
+        } catch (error) {
             if (redirectTo === 'reset') {
                 router.push('/auth/reset-password')
             }
-            const message = error.response?.data?.message || "Verification failed.";
+            const err = error as { response?: { data?: { message?: string } } };
+            const message = err.response?.data?.message || "Verification failed.";
             toaster.create({ title: "Error", description: message, type: "error" });
         } finally {
             setIsLoading(false);
@@ -73,8 +74,9 @@ function VerifyEmailContent() {
             await authService.resendVerification(email);
             toaster.create({ title: "Code sent!", description: "Check your email inbox.", type: "success" });
             setTimeLeft(60); // Reset timer after resend
-        } catch (error: any) {
-            const message = error.response?.data?.message || "Failed to resend code.";
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            const message = err.response?.data?.message || "Failed to resend code.";
             toaster.create({ title: "Error", description: message, type: "error" });
         } finally {
             setIsResending(false);
@@ -82,7 +84,7 @@ function VerifyEmailContent() {
     };
 
     return (
-        <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-[#D4A373]">        
+        <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-[#D4A373]">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                 <Image
@@ -145,7 +147,7 @@ function VerifyEmailContent() {
                 </div>
             </div>
         </div>
-);
+    );
 }
 
 export default function VerifyEmailPage() {

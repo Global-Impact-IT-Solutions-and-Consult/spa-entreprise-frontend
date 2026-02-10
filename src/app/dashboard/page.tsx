@@ -122,7 +122,7 @@ export default function DashboardPage() {
                             <h2 className="text-xl font-bold text-[#F59E0B]">Business Verification in Progress</h2>
                             <p className="mt-2 text-sm text-gray-600 max-w-2xl leading-relaxed">
                                 Waiting for admin to verify business, while waiting you can go on to add more services,
-                                staffs and so on. Bookings will remain locked untill admin's verification.
+                                staffs and so on. Bookings will remain locked untill admin&apos;s verification.
                             </p>
                         </div>
                     </div>
@@ -231,7 +231,7 @@ export default function DashboardPage() {
                 {/* Upcoming Bookings */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-gray-900">Today's Bookings</h2>
+                        <h2 className="text-xl font-bold text-gray-900">Today&apos;s Bookings</h2>
                         <Link href="/dashboard/bookings" className="text-xs font-medium text-[#F59E0B] hover:underline">View All</Link>
                     </div>
 

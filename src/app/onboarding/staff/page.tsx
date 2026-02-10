@@ -110,7 +110,7 @@ export default function StaffsPage() {
                 setServices(servicesData);
                 setStaffs(staffsData);
             } catch (error) {
-                const err = error as any;
+                const err = error as { response?: { data?: { message?: string } } };
                 console.error("Failed to load data", err);
                 toaster.create({
                     title: "Error",

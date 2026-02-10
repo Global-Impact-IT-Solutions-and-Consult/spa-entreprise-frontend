@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import {
     Clock,
-    ChevronDown,
     Loader2,
     Save
 } from "lucide-react";
@@ -14,7 +13,6 @@ import { Select as CustomSelect } from "@/components/ui/select";
 import { useAuthStore } from "@/store/auth.store";
 import { businessService } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
-import { cn } from "@/lib/utils";
 
 const DAYS = [
     { id: 'monday', label: 'Monday' },
@@ -39,15 +37,11 @@ const TIME_SLOTS = Array.from({ length: 24 * 2 }).map((_, i) => {
 export default function WorkingHoursPage() {
     const { user } = useAuthStore();
     const businessId = user?.businesses?.[0]?.id;
-    const business = user?.businesses?.[0];
 
     const [schedule, setSchedule] = useState<import("@/services/business.service").OperatingHours>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Mass update states
-    const [weekdaysTime, setWeekdaysTime] = useState({ open: "09:00", close: "21:00" });
-    const [weekendsTime, setWeekendsTime] = useState({ open: "10:00", close: "18:00" });
 
     useEffect(() => {
         const fetchBusinessData = async () => {

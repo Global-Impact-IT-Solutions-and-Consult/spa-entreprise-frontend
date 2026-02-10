@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,7 @@ export default function ManageServicesPage() {
                 setCategories(categoriesData);
                 setServices(servicesData);
             } catch (error) {
-                const err = error as any;
+                const err = error as { response?: { data?: { message?: string } } };
                 console.error("Failed to fetch services", err);
                 toaster.create({
                     title: "Error",
@@ -58,7 +58,7 @@ export default function ManageServicesPage() {
             setServices(services.filter(s => s.id !== serviceId));
             toaster.create({ title: "Service Deleted", type: "success" });
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Error",
                 description: err.response?.data?.message || "Failed to delete service",

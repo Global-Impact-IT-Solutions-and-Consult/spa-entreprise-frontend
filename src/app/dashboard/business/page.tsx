@@ -5,8 +5,6 @@ import Image from "next/image";
 import {
     CheckCircle2,
     MapPin,
-    Phone,
-    Mail,
     Save,
     ChevronDown,
     Image as ImageIcon,
@@ -29,7 +27,6 @@ export default function BusinessProfilePage() {
     const businessId = business?.id;
 
     const [images, setImages] = useState<BusinessImage[]>([]);
-    const [isLoadingImages, setIsLoadingImages] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,7 +68,7 @@ export default function BusinessProfilePage() {
             } catch (error) {
                 console.error("Failed to fetch images", error);
             } finally {
-                setIsLoadingImages(false);
+                // Done
             }
         };
 
@@ -88,7 +85,7 @@ export default function BusinessProfilePage() {
             setImages(prev => [...prev, newImage]);
             toaster.create({ title: "Image Uploaded", type: "success" });
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Upload Failed",
                 description: err.response?.data?.message || "Failed to upload image. Please try again.",
@@ -108,7 +105,7 @@ export default function BusinessProfilePage() {
             setImages(prev => prev.filter(img => img.id !== imageId));
             toaster.create({ title: "Image Deleted", type: "success" });
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to delete image", type: "error" });
         }
     };
@@ -124,7 +121,7 @@ export default function BusinessProfilePage() {
             })));
             toaster.create({ title: "Primary Image Updated", type: "success" });
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to set primary image", type: "error" });
         }
     };

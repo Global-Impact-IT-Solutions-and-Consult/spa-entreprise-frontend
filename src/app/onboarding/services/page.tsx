@@ -3,17 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiArrowRight, FiPlus, FiTrash2, FiEdit2, FiClock, FiHome, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import Image from 'next/image';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, CreateServiceDto, Service } from '@/services/business.service';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 interface ServiceCardProps {
     service: Service;
@@ -121,7 +121,7 @@ export default function ServicesPage() {
                 setCategories(categoriesData);
                 setServices(servicesData);
             } catch (error) {
-                const err = error as any;
+                const err = error as { response?: { data?: { message?: string } } };
                 console.error("Failed to fetch data", err);
                 toaster.create({
                     title: "Error",
@@ -209,7 +209,6 @@ export default function ServicesPage() {
             console.log('Response:', JSON.stringify(newService, null, 2));
             console.log('Response (raw):', newService);
 
-            // Upload service image if provided (using business images endpoint with caption)
             if (serviceImage && newService.id) {
                 try {
                     await businessService.uploadImage(
@@ -220,7 +219,7 @@ export default function ServicesPage() {
                     );
                     console.log('Service image uploaded successfully');
                 } catch (imageError) {
-                    const imgErr = imageError as any;
+                    const imgErr = imageError as { response?: { data?: { message?: string } } };
                     console.error('Failed to upload service image:', imgErr);
                     // Don't fail the entire service creation if image upload fails
                     toaster.create({
@@ -246,11 +245,11 @@ export default function ServicesPage() {
             setSelectedCategory('');
             setDeliveryType('IN_LOCATION_ONLY');
             setServiceRadius('');
+            setServiceRadius('');
             setServiceImage(null);
-            setImagePreview(null);
 
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string, errors?: { field: string; messages?: string[]; message?: string }[] }, status?: number } };
             // Log the error response with detailed information
             console.error('=== SERVICE CREATION ERROR ===');
             console.error('Error:', err);
@@ -297,7 +296,7 @@ export default function ServicesPage() {
             setServices(services.filter(s => s.id !== serviceId));
             toaster.create({ title: "Service Deleted", type: "success" });
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Failed to delete service",
                 description: err.response?.data?.message || "Please try again.",

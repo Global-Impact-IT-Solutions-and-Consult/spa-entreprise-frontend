@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { toaster } from "@/components/ui/toaster";
 import { authService } from '@/services/auth.service';
 import { useOnboardingStore } from '@/store/onboarding.store';
-import { cn } from '@/lib/utils'; // Assuming you might use this, though mostly standard classes here
+
 
 function MfaSetupContent() {
     const router = useRouter();
@@ -45,7 +45,7 @@ function MfaSetupContent() {
                 setQrCodeUrl(data.qrCode);
                 setSecret(data.secret);
             } catch (error) {
-                const err = error as any;
+                const err = error as { response?: { data?: { message?: string } } };
                 toaster.create({
                     title: "Error fetching MFA setup",
                     description: err.response?.data?.message || "Please try again.",
@@ -87,7 +87,7 @@ function MfaSetupContent() {
                 router.push('/dashboard');
             }
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string } } };
             const message = err.response?.data?.message || "Verification failed. Check the code and try again.";
             toaster.create({ title: "Error", description: message, type: "error" });
         } finally {
@@ -116,7 +116,7 @@ function MfaSetupContent() {
 
             <div className="overflow-hidden rounded-lg border border-gray-100 bg-gray-50 p-4">
                 {qrCodeUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+
                     <div className="relative h-[200px] w-[200px] mix-blend-multiply">
                         <Image
                             src={qrCodeUrl}

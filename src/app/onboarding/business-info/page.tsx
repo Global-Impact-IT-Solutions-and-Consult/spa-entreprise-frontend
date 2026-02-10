@@ -12,7 +12,7 @@ import { toaster } from "@/components/ui/toaster";
 import { Label } from "@/components/ui/label";
 
 import { useOnboardingStore } from '@/store/onboarding.store';
-import { businessService, Country as CountryType, State as StateType, City as CityType, UpdateProfileDto } from '@/services/business.service';
+import { businessService, UpdateProfileDto } from '@/services/business.service';
 
 const businessTypes = [
     { label: "Select business type", value: "" },
@@ -75,7 +75,6 @@ export default function BusinessInfoPage() {
                     setBusinessId(business.id);
 
                     // Load existing data - use addressRelation if available (new structure), otherwise fall back to legacy fields
-                    const businessData = business as any;
                     const addressData = business.addressRelation || {
                         country: business.country,
                         state: business.state,
@@ -112,7 +111,6 @@ export default function BusinessInfoPage() {
                     // try to fetch it directly (but handle 404 gracefully)
                     try {
                         const business = await businessService.getBusiness(businessId);
-                        const businessData = business as any;
                         const addressData = business.addressRelation || {
                             country: business.country,
                             state: business.state,
@@ -144,17 +142,14 @@ export default function BusinessInfoPage() {
                             setSelectedCity(addressData.city);
                         }
                     } catch (fetchError) {
-                        // If business doesn't exist (404), that's okay - it's a new business
-                        const error = fetchError as any;
-                        if (error.response?.status !== 404) {
-                            console.error('Failed to load business:', error);
+                        const err = fetchError as { response?: { status?: number } };
+                        if (err.response?.status !== 404) {
+                            console.error('Failed to load business:', err);
                         }
                     }
                 }
             } catch (error) {
-                // If getMyBusinesses fails, it might be because the business doesn't exist yet
-                // This is normal for new registrations, so we'll just continue with empty form
-                const err = error as any;
+                const err = error as { response?: { status?: number } };
                 if (err.response?.status !== 404) {
                     console.error('Failed to load businesses:', err);
                 }
@@ -291,7 +286,7 @@ export default function BusinessInfoPage() {
             // Skip business-hours (optional) and go directly to services
             router.push('/onboarding/business-hours');
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string, error?: string, errors?: { field: string; messages?: string[]; message?: string }[] } } };
             // Log the full error for debugging
             console.error('Profile update error:', err);
             console.error('Error response:', err.response?.data);

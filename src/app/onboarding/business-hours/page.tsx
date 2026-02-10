@@ -76,7 +76,7 @@ export default function BusinessHoursPage() {
             toaster.create({ title: "Success", description: "Operating hours set successfully", type: "success" });
             router.push('/onboarding/services');
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Failed to update hours",
                 description: err.response?.data?.message || "Please try again.",

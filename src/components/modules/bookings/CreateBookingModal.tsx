@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Calendar as CalendarIcon, Clock, User, Check, Loader2, Phone } from "lucide-react";
+import { X, User, Check, Loader2, Phone } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -57,7 +57,7 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
                     setStaffs(staffData);
                     if (servicesData.length > 0) setSelectedService(servicesData[0].id);
                 } catch (error) {
-                    const err = error as any;
+                    const err = error as { response?: { data?: { message?: string } } };
                     console.error("Error fetching modal data:", err);
                 } finally {
                     setIsLoading(false);
@@ -98,7 +98,7 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
             onSuccess?.();
             onClose();
         } catch (error) {
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string } } };
             console.error("Error creating booking:", err);
             alert("Failed to create booking. Please try again.");
         } finally {

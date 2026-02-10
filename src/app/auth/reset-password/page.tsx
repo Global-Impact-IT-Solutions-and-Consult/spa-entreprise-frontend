@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
+
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FiChevronLeft, FiLock, FiCheckCircle } from 'react-icons/fi';
+import { FiLock, FiCheckCircle } from 'react-icons/fi';
 
 import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
 import { cn } from '@/lib/utils';
 import { authService } from '@/services/auth.service';
-import { AuthLayout } from '@/components/auth/AuthLayout';
 import { toaster } from "@/components/ui/toaster";
 import Image from 'next/image';
 
@@ -56,12 +55,13 @@ function ResetPasswordContent() {
             await authService.resetPassword({
                 email,
                 otp,
-                newPassword: password
+                password: password
             });
             toaster.create({ title: "Password reset successful", description: "You can now login with your new password.", type: "success" });
             router.push(`/auth/login?email=${encodeURIComponent(email)}`);
-        } catch (error: any) {
-            const message = error.response?.data?.message || "Reset password failed.";
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            const message = err.response?.data?.message || "Reset password failed.";
             toaster.create({ title: "Error", description: message, type: "error" });
         } finally {
             setIsLoading(false);
@@ -82,7 +82,7 @@ function ResetPasswordContent() {
                 {/* Semi-transparent overlay to match the warm tone in the screenshot if needed */}
                 <div className="absolute inset-0 bg-black/5" />
             </div>
-        
+
             <div className="relative z-10 w-full max-w-[1440px] px-4 md:px-32 flex items-center justify-center min-h-screen py-12">
                 <div className="w-full flex justify-center">
                     <div className="bg-white rounded-lg shadow-2xl p-8 md:p-12 w-full max-w-lg">
