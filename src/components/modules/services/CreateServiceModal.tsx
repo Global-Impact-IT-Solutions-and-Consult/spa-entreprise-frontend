@@ -30,7 +30,6 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
     const [serviceRadius, setServiceRadius] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [serviceImage, setServiceImage] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     const resetForm = () => {
         setServiceName('');
@@ -43,7 +42,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
         setDeliveryType('IN_LOCATION_ONLY');
         setServiceRadius('');
         setServiceImage(null);
-        setImagePreview(null);
+
     };
 
     const handleAddService = async () => {
@@ -93,10 +92,11 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
             toaster.create({ title: "Service Added", type: "success" });
             resetForm();
             onClose();
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Failed to add service",
-                description: error.response?.data?.message || "Please try again.",
+                description: err.response?.data?.message || "Please try again.",
                 type: "error"
             });
         } finally {
@@ -108,9 +108,6 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
         const file = e.target.files?.[0];
         if (file) {
             setServiceImage(file);
-            const reader = new FileReader();
-            reader.onloadend = () => setImagePreview(reader.result as string);
-            reader.readAsDataURL(file);
         }
     };
 
@@ -199,7 +196,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                                     { label: 'On Site & Home Service', value: 'BOTH' },
                                 ]}
                                 value={deliveryType}
-                                onChange={(e) => setDeliveryType(e.target.value as any)}
+                                onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH')}
                                 className="h-[56px] rounded-lg border-gray-200"
                             />
                         </div>

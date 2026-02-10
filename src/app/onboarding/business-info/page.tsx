@@ -12,7 +12,7 @@ import { toaster } from "@/components/ui/toaster";
 import { Label } from "@/components/ui/label";
 
 import { useOnboardingStore } from '@/store/onboarding.store';
-import { businessService, Country as CountryType, State as StateType, City as CityType } from '@/services/business.service';
+import { businessService, UpdateProfileDto } from '@/services/business.service';
 
 const businessTypes = [
     { label: "Select business type", value: "" },
@@ -58,7 +58,7 @@ export default function BusinessInfoPage() {
     // Get states and cities based on selection
     const states = selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : [];
     const stateOptions = states.map(s => ({ label: s.name, value: s.isoCode }));
-    
+
     const cities = (selectedCountryCode && selectedStateCode) ? City.getCitiesOfState(selectedCountryCode, selectedStateCode) : [];
     const cityOptions = cities.map(c => ({ label: c.name, value: c.name }));
 
@@ -69,13 +69,12 @@ export default function BusinessInfoPage() {
                 // Always use getMyBusinesses to get the user's business
                 // This is more reliable than using businessId directly
                 const businesses = await businessService.getMyBusinesses();
-                
+
                 if (businesses && businesses.length > 0) {
                     const business = businesses[0];
                     setBusinessId(business.id);
-                    
+
                     // Load existing data - use addressRelation if available (new structure), otherwise fall back to legacy fields
-                    const businessData = business as any;
                     const addressData = business.addressRelation || {
                         country: business.country,
                         state: business.state,
@@ -112,7 +111,6 @@ export default function BusinessInfoPage() {
                     // try to fetch it directly (but handle 404 gracefully)
                     try {
                         const business = await businessService.getBusiness(businessId);
-                        const businessData = business as any;
                         const addressData = business.addressRelation || {
                             country: business.country,
                             state: business.state,
@@ -143,18 +141,17 @@ export default function BusinessInfoPage() {
                             setSelectedCityName(addressData.city.name);
                             setSelectedCity(addressData.city);
                         }
-                    } catch (fetchError: any) {
-                        // If business doesn't exist (404), that's okay - it's a new business
-                        if (fetchError.response?.status !== 404) {
-                            console.error('Failed to load business:', fetchError);
+                    } catch (fetchError) {
+                        const err = fetchError as { response?: { status?: number } };
+                        if (err.response?.status !== 404) {
+                            console.error('Failed to load business:', err);
                         }
                     }
                 }
-            } catch (error: any) {
-                // If getMyBusinesses fails, it might be because the business doesn't exist yet
-                // This is normal for new registrations, so we'll just continue with empty form
-                if (error.response?.status !== 404) {
-                    console.error('Failed to load businesses:', error);
+            } catch (error) {
+                const err = error as { response?: { status?: number } };
+                if (err.response?.status !== 404) {
+                    console.error('Failed to load businesses:', err);
                 }
             } finally {
                 setIsLoadingBusiness(false);
@@ -217,7 +214,7 @@ export default function BusinessInfoPage() {
         }
 
         setIsLoading(true);
-        
+
         // Send the exact objects from the country-state-city package
         // The backend validates these objects strictly - must match package structure exactly
         // Use JSON serialization to ensure clean plain objects without any prototype methods
@@ -249,7 +246,7 @@ export default function BusinessInfoPage() {
         }));
 
         // Build the payload, only including fields that have values
-        const payload: any = {
+        const payload: Partial<UpdateProfileDto> = {
             businessTypeCode: formData.businessTypeCode.toLowerCase(), // Ensure lowercase
             businessName: formData.businessName,
             phone: formData.phone,
@@ -288,22 +285,23 @@ export default function BusinessInfoPage() {
             toaster.create({ title: "Success", description: "Business Information Saved", type: "success" });
             // Skip business-hours (optional) and go directly to services
             router.push('/onboarding/business-hours');
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string, error?: string, errors?: { field: string; messages?: string[]; message?: string }[] } } };
             // Log the full error for debugging
-            console.error('Profile update error:', error);
-            console.error('Error response:', error.response?.data);
+            console.error('Profile update error:', err);
+            console.error('Error response:', err.response?.data);
             console.error('Payload sent:', payload);
 
-            const message = error.response?.data?.message || error.response?.data?.error || "Failed to update business profile";
-            const errors = error.response?.data?.errors || [];
-            const errorDetails = errors.map((err: any) => 
-                `${err.field}: ${err.messages?.join(', ') || err.message || 'Invalid'}`
+            const message = err.response?.data?.message || err.response?.data?.error || "Failed to update business profile";
+            const errors = err.response?.data?.errors || [];
+            const errorDetails = errors.map((e: { field: string; messages?: string[]; message?: string }) =>
+                `${e.field}: ${e.messages?.join(', ') || e.message || 'Invalid'}`
             ).join('; ');
 
-            toaster.create({ 
-                title: "Error", 
-                description: errorDetails ? `${message} - ${errorDetails}` : message, 
-                type: "error" 
+            toaster.create({
+                title: "Error",
+                description: errorDetails ? `${message} - ${errorDetails}` : message,
+                type: "error"
             });
         } finally {
             setIsLoading(false);

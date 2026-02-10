@@ -40,7 +40,7 @@ export default function StaffsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery] = useState("");
 
     const [formData, setFormData] = useState({
         name: "",
@@ -60,8 +60,9 @@ export default function StaffsPage() {
                 setStaffs(staffData);
                 setServices(servicesData);
             } catch (error) {
-                console.error("Failed to fetch staff data", error);
-                toaster.create({ title: "Error", description: "Failed to load staff data", type: "error" });
+                const err = error as { response?: { data?: { message?: string } } };
+                console.error("Failed to fetch staff data", err);
+                toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to load staff data", type: "error" });
             } finally {
                 setIsLoading(false);
             }
@@ -85,7 +86,8 @@ export default function StaffsPage() {
             setFormData({ name: "", role: "", experience: "", serviceIds: [] });
             toaster.create({ title: "Staff Added", type: "success" });
         } catch (error) {
-            toaster.create({ title: "Error", description: "Failed to add staff", type: "error" });
+            const err = error as { response?: { data?: { message?: string } } };
+            toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to add staff", type: "error" });
         } finally {
             setIsActionLoading(false);
         }
@@ -99,7 +101,8 @@ export default function StaffsPage() {
             setStaffs(prev => prev.filter(s => s.id !== staffId));
             toaster.create({ title: "Staff Deleted", type: "success" });
         } catch (error) {
-            toaster.create({ title: "Error", description: "Failed to delete staff", type: "error" });
+            const err = error as { response?: { data?: { message?: string } } };
+            toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to delete staff", type: "error" });
         }
     };
 
@@ -142,7 +145,7 @@ export default function StaffsPage() {
                     <User className="h-16 w-16 text-gray-200 mb-4" />
                     <h3 className="text-xl font-bold text-gray-900">No staffs found</h3>
                     <p className="text-gray-500 mt-2 max-w-sm">
-                        You haven't added any staff members yet or no results match your search.
+                        You haven&apos;t added any staff members yet or no results match your search.
                     </p>
                     <Button
                         variant="link"

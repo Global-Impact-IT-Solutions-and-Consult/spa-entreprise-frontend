@@ -39,8 +39,9 @@ function MfaVerifyContent() {
 
             toaster.create({ title: "Verification successful", type: "success" });
             router.push('/');
-        } catch (error: any) {
-            const message = error.response?.data?.message || "Verification failed. Please try again.";
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            const message = err.response?.data?.message || "Verification failed. Please try again.";
             toaster.create({ title: "Error", description: message, type: "error" });
         } finally {
             setIsVerifying(false);

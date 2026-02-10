@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createRoot } from "react-dom/client"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 

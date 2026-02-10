@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { toaster } from "@/components/ui/toaster";
 import { authService } from '@/services/auth.service';
 import { useOnboardingStore } from '@/store/onboarding.store';
-import { cn } from '@/lib/utils'; // Assuming you might use this, though mostly standard classes here
+
 
 function MfaSetupContent() {
     const router = useRouter();
@@ -44,10 +44,11 @@ function MfaSetupContent() {
 
                 setQrCodeUrl(data.qrCode);
                 setSecret(data.secret);
-            } catch (error: any) {
+            } catch (error) {
+                const err = error as { response?: { data?: { message?: string } } };
                 toaster.create({
                     title: "Error fetching MFA setup",
-                    description: error.response?.data?.message || "Please try again.",
+                    description: err.response?.data?.message || "Please try again.",
                     type: "error"
                 });
                 if (mode !== 'unverified') router.push('/');
@@ -85,8 +86,9 @@ function MfaSetupContent() {
                 toaster.create({ title: "MFA Enabled", type: "success" });
                 router.push('/dashboard');
             }
-        } catch (error: any) {
-            const message = error.response?.data?.message || "Verification failed. Check the code and try again.";
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            const message = err.response?.data?.message || "Verification failed. Check the code and try again.";
             toaster.create({ title: "Error", description: message, type: "error" });
         } finally {
             setIsVerifying(false);
@@ -114,11 +116,13 @@ function MfaSetupContent() {
 
             <div className="overflow-hidden rounded-lg border border-gray-100 bg-gray-50 p-4">
                 {qrCodeUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+
                     <div className="relative h-[200px] w-[200px] mix-blend-multiply">
-                        <img
+                        <Image
                             src={qrCodeUrl}
                             alt="MFA QR Code"
+                            width={200}
+                            height={200}
                             className="h-full w-full object-contain"
                         />
                     </div>

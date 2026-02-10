@@ -76,8 +76,9 @@ export default function RegisterPage() {
             setTempCredentials({ email: email, password: password });
             router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&redirectTo=login`);
 
-        } catch (error: any) {
-            const message = error.response?.data?.message || "Registration failed. Please try again.";
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            const message = err.response?.data?.message || "Registration failed. Please try again.";
             toaster.create({ title: "Error", description: message, type: "error" });
         } finally {
             setIsLoading(false);

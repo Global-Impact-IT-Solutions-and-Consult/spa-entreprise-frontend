@@ -38,9 +38,9 @@ export default function BusinessHoursPage() {
     const [isLoading, setIsLoading] = useState(false);
 
     // Initial State
-    const [schedule, setSchedule] = useState<any>(
+    const [schedule, setSchedule] = useState<import('@/services/business.service').OperatingHours>(
         Object.keys(operatingHours).length > 0 ? operatingHours :
-            DAYS.reduce((acc: any, day) => {
+            DAYS.reduce((acc: import('@/services/business.service').OperatingHours, day) => {
                 acc[day.id] = {
                     open: '09:00',
                     close: '21:00',
@@ -50,8 +50,8 @@ export default function BusinessHoursPage() {
             }, {})
     );
 
-    const handleDayChange = (dayId: string, field: string, value: any) => {
-        setSchedule((prev: any) => ({
+    const handleDayChange = (dayId: string, field: string, value: string | boolean) => {
+        setSchedule((prev) => ({
             ...prev,
             [dayId]: {
                 ...prev[dayId],
@@ -75,10 +75,11 @@ export default function BusinessHoursPage() {
 
             toaster.create({ title: "Success", description: "Operating hours set successfully", type: "success" });
             router.push('/onboarding/services');
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Failed to update hours",
-                description: error.response?.data?.message || "Please try again.",
+                description: err.response?.data?.message || "Please try again.",
                 type: "error"
             });
         } finally {

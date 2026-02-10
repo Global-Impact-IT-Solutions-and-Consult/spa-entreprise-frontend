@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { RegisterBusinessDto, UpdateProfileDto, CreateServiceDto } from '@/services/business.service';
+import { RegisterBusinessDto, CreateServiceDto, OperatingHours } from '@/services/business.service';
 
 interface OnboardingState {
     step: number;
     businessId: string | null;
     businessInfo: Partial<RegisterBusinessDto>;
-    operatingHours: any; // Using any for flexibility with the complex hours structure
+    operatingHours: OperatingHours; // Using OperatingHours interface
     services: CreateServiceDto[];
     tempCredentials?: { email: string; password: string }; // For MFA setup flow
 
@@ -14,7 +14,7 @@ interface OnboardingState {
     setStep: (step: number) => void;
     setBusinessId: (id: string) => void;
     setBusinessInfo: (info: Partial<RegisterBusinessDto>) => void;
-    setOperatingHours: (hours: any) => void;
+    setOperatingHours: (hours: OperatingHours) => void;
     addService: (service: CreateServiceDto) => void;
     removeService: (index: number) => void;
     setTempCredentials: (creds: { email: string; password: string }) => void;

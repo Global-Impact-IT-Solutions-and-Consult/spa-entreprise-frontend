@@ -17,7 +17,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: !!Cookies.get('accessToken'), // Initialize based on token existence
 
-            login: (user, accessToken, refreshToken) => {
+            login: (user) => {
                 set({ user, isAuthenticated: true });
                 // Cookie setting is handled in authService usually, but redundancy here or there is fine. 
                 // We'll rely on authService for headers/cookies, store for UI state.

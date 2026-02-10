@@ -9,15 +9,12 @@ import {
     Briefcase,
     Calendar,
     Users,
-    BarChart3,
     Home,
-    LogOut,
     Clock
 } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { toaster } from "@/components/ui/toaster";
-import { Button } from "@/components/ui/button";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },

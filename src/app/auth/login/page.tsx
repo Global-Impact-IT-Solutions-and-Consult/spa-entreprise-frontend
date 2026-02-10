@@ -30,14 +30,14 @@ function LoginContent() {
         if (emailParam) {
             setEmail(emailParam);
         }
-        
+
         // Check if redirected due to token expiration
         const expired = searchParams.get('expired');
         if (expired === 'true') {
-            toaster.create({ 
-                title: "Session Expired", 
-                description: "Your session has expired. Please log in again to continue.", 
-                type: "warning" 
+            toaster.create({
+                title: "Session Expired",
+                description: "Your session has expired. Please log in again to continue.",
+                type: "warning"
             });
         }
     }, [searchParams]);
@@ -63,17 +63,17 @@ function LoginContent() {
                 // Fetch user's businesses
                 try {
                     const businesses = await businessService.getMyBusinesses();
-                    
+
                     if (businesses && businesses.length > 0) {
                         const business = businesses[0];
                         setBusinessId(business.id);
 
                         // Check business status
                         if (business.status === 'REJECTED' || business.status === 'SUSPENDED') {
-                            toaster.create({ 
-                                title: "Account Status", 
-                                description: `Your business is ${business.status.toLowerCase()}. Please contact support.`, 
-                                type: "error" 
+                            toaster.create({
+                                title: "Account Status",
+                                description: `Your business is ${business.status.toLowerCase()}. Please contact support.`,
+                                type: "error"
                             });
                             return;
                         }
@@ -86,7 +86,7 @@ function LoginContent() {
                         // No business found, start onboarding
                         router.push('/onboarding/business-info');
                     }
-                } catch (error: any) {
+                } catch (error) {
                     // If we can't fetch businesses, still try to proceed
                     console.error('Failed to fetch businesses:', error);
                     router.push('/onboarding/business-info');
@@ -97,8 +97,9 @@ function LoginContent() {
                 toaster.create({ title: "Login failed", description: "Invalid response from server", type: "error" });
             }
 
-        } catch (error: any) {
-            const message = error.response?.data?.message || "Invalid credentials. Please try again.";
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            const message = err.response?.data?.message || "Invalid credentials. Please try again.";
             toaster.create({ title: "Login failed", description: message, type: "error" });
         } finally {
             setIsLoading(false);
@@ -110,7 +111,7 @@ function LoginContent() {
             <div className="flex flex-col text-center mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
                 <p className="text-sm text-gray-500">
-                    Don't have an account?{' '}
+                    Don&apos;t have an account?{' '}
                     <Link href="/auth/register" className="text-[#E59622] hover:underline">
                         Create one
                     </Link>

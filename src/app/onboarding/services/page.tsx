@@ -3,19 +3,26 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiArrowRight, FiPlus, FiTrash2, FiEdit2, FiClock, FiHome, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import Image from 'next/image';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, CreateServiceDto, Service } from '@/services/business.service';
 import { cn } from '@/lib/utils';
 
-// Refined Service Card Component
-const ServiceCard = ({ service, categoryName, onDelete, onEdit }: any) => {
+interface ServiceCardProps {
+    service: Service;
+    categoryName: string;
+    onDelete: () => void;
+    onEdit: () => void;
+}
+
+const ServiceCard = ({ service, categoryName, onDelete, onEdit }: ServiceCardProps) => {
     return (
         <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col gap-4 relative">
             <div className="flex justify-between items-center">
@@ -113,12 +120,13 @@ export default function ServicesPage() {
                 ]);
                 setCategories(categoriesData);
                 setServices(servicesData);
-            } catch (error: any) {
-                console.error("Failed to fetch data", error);
-                toaster.create({ 
-                    title: "Error", 
-                    description: error.response?.data?.message || "Failed to load services", 
-                    type: "error" 
+            } catch (error) {
+                const err = error as { response?: { data?: { message?: string } } };
+                console.error("Failed to fetch data", err);
+                toaster.create({
+                    title: "Error",
+                    description: err.response?.data?.message || "Failed to load services",
+                    type: "error"
                 });
             } finally {
                 setIsLoading(false);
@@ -166,7 +174,7 @@ export default function ServicesPage() {
 
         setIsSubmitting(true);
         // Build payload according to backend requirements (declare outside try for error logging)
-        let payload: CreateServiceDto;
+        let payload: CreateServiceDto | null = null;
         try {
             payload = {
                 name: serviceName,
@@ -195,13 +203,12 @@ export default function ServicesPage() {
             console.log('Payload (raw):', payload);
 
             const newService = await businessService.createService(businessId, payload);
-            
+
             // Log the response from backend
             console.log('=== SERVICE CREATION RESPONSE ===');
             console.log('Response:', JSON.stringify(newService, null, 2));
             console.log('Response (raw):', newService);
-            
-            // Upload service image if provided (using business images endpoint with caption)
+
             if (serviceImage && newService.id) {
                 try {
                     await businessService.uploadImage(
@@ -211,8 +218,9 @@ export default function ServicesPage() {
                         `Service: ${serviceName} - ${newService.id}` // caption with service reference
                     );
                     console.log('Service image uploaded successfully');
-                } catch (imageError: any) {
-                    console.error('Failed to upload service image:', imageError);
+                } catch (imageError) {
+                    const imgErr = imageError as { response?: { data?: { message?: string } } };
+                    console.error('Failed to upload service image:', imgErr);
                     // Don't fail the entire service creation if image upload fails
                     toaster.create({
                         title: "Service Created",
@@ -221,7 +229,7 @@ export default function ServicesPage() {
                     });
                 }
             }
-            
+
             setServices([...services, newService]);
 
             toaster.create({ title: "Service Added", type: "success" });
@@ -237,39 +245,39 @@ export default function ServicesPage() {
             setSelectedCategory('');
             setDeliveryType('IN_LOCATION_ONLY');
             setServiceRadius('');
+            setServiceRadius('');
             setServiceImage(null);
-            setImagePreview(null);
 
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string, errors?: { field: string; messages?: string[]; message?: string }[] }, status?: number } };
             // Log the error response with detailed information
             console.error('=== SERVICE CREATION ERROR ===');
-            console.error('Error:', error);
-            console.error('Error Response:', error.response?.data);
-            console.error('Error Status:', error.response?.status);
-            console.error('Error Message:', error.response?.data?.message);
-            console.error('Validation Errors:', JSON.stringify(error.response?.data?.errors, null, 2));
-            console.error('Payload that was sent:', JSON.stringify(payload, null, 2));
-            
+            console.error('Error:', err);
+            console.error('Error Response:', err.response?.data);
+            console.error('Error Status:', err.response?.status);
+            console.error('Error Message:', err.response?.data?.message);
+            console.error('Validation Errors:', JSON.stringify(err.response?.data?.errors, null, 2));
+            console.error('Payload that was sent:', payload ? JSON.stringify(payload, null, 2) : 'No payload');
+
             // Build detailed error message from validation errors
-            let errorDescription = error.response?.data?.message || "Please try again.";
-            if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-                const errorDetails = error.response.data.errors
-                    .map((err: any) => {
-                        const field = err.field || 'unknown';
-                        const messages = Array.isArray(err.messages) 
-                            ? err.messages.join(', ') 
-                            : err.message || 'Invalid value';
+            let errorDescription = err.response?.data?.message || "Please try again.";
+            if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+                const errorDetails = err.response.data.errors
+                    .map((e: { field: string; messages?: string[]; message?: string }) => {
+                        const field = e.field || 'unknown';
+                        const messages = Array.isArray(e.messages)
+                            ? e.messages.join(', ')
+                            : e.message || 'Invalid value';
                         return `${field}: ${messages}`;
                     })
                     .join('; ');
-                
+
                 if (errorDetails) {
                     errorDescription = `${errorDescription} - ${errorDetails}`;
                 }
             }
-            
+
             toaster.create({
-                title: "Failed to add service",
                 description: errorDescription,
                 type: "error"
             });
@@ -280,17 +288,18 @@ export default function ServicesPage() {
 
     const handleDeleteService = async (serviceId: string) => {
         if (!businessId) return;
-        
+
         if (!confirm('Are you sure you want to delete this service?')) return;
 
         try {
             await businessService.deleteService(businessId, serviceId);
             setServices(services.filter(s => s.id !== serviceId));
             toaster.create({ title: "Service Deleted", type: "success" });
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Failed to delete service",
-                description: error.response?.data?.message || "Please try again.",
+                description: err.response?.data?.message || "Please try again.",
                 type: "error"
             });
         }
@@ -521,7 +530,7 @@ export default function ServicesPage() {
                                         { label: 'On Site & Home Service', value: 'BOTH' },
                                     ]}
                                     value={deliveryType}
-                                    onChange={(e) => setDeliveryType(e.target.value as any)}
+                                    onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH')}
                                     className="h-[56px] rounded-lg border-gray-200"
                                 />
                             </div>
@@ -573,9 +582,12 @@ export default function ServicesPage() {
                                 <Label className="text-sm font-medium text-gray-400">Upload Image (Optional)</Label>
                                 {imagePreview ? (
                                     <div className="relative border-2 border-dashed border-gray-200 rounded-xl p-4 bg-white">
-                                        <img 
-                                            src={imagePreview} 
-                                            alt="Service preview" 
+                                        <Image
+                                            src={imagePreview}
+                                            alt="Service preview"
+                                            width={500}
+                                            height={300}
+                                            unoptimized
                                             className="w-full h-48 object-cover rounded-lg"
                                         />
                                         <button

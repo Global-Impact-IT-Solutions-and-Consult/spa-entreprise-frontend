@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import {
     CheckCircle2,
     MapPin,
-    Phone,
-    Mail,
     Save,
     ChevronDown,
     Image as ImageIcon,
@@ -28,7 +27,6 @@ export default function BusinessProfilePage() {
     const businessId = business?.id;
 
     const [images, setImages] = useState<BusinessImage[]>([]);
-    const [isLoadingImages, setIsLoadingImages] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +50,7 @@ export default function BusinessProfilePage() {
                 businessTypeCode: business.businessTypeCode || "spa",
                 description: business.description || "",
                 phone: business.phone || "",
-                email: (business as any).email || "", // business object might have email
+                email: (business as unknown as { email?: string }).email || "", // business object might have email
                 address: business.addressRelation?.address || "",
                 city: business.addressRelation?.city?.name || "",
                 state: business.addressRelation?.state?.name || "",
@@ -70,7 +68,7 @@ export default function BusinessProfilePage() {
             } catch (error) {
                 console.error("Failed to fetch images", error);
             } finally {
-                setIsLoadingImages(false);
+                // Done
             }
         };
 
@@ -87,9 +85,10 @@ export default function BusinessProfilePage() {
             setImages(prev => [...prev, newImage]);
             toaster.create({ title: "Image Uploaded", type: "success" });
         } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Upload Failed",
-                description: "Failed to upload image. Please try again.",
+                description: err.response?.data?.message || "Failed to upload image. Please try again.",
                 type: "error"
             });
         } finally {
@@ -106,7 +105,8 @@ export default function BusinessProfilePage() {
             setImages(prev => prev.filter(img => img.id !== imageId));
             toaster.create({ title: "Image Deleted", type: "success" });
         } catch (error) {
-            toaster.create({ title: "Error", description: "Failed to delete image", type: "error" });
+            const err = error as { response?: { data?: { message?: string } } };
+            toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to delete image", type: "error" });
         }
     };
 
@@ -121,7 +121,8 @@ export default function BusinessProfilePage() {
             })));
             toaster.create({ title: "Primary Image Updated", type: "success" });
         } catch (error) {
-            toaster.create({ title: "Error", description: "Failed to set primary image", type: "error" });
+            const err = error as { response?: { data?: { message?: string } } };
+            toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to set primary image", type: "error" });
         }
     };
 
@@ -150,9 +151,10 @@ export default function BusinessProfilePage() {
             });
             toaster.create({ title: "Profile Updated", type: "success" });
         } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Update Failed",
-                description: "Failed to save business profile changes.",
+                description: err.response?.data?.message || "Failed to save business profile changes.",
                 type: "error"
             });
         } finally {
@@ -179,9 +181,11 @@ export default function BusinessProfilePage() {
                     <div className="lg:col-span-2 relative h-[400px] rounded-2xl overflow-hidden group border border-gray-100 bg-gray-50">
                         {primaryImage ? (
                             <>
-                                <img
+                                <Image
                                     src={primaryImage.url}
                                     alt="Business Cover"
+                                    width={800}
+                                    height={400}
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
                                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
@@ -210,9 +214,11 @@ export default function BusinessProfilePage() {
                     <div className="grid grid-rows-2 gap-4">
                         {otherImages.map((img) => (
                             <div key={img.id} className="relative rounded-2xl overflow-hidden group border border-gray-100 bg-gray-50">
-                                <img
+                                <Image
                                     src={img.url}
                                     alt="Gallery"
+                                    width={400}
+                                    height={200}
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />

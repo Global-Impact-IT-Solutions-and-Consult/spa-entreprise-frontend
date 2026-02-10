@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FiChevronLeft, FiMail, FiInfo } from 'react-icons/fi';
+import { FiChevronLeft, FiMail } from 'react-icons/fi';
 
 import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
 import { authService } from '@/services/auth.service';
-import { AuthLayout } from '@/components/auth/AuthLayout';
+
 import Image from 'next/image';
 
 export default function ForgotPasswordPage() {
@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
 
     const handleSendVerificationCode = async () => {
-        const response = await authService.forgotPassword(email)
+        await authService.forgotPassword(email);
         //navigate to verify email page
         router.push(`/auth/reset-password?email=${email}&redirectTo=reset`);
     };
@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
                                     Forgot Password
                                 </h1>
                                 <p className="px-4 text-sm text-gray-500">
-                                    Enter your email address and we'll send you a verification code to reset your password.
+                                    Enter your email address and we&apos;ll send you a verification code to reset your password.
                                 </p>
                             </div>
 
