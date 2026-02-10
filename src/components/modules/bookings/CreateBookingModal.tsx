@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { businessService, Service, Staff } from "@/services/business.service";
 import { bookingService } from "@/services/booking.service";
+import { toaster } from "@/components/ui/toaster";
 
 interface CreateBookingModalProps {
     isOpen: boolean;
@@ -69,7 +70,11 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
 
     const handleCreate = async () => {
         if (!selectedService || !customerName || !customerPhone) {
-            alert("Please fill in all required fields");
+            toaster.create({
+                title: "Missing Required Fields",
+                description: "Please fill in all required fields",
+                type: "error"
+            });
             return;
         }
 
@@ -100,7 +105,11 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
             console.error("Error creating booking:", err);
-            alert("Failed to create booking. Please try again.");
+            toaster.create({
+                title: "Booking Failed",
+                description: err.response?.data?.message || "Failed to create booking. Please try again.",
+                type: "error"
+            });
         } finally {
             setIsSubmitting(false);
         }

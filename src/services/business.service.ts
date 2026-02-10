@@ -149,9 +149,48 @@ export interface BusinessImage {
     businessId: string;
     url: string;
     caption?: string;
+    category?: 'profile' | 'gallery' | 'activities' | 'facilities' | 'services';
     displayOrder: number;
     isPrimary: boolean;
     createdAt: string;
+}
+
+export interface DashboardUpcomingBooking {
+    id: string;
+    customerName: string;
+    serviceName: string;
+    duration: number;
+    startTime: string;
+    endTime: string;
+    status: string;
+    price: number;
+    isHomeService: boolean;
+    location: string;
+}
+
+export interface DashboardData {
+    todaysRevenue: {
+        amount: number;
+        changeFromYesterday: number;
+    };
+    todaysBookings: {
+        total: number;
+        completed: number;
+    };
+    averageRating: {
+        rating: number;
+        label: string;
+    };
+    staffOnline: {
+        online: number;
+        total: number;
+        onHomeService: number;
+    };
+    weeklyRevenue: {
+        day: string;
+        revenue: number;
+    }[];
+    upcomingBookings: DashboardUpcomingBooking[];
 }
 
 export const businessService = {
@@ -252,11 +291,12 @@ export const businessService = {
     },
 
     // Upload Image
-    uploadImage: async (businessId: string, file: File, isPrimary: boolean = false, caption?: string): Promise<BusinessImage> => {
+    uploadImage: async (businessId: string, file: File, isPrimary: boolean = false, caption?: string, category: string = 'gallery'): Promise<BusinessImage> => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('isPrimary', isPrimary.toString());
         formData.append('caption', caption || 'Business Image');
+        formData.append('category', category);
 
         const response = await apiClient.post(`/spas/${businessId}/images`, formData, {
             headers: {
@@ -267,8 +307,16 @@ export const businessService = {
     },
 
     // Get Business Images
-    getImages: async (businessId: string) => {
-        const response = await apiClient.get<BusinessImage[]>(`/spas/${businessId}/images`);
+    getImages: async (businessId: string, category?: string) => {
+        const response = await apiClient.get<BusinessImage[]>(`/spas/${businessId}/images`, {
+            params: category ? { category } : undefined
+        });
+        return response.data;
+    },
+
+    // Get Gallery Images (activities, facilities, services, gallery)
+    getGalleryImages: async (businessId: string): Promise<BusinessImage[]> => {
+        const response = await apiClient.get<BusinessImage[]>(`/spas/${businessId}/gallery`);
         return response.data;
     },
 
@@ -301,6 +349,12 @@ export const businessService = {
     // Set Availability
     setAvailability: async (businessId: string, availability: OperatingHours) => {
         const response = await apiClient.put(`/spas/${businessId}/operating-hours`, availability);
+        return response.data;
+    },
+
+    // Get Dashboard Data
+    getDashboard: async (businessId: string): Promise<DashboardData> => {
+        const response = await apiClient.get(`/spas/${businessId}/dashboard`);
         return response.data;
     }
 };

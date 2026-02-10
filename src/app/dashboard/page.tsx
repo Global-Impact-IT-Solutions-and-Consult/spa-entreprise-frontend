@@ -13,12 +13,14 @@ import {
     CalendarClock,
     Eye,
     Calendar,
-    Loader2
+    Loader2,
+    TrendingUp,
+    Home,
+    MapPin
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, useMemo } from "react";
-import { bookingService, Booking } from "@/services/booking.service";
-import { businessService, Staff } from "@/services/business.service";
+import { useEffect, useState } from "react";
+import { businessService, DashboardData } from "@/services/business.service";
 
 export default function DashboardPage() {
     const { user } = useAuthStore();
@@ -27,8 +29,7 @@ export default function DashboardPage() {
     const status = business?.status?.toLowerCase();
     const isPending = status === 'pending_approval' || status === 'pending';
 
-    const [todayBookings, setTodayBookings] = useState<Booking[]>([]);
-    const [allStaff, setAllStaff] = useState<Staff[]>([]);
+    const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -36,13 +37,8 @@ export default function DashboardPage() {
             const fetchDashboardData = async () => {
                 setIsLoading(true);
                 try {
-                    const todayString = new Date().toISOString().split('T')[0];
-                    const [bookingsData, staffData] = await Promise.all([
-                        bookingService.getSpaBookings(businessId, { date: todayString, limit: 100 }),
-                        businessService.getAllStaff(businessId)
-                    ]);
-                    setTodayBookings(bookingsData);
-                    setAllStaff(staffData);
+                    const data = await businessService.getDashboard(businessId);
+                    setDashboardData(data);
                 } catch (error) {
                     console.error("Error fetching dashboard data:", error);
                 } finally {
@@ -55,51 +51,60 @@ export default function DashboardPage() {
         }
     }, [businessId, isPending]);
 
-    const statsData = useMemo(() => {
-        const bookingsArray = Array.isArray(todayBookings) ? todayBookings : [];
-        const revenue = bookingsArray
-            .filter(b => b.status === 'confirmed' || b.status === 'completed')
-            .reduce((sum, b) => sum + b.totalPrice, 0);
+    // Compute dynamic bar heights from weeklyRevenue data
+    const maxRevenue = dashboardData?.weeklyRevenue?.length
+        ? Math.max(...dashboardData.weeklyRevenue.map(d => d.revenue), 1)
+        : 1;
 
-        return [
-            {
-                label: "Today's Revenue",
-                value: `₦${revenue.toLocaleString()}`,
-                change: "Total from confirmed bookings",
-                icon: Banknote,
-                iconBg: "bg-teal-50",
-                iconColor: "text-teal-600",
-                changeColor: "text-teal-600"
-            },
-            {
-                label: "Today's Booking",
-                value: bookingsArray.length.toString(),
-                change: `${bookingsArray.filter(b => b.status === 'completed').length} Booking Completed`,
-                icon: Calendar,
-                iconBg: "bg-blue-50",
-                iconColor: "text-blue-500",
-                changeColor: "text-gray-400"
-            },
-            {
-                label: "Average Rating",
-                value: business?.averageRating ? parseFloat(business.averageRating).toFixed(1) : "0.0",
-                change: `${business?.totalReviews || 0} reviews`,
-                icon: Star,
-                iconBg: "bg-amber-50",
-                iconColor: "text-amber-500",
-                changeColor: "text-amber-600"
-            },
-            {
-                label: "Total Staff",
-                value: allStaff.length.toString(),
-                change: "Assigned to your business",
-                icon: Users,
-                iconBg: "bg-purple-50",
-                iconColor: "text-purple-400",
-                changeColor: "text-gray-400"
-            }
-        ];
-    }, [todayBookings, allStaff, business]);
+    const dayAbbreviations: Record<string, string> = {
+        Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed",
+        Thursday: "Thu", Friday: "Fri", Saturday: "Sat", Sunday: "Sun"
+    };
+
+    const statsData = dashboardData ? [
+        {
+            label: "Today\u2019s Revenue",
+            value: `\u20A6${dashboardData.todaysRevenue.amount.toLocaleString()}`,
+            change: dashboardData.todaysRevenue.changeFromYesterday >= 0
+                ? `+${dashboardData.todaysRevenue.changeFromYesterday}% from yesterday`
+                : `${dashboardData.todaysRevenue.changeFromYesterday}% from yesterday`,
+            icon: Banknote,
+            iconBg: "bg-teal-50",
+            iconColor: "text-teal-600",
+            changeColor: dashboardData.todaysRevenue.changeFromYesterday >= 0 ? "text-teal-600" : "text-red-500",
+            changeIcon: TrendingUp
+        },
+        {
+            label: "Today\u2019s Bookings",
+            value: dashboardData.todaysBookings.total.toString(),
+            change: `${dashboardData.todaysBookings.completed} Bookings Completed`,
+            icon: Calendar,
+            iconBg: "bg-blue-50",
+            iconColor: "text-blue-500",
+            changeColor: "text-gray-400",
+            changeIcon: null
+        },
+        {
+            label: "Average Rating",
+            value: Number(dashboardData.averageRating.rating).toFixed(1),
+            change: dashboardData.averageRating.label,
+            icon: Star,
+            iconBg: "bg-amber-50",
+            iconColor: "text-amber-500",
+            changeColor: "text-amber-600",
+            changeIcon: null
+        },
+        {
+            label: "Staff Online",
+            value: `${dashboardData.staffOnline.online}/${dashboardData.staffOnline.total}`,
+            change: `${dashboardData.staffOnline.onHomeService} on home service`,
+            icon: Users,
+            iconBg: "bg-purple-50",
+            iconColor: "text-purple-400",
+            changeColor: "text-gray-400",
+            changeIcon: Home
+        }
+    ] : [];
 
     if (isLoading) {
         return (
@@ -161,7 +166,7 @@ export default function DashboardPage() {
             {/* Stats Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {statsData.map((stat, i) => (
-                    <Card key={i} className="border-none shadow-sm">
+                    <Card key={i} className="border-none shadow-sm bg-white hover:shadow-md transition-all">
                         <CardContent className="p-6">
                             <div className="flex items-start justify-between">
                                 <div>
@@ -172,7 +177,8 @@ export default function DashboardPage() {
                                     <stat.icon className={cn("h-5 w-5", stat.iconColor)} />
                                 </div>
                             </div>
-                            <p className={cn("mt-4 text-[10px] font-medium", stat.changeColor)}>
+                            <p className={cn("mt-4 text-[10px] font-medium flex items-center gap-1", stat.changeColor)}>
+                                {stat.changeIcon && <stat.changeIcon className="h-3 w-3" />}
                                 {stat.change}
                             </p>
                         </CardContent>
@@ -184,45 +190,55 @@ export default function DashboardPage() {
             <div className="grid gap-8 lg:grid-cols-3">
                 {/* Weekly Revenue Chart */}
                 <div className="lg:col-span-2">
-                    <Card className="border-none shadow-sm overflow-hidden h-full">
+                    <Card className="border-none shadow-sm overflow-hidden h-full bg-white hover:shadow-md transition-all">
                         <CardContent className="p-8">
                             <div className="flex items-center justify-between mb-8">
                                 <h2 className="text-xl font-bold text-gray-900">Weekly Revenue</h2>
                                 <select className="text-xs font-medium bg-gray-50 border-none rounded-lg px-2 py-1 text-gray-500 outline-none">
-                                    <option>This Month</option>
+                                    <option>This Week</option>
                                 </select>
                             </div>
 
                             <div className="relative h-64 flex items-end justify-between gap-4 mt-8">
-                                {/* Simple Bar Chart */}
-                                {[
-                                    { day: "Mon", height: "h-12" },
-                                    { day: "Tue", height: "h-24" },
-                                    { day: "Wed", height: "h-32" },
-                                    { day: "Thu", height: "h-20" },
-                                    { day: "Fri", height: "h-28" },
-                                    { day: "Sat", height: "h-40" },
-                                    { day: "Sun", height: "h-26" },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex-1 flex flex-col items-center gap-4 group">
-                                        <div className={cn(
-                                            "w-full rounded-md transition-all duration-300",
-                                            item.height,
-                                            item.day === "Sat" ? "bg-[#1A1F2C]" : "bg-gray-100 group-hover:bg-gray-200"
-                                        )} />
-                                        <span className="text-xs text-gray-400 font-medium">{item.day}</span>
+                                {dashboardData?.weeklyRevenue && dashboardData.weeklyRevenue.length > 0 ? (
+                                    dashboardData.weeklyRevenue.map((item, i) => {
+                                        const heightPercent = Math.max((item.revenue / maxRevenue) * 100, 4);
+                                        const isHighest = item.revenue === maxRevenue;
+                                        return (
+                                            <div key={i} className="flex-1 flex flex-col items-center gap-4 group relative">
+                                                {/* Tooltip on hover */}
+                                                <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10">
+                                                    ₦{item.revenue.toLocaleString()}
+                                                </div>
+                                                <div
+                                                    className={cn(
+                                                        "w-full rounded-md transition-all duration-300",
+                                                        isHighest ? "bg-[#1A1F2C]" : "bg-gray-100 group-hover:bg-gray-200"
+                                                    )}
+                                                    style={{ height: `${heightPercent}%` }}
+                                                />
+                                                <span className="text-xs text-gray-400 font-medium">
+                                                    {dayAbbreviations[item.day] || item.day.slice(0, 3)}
+                                                </span>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="flex-1 flex items-center justify-center text-sm text-gray-400">
+                                        No revenue data yet
                                     </div>
-                                ))}
+                                )}
 
-                                {/* Y-axis Labels Placeholder */}
-                                <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] text-gray-300 -ml-12 pointer-events-none">
-                                    <span>150k</span>
-                                    <span>120k</span>
-                                    <span>80k</span>
-                                    <span>60k</span>
-                                    <span>45k</span>
-                                    <span>0</span>
-                                </div>
+                                {/* Y-axis Labels */}
+                                {dashboardData?.weeklyRevenue && dashboardData.weeklyRevenue.length > 0 && (
+                                    <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] text-gray-300 -ml-12 pointer-events-none">
+                                        <span>{(maxRevenue / 1000).toFixed(0)}k</span>
+                                        <span>{(maxRevenue * 0.75 / 1000).toFixed(0)}k</span>
+                                        <span>{(maxRevenue * 0.5 / 1000).toFixed(0)}k</span>
+                                        <span>{(maxRevenue * 0.25 / 1000).toFixed(0)}k</span>
+                                        <span>0</span>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -231,25 +247,39 @@ export default function DashboardPage() {
                 {/* Upcoming Bookings */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-gray-900">Today&apos;s Bookings</h2>
+                        <h2 className="text-xl font-bold text-gray-900">Upcoming Bookings</h2>
                         <Link href="/dashboard/bookings" className="text-xs font-medium text-[#F59E0B] hover:underline">View All</Link>
                     </div>
 
                     <div className="space-y-4">
-                        {todayBookings.length === 0 ? (
+                        {!dashboardData?.upcomingBookings || dashboardData.upcomingBookings.length === 0 ? (
                             <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl border border-gray-50 text-center">
                                 <Calendar className="h-8 w-8 text-gray-200 mb-2" />
-                                <p className="text-sm text-gray-400">No bookings for today</p>
+                                <p className="text-sm text-gray-400">No upcoming bookings</p>
                             </div>
                         ) : (
-                            todayBookings.slice(0, 5).map((booking) => (
+                            dashboardData.upcomingBookings.slice(0, 5).map((booking) => (
                                 <div key={booking.id} className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-50 shadow-sm">
                                     <div className="flex-1">
-                                        <h3 className="text-sm font-bold text-gray-900 leading-none">{booking.customerName || "Guest"}</h3>
+                                        <h3 className="text-sm font-bold text-gray-900 leading-none">{booking.customerName}</h3>
                                         <p className="text-[10px] text-gray-400 mt-1">{booking.serviceName}</p>
-                                        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 mt-1.5">
-                                            <Clock className="h-3 w-3" />
-                                            <span>{booking.startTime} - {booking.endTime}</span>
+                                        <div className="flex items-center gap-3 text-[10px] text-gray-400 mt-1.5">
+                                            <div className="flex items-center gap-1">
+                                                <Clock className="h-3 w-3" />
+                                                <span>{booking.startTime} - {booking.endTime}</span>
+                                            </div>
+                                            {booking.isHomeService && (
+                                                <div className="flex items-center gap-1 text-purple-400">
+                                                    <Home className="h-3 w-3" />
+                                                    <span>Home</span>
+                                                </div>
+                                            )}
+                                            {booking.location && (
+                                                <div className="flex items-center gap-1">
+                                                    <MapPin className="h-3 w-3" />
+                                                    <span>{booking.location}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className={cn(
@@ -257,7 +287,7 @@ export default function DashboardPage() {
                                         booking.status === "confirmed" ? "bg-[#1A1F2C] text-white" : "bg-orange-50 text-[#F59E0B]"
                                     )}>
                                         <p className="text-[10px] font-bold capitalize">{booking.status.replace('_', ' ')}</p>
-                                        <p className="text-xs font-bold mt-0.5">₦{booking.totalPrice.toLocaleString()}</p>
+                                        <p className="text-xs font-bold mt-0.5">₦{booking.price.toLocaleString()}</p>
                                     </div>
                                 </div>
                             ))
@@ -271,7 +301,7 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 opacity-80">
                     <Link href="/dashboard/services">
-                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white">
                             <CardContent className="flex flex-col items-center justify-center p-8 text-center">
                                 <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-orange-50">
                                     <Plus className="h-6 w-6 text-orange-400" />
@@ -281,7 +311,7 @@ export default function DashboardPage() {
                         </Card>
                     </Link>
                     <Link href="/dashboard/staffs">
-                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white">
                             <CardContent className="flex flex-col items-center justify-center p-8 text-center">
                                 <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
                                     <UserPlus className="h-6 w-6 text-blue-400" />

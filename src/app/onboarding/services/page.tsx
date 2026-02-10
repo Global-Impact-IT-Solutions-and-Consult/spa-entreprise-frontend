@@ -14,6 +14,7 @@ import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, CreateServiceDto, Service } from '@/services/business.service';
 import { cn } from '@/lib/utils';
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface ServiceCardProps {
     service: Service;
@@ -89,6 +90,7 @@ export default function ServicesPage() {
     const [services, setServices] = useState<Service[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
+    const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
 
     // Form State
     const [serviceName, setServiceName] = useState('');
@@ -286,14 +288,17 @@ export default function ServicesPage() {
         }
     };
 
-    const handleDeleteService = async (serviceId: string) => {
+    const handleDeleteService = (serviceId: string) => {
         if (!businessId) return;
+        setServiceToDelete(serviceId);
+    };
 
-        if (!confirm('Are you sure you want to delete this service?')) return;
+    const confirmDelete = async () => {
+        if (!businessId || !serviceToDelete) return;
 
         try {
-            await businessService.deleteService(businessId, serviceId);
-            setServices(services.filter(s => s.id !== serviceId));
+            await businessService.deleteService(businessId, serviceToDelete);
+            setServices(services.filter(s => s.id !== serviceToDelete));
             toaster.create({ title: "Service Deleted", type: "success" });
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
@@ -302,8 +307,11 @@ export default function ServicesPage() {
                 description: err.response?.data?.message || "Please try again.",
                 type: "error"
             });
+        } finally {
+            setServiceToDelete(null);
         }
     };
+
 
     const categoryOptions = categories.map(c => ({ label: c.name, value: c.id }));
 
@@ -645,6 +653,16 @@ export default function ServicesPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmModal
+                isOpen={!!serviceToDelete}
+                title="Delete Service?"
+                message="Are you sure you want to delete this service? This action cannot be undone."
+                variant="danger"
+                confirmLabel="Delete"
+                onConfirm={confirmDelete}
+                onCancel={() => setServiceToDelete(null)}
+            />
         </div>
     );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
     Search,
     Filter,
@@ -25,6 +25,10 @@ import { cn } from "@/lib/utils";
 import { CreateBookingModal } from "@/components/modules/bookings/CreateBookingModal";
 import { useAuthStore } from "@/store/auth.store";
 import { bookingService, Booking } from "@/services/booking.service";
+import { businessService, Service, Staff } from "@/services/business.service";
+import { FiBell } from "react-icons/fi";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { toaster } from "@/components/ui/toaster";
 
 export default function BookingsPage() {
     const { user } = useAuthStore();
@@ -32,13 +36,38 @@ export default function BookingsPage() {
 
     const [activeTab, setActiveTab] = useState("Upcoming");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [bookings, setBookings] = useState<Booking[]>([]);
+    const [allBookings, setAllBookings] = useState<Booking[]>([]);
+    const [businessServices, setBusinessServices] = useState<Service[]>([]);
+    const [businessStaff, setBusinessStaff] = useState<Staff[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState({
         pending: 0,
         confirmedToday: 0,
         requireAction: 0,
         revenueToday: 0
+    });
+    const [tabCount, setTabCount] = useState({
+        upcoming: 0,
+        completed: 0,
+        canceled: 0
+    });
+
+    // Filter state
+    const [filterService, setFilterService] = useState("all");
+    const [filterStaff, setFilterStaff] = useState("all");
+    const [filterDeliveryType, setFilterDeliveryType] = useState("all");
+    const [filterDate, setFilterDate] = useState("");
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+
+    // Applied filters (only update when "Apply" is clicked)
+    const [appliedFilters, setAppliedFilters] = useState({
+        service: "all",
+        staff: "all",
+        deliveryType: "all",
+        date: "",
+        search: ""
     });
 
     const statusMap: Record<string, string[]> = {
@@ -51,15 +80,15 @@ export default function BookingsPage() {
         if (!businessId) return;
         setIsLoading(true);
         try {
-            const statuses = statusMap[activeTab];
-            // Since API might only take one status, we'll fetch all and filter or make multiple calls
-            // For now, let's fetch all and filter locally for simpler implementation if API is limited
-            const allBookings = await bookingService.getSpaBookings(businessId, { limit: 100 });
-            const bookingsArray = Array.isArray(allBookings) ? allBookings : [];
-
-            // Filter by selected tab statuses
-            const filtered = bookingsArray.filter(b => statuses.includes(b.status));
-            setBookings(filtered);
+            const [fetchedBookings, services, staff] = await Promise.all([
+                bookingService.getSpaBookings(businessId, { limit: 100 }),
+                businessService.getServices(businessId),
+                businessService.getAllStaff(businessId)
+            ]);
+            const bookingsArray = Array.isArray(fetchedBookings) ? fetchedBookings : [];
+            setBusinessServices(Array.isArray(services) ? services : []);
+            setBusinessStaff(Array.isArray(staff) ? staff : []);
+            setAllBookings(bookingsArray);
 
             // Calculate stats from all bookings
             const now = new Date();
@@ -72,10 +101,16 @@ export default function BookingsPage() {
                 bookingsArray.filter(b => b.status === 'completed' && b.bookingDate === todayStr)
                     .reduce((sum, b) => sum + b.totalPrice, 0);
 
+            setTabCount({
+                upcoming: bookingsArray.filter(b => b.status === 'pending_payment' || b.status === 'confirmed').length,
+                completed: bookingsArray.filter(b => b.status === 'completed').length,
+                canceled: bookingsArray.filter(b => b.status === 'cancelled' || b.status === 'expired').length
+            });
+
             setStats({
                 pending,
                 confirmedToday,
-                requireAction: pending, // For now
+                requireAction: pending,
                 revenueToday
             });
         } catch (error) {
@@ -83,12 +118,79 @@ export default function BookingsPage() {
         } finally {
             setIsLoading(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [businessId, activeTab]);
+    }, [businessId]);
 
     useEffect(() => {
         fetchBookings();
     }, [fetchBookings]);
+
+
+
+    // Filtered bookings based on active tab + applied filters
+    const filteredBookings = useMemo(() => {
+        const statuses = statusMap[activeTab];
+        let filtered = allBookings.filter(b => statuses.includes(b.status));
+
+        // Apply service filter
+        if (appliedFilters.service !== "all") {
+            filtered = filtered.filter(b => b.serviceName === appliedFilters.service);
+        }
+
+        // Apply staff filter
+        if (appliedFilters.staff !== "all") {
+            filtered = filtered.filter(b => b.staffName === appliedFilters.staff);
+        }
+
+        // Apply date filter
+        if (appliedFilters.date) {
+            filtered = filtered.filter(b => b.bookingDate === appliedFilters.date);
+        }
+
+        // Apply search
+        if (appliedFilters.search.trim()) {
+            const q = appliedFilters.search.toLowerCase();
+            filtered = filtered.filter(b =>
+                (b.customerName?.toLowerCase().includes(q)) ||
+                (b.serviceName?.toLowerCase().includes(q)) ||
+                (b.staffName?.toLowerCase().includes(q)) ||
+                (b.id?.toLowerCase().includes(q))
+            );
+        }
+
+        return filtered;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [allBookings, activeTab, appliedFilters]);
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            service: filterService,
+            staff: filterStaff,
+            deliveryType: filterDeliveryType,
+            date: filterDate,
+            search: searchQuery
+        });
+    };
+
+    const handleClearFilters = () => {
+        setFilterService("all");
+        setFilterStaff("all");
+        setFilterDeliveryType("all");
+        setFilterDate("");
+        setSearchQuery("");
+        setAppliedFilters({
+            service: "all",
+            staff: "all",
+            deliveryType: "all",
+            date: "",
+            search: ""
+        });
+    };
+
+    // Check if any filters are active
+    const hasActiveFilters = appliedFilters.service !== "all" ||
+        appliedFilters.staff !== "all" ||
+        appliedFilters.date !== "" ||
+        appliedFilters.search !== "";
 
     const handleConfirm = async (id: string) => {
         try {
@@ -99,13 +201,22 @@ export default function BookingsPage() {
         }
     };
 
-    const handleCancel = async (id: string) => {
-        if (!confirm("Are you sure you want to cancel this booking?")) return;
+    const handleCancel = (id: string) => {
+        setBookingToCancel(id);
+    };
+
+    const confirmCancel = async () => {
+        if (!bookingToCancel) return;
+
         try {
-            await bookingService.cancelBooking(id, { reason: "Cancelled by business owner" });
+            await bookingService.cancelBooking(bookingToCancel, { reason: "Cancelled by business owner" });
             fetchBookings();
+            toaster.create({ title: "Booking Cancelled", type: "success" });
         } catch (error) {
             console.error("Error cancelling booking:", error);
+            toaster.create({ title: "Cancellation Failed", description: "Could not cancel booking", type: "error" });
+        } finally {
+            setBookingToCancel(null);
         }
     };
 
@@ -118,7 +229,7 @@ export default function BookingsPage() {
             iconColor: "text-amber-500",
         },
         {
-            label: "Today's Confirmed",
+            label: "Today\u2019s Confirmed",
             value: stats.confirmedToday.toString(),
             icon: CalendarCheck,
             iconBg: "bg-emerald-100",
@@ -133,23 +244,30 @@ export default function BookingsPage() {
         },
         {
             label: "Revenue Today",
-            value: `₦${stats.revenueToday.toLocaleString()}`,
+            value: `\u20A6${stats.revenueToday.toLocaleString()}`,
             icon: Banknote,
             iconBg: "bg-blue-100",
             iconColor: "text-blue-500",
         },
     ];
 
+    // Also apply search immediately on typing (debounced via Enter or Apply)
+    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            setAppliedFilters(prev => ({ ...prev, search: searchQuery }));
+        }
+    };
+
     return (
         <div className="space-y-8 p-8">
-            <div className="flex items-center justify-between">
+            <div className="flex items-end justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Bookings Management</h1>
                     <p className="text-gray-500 mt-1">Manage appointments, track bookings, and handle scheduling for your business</p>
                 </div>
                 <Button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-[#F59E0B] hover:bg-[#D97706] text-white gap-2 h-11 px-6 font-bold"
+                    className="bg-[#F59E0B] hover:bg-[#D97706] text-white gap-2 h-11 px-6 font-bold mb-1"
                 >
                     <Plus className="h-5 w-5" />
                     New Booking
@@ -159,8 +277,8 @@ export default function BookingsPage() {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {statsConfig.map((stat, index) => (
-                    <Card key={index} className="border-none shadow-sm ring-1 ring-gray-100">
-                        <CardContent className="p-6">
+                    <Card key={index} className="border-none shadow-sm hover:shadow-md ring-1 ring-gray-100 bg-white">
+                        <CardContent className="p-6 px-4">
                             <div className="flex items-center gap-4">
                                 <div className={cn("p-3 rounded-lg", stat.iconBg)}>
                                     <stat.icon className={cn("h-6 w-6", stat.iconColor)} />
@@ -183,13 +301,15 @@ export default function BookingsPage() {
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={cn(
-                                "pb-4 text-sm font-semibold transition-colors relative",
+                                "pb-4 text-sm font-semibold transition-colors relative flex items-center gap-1",
                                 activeTab === tab
                                     ? "text-[#F59E0B]"
                                     : "text-gray-400 hover:text-gray-600"
                             )}
                         >
+                            <FiBell className="mr-2 h-4 w-4" />
                             {tab}
+                            <span className="text-xs px-2 py-1 rounded-full">({tabCount[tab.toLowerCase() as keyof typeof tabCount]})</span>
                             {activeTab === tab && (
                                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B]" />
                             )}
@@ -203,23 +323,120 @@ export default function BookingsPage() {
                     </h2>
 
                     <div className="flex flex-wrap items-center gap-4">
+                        {/* Service Filter */}
                         <div className="relative">
-                            <select className="appearance-none bg-gray-50 border border-transparent rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20 w-44">
-                                <option>All Services</option>
+                            <select
+                                value={filterService}
+                                onChange={(e) => setFilterService(e.target.value)}
+                                className="appearance-none bg-gray-50 border border-transparent rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20 w-44"
+                            >
+                                <option value="all">All Services</option>
+                                {businessServices.map(s => (
+                                    <option key={s.id} value={s.name}>{s.name}</option>
+                                ))}
                             </select>
-                            <ChevronLeft className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 rotate-[270deg]" />
+                            <ChevronLeft className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 rotate-[270deg] pointer-events-none" />
                         </div>
+
+                        {/* Staff Filter */}
                         <div className="relative">
-                            <select className="appearance-none bg-gray-50 border border-transparent rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20 w-44">
-                                <option>All Staffs</option>
+                            <select
+                                value={filterStaff}
+                                onChange={(e) => setFilterStaff(e.target.value)}
+                                className="appearance-none bg-gray-50 border border-transparent rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20 w-44"
+                            >
+                                <option value="all">All Staffs</option>
+                                {businessStaff.map(s => (
+                                    <option key={s.id} value={s.name}>{s.name}</option>
+                                ))}
                             </select>
-                            <ChevronLeft className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 rotate-[270deg]" />
+                            <ChevronLeft className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 rotate-[270deg] pointer-events-none" />
                         </div>
-                        <Button className="bg-gray-100 hover:bg-gray-200 text-gray-600 gap-2 font-semibold">
+
+                        {/* Delivery Type Filter */}
+                        <div className="relative">
+                            <select
+                                value={filterDeliveryType}
+                                onChange={(e) => setFilterDeliveryType(e.target.value)}
+                                className="appearance-none bg-gray-50 border border-transparent rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20 w-44"
+                            >
+                                <option value="all">All Delivery Type</option>
+                                <option value="in_location">In Location</option>
+                                <option value="home_service">Home Service</option>
+                            </select>
+                            <ChevronLeft className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 rotate-[270deg] pointer-events-none" />
+                        </div>
+
+                        {/* Date Picker */}
+                        <div className="relative">
+                            <input
+                                type="date"
+                                value={filterDate}
+                                onChange={(e) => setFilterDate(e.target.value)}
+                                className="appearance-none bg-gray-50 border border-transparent rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20 w-44"
+                            />
+                            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                        </div>
+
+                        {/* Apply & Clear */}
+                        <Button
+                            onClick={handleApplyFilters}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-600 gap-2 font-semibold"
+                        >
                             <Filter className="h-4 w-4" />
                             Apply
                         </Button>
-                        <button className="text-sm font-semibold text-gray-400 hover:text-gray-600 px-2 transition-colors">Clear</button>
+                        <button
+                            onClick={handleClearFilters}
+                            className={cn(
+                                "text-sm font-semibold px-2 transition-colors",
+                                hasActiveFilters ? "text-red-500 hover:text-red-600" : "text-gray-400 hover:text-gray-600"
+                            )}
+                        >
+                            Clear
+                        </button>
+
+                        {/* Active filter badges */}
+                        {hasActiveFilters && (
+                            <div className="flex items-center gap-2 ml-auto">
+                                {appliedFilters.service !== "all" && (
+                                    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full border border-amber-200">
+                                        {appliedFilters.service}
+                                        <X className="h-3 w-3 cursor-pointer" onClick={() => {
+                                            setFilterService("all");
+                                            setAppliedFilters(prev => ({ ...prev, service: "all" }));
+                                        }} />
+                                    </span>
+                                )}
+                                {appliedFilters.staff !== "all" && (
+                                    <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full border border-blue-200">
+                                        {appliedFilters.staff}
+                                        <X className="h-3 w-3 cursor-pointer" onClick={() => {
+                                            setFilterStaff("all");
+                                            setAppliedFilters(prev => ({ ...prev, staff: "all" }));
+                                        }} />
+                                    </span>
+                                )}
+                                {appliedFilters.date && (
+                                    <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-xs font-medium px-2.5 py-1 rounded-full border border-purple-200">
+                                        {new Date(appliedFilters.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        <X className="h-3 w-3 cursor-pointer" onClick={() => {
+                                            setFilterDate("");
+                                            setAppliedFilters(prev => ({ ...prev, date: "" }));
+                                        }} />
+                                    </span>
+                                )}
+                                {appliedFilters.search && (
+                                    <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full border border-gray-200">
+                                        &quot;{appliedFilters.search}&quot;
+                                        <X className="h-3 w-3 cursor-pointer" onClick={() => {
+                                            setSearchQuery("");
+                                            setAppliedFilters(prev => ({ ...prev, search: "" }));
+                                        }} />
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -227,7 +444,10 @@ export default function BookingsPage() {
                 <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
-                        placeholder="Search bookings by customer name, service, or booking ID...."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={handleSearchKeyDown}
+                        placeholder="Search bookings by customer name, service, or booking ID... (press Enter)"
                         className="pl-12 h-14 bg-white border-gray-100 shadow-sm rounded-xl focus-visible:ring-[#F59E0B]"
                     />
                 </div>
@@ -237,17 +457,30 @@ export default function BookingsPage() {
                     <div className="flex h-64 items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-[#F59E0B]" />
                     </div>
-                ) : bookings.length === 0 ? (
+                ) : filteredBookings.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-gray-100 gap-4">
                         <CalendarCheck className="h-12 w-12 text-gray-200" />
                         <div className="text-center">
-                            <p className="text-lg font-bold text-gray-900">No {activeTab.toLowerCase()} bookings</p>
-                            <p className="text-sm text-gray-400">When you have bookings, they will appear here</p>
+                            <p className="text-lg font-bold text-gray-900">
+                                {hasActiveFilters ? "No bookings match your filters" : `No ${activeTab.toLowerCase()} bookings`}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                                {hasActiveFilters ? "Try adjusting your filters or clearing them" : "When you have bookings, they will appear here"}
+                            </p>
                         </div>
+                        {hasActiveFilters && (
+                            <Button
+                                onClick={handleClearFilters}
+                                variant="outline"
+                                className="mt-2 text-sm font-semibold"
+                            >
+                                Clear All Filters
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        {bookings.map((booking) => (
+                        {filteredBookings.map((booking) => (
                             <Card key={booking.id} className="border-none shadow-sm ring-1 ring-gray-100 overflow-hidden group">
                                 <CardContent className="p-0 flex h-full">
                                     <div className="w-1/3 bg-gray-50 h-full min-h-[220px] flex items-center justify-center">
@@ -350,6 +583,17 @@ export default function BookingsPage() {
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 onSuccess={fetchBookings}
+
+            />
+
+            <ConfirmModal
+                isOpen={!!bookingToCancel}
+                title="Cancel Booking?"
+                message="Are you sure you want to cancel this booking? This action cannot be undone."
+                variant="danger"
+                confirmLabel="Cancel Booking"
+                onConfirm={confirmCancel}
+                onCancel={() => setBookingToCancel(null)}
             />
         </div>
     );
