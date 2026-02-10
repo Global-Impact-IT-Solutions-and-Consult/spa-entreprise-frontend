@@ -265,7 +265,7 @@ export default function BookingsPage() {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {statsConfig.map((stat, index) => (
-                    <Card key={index} className="border-none shadow-sm hover:shadow-md ring-1 ring-gray-100">
+                    <Card key={index} className="border-none shadow-sm hover:shadow-md ring-1 ring-gray-100 bg-white">
                         <CardContent className="p-6 px-4">
                             <div className="flex items-center gap-4">
                                 <div className={cn("p-3 rounded-lg", stat.iconBg)}>

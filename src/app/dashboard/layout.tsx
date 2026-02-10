@@ -4,9 +4,10 @@ import { useAuthStore } from "@/store/auth.store";
 import { Sidebar } from "@/components/modules/Sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell, Clock, X, Info } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { businessService } from "@/services/business.service";
 
 export default function DashboardLayout({
     children,
@@ -15,9 +16,37 @@ export default function DashboardLayout({
 }) {
     const { user } = useAuthStore();
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const business = user?.businesses?.[0];
     const status = business?.status?.toLowerCase();
     const isPending = status === 'pending_approval' || status === 'pending';
+
+    useEffect(() => {
+        const fetchPrimaryImage = async () => {
+            const businessId = business?.id;
+            if (!businessId) return;
+            try {
+                const images = await businessService.getImages(businessId);
+                const primary = images.find(img => img.isPrimary) || images[0];
+                if (primary) setAvatarUrl(primary.url);
+            } catch {
+                // Silently fail — fallback will show initials
+            }
+        };
+        fetchPrimaryImage();
+    }, [business?.id]);
+
+    // Listen for primary image changes from the business page
+    useEffect(() => {
+        const handlePrimaryChange = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            if (detail?.url !== undefined) {
+                setAvatarUrl(detail.url);
+            }
+        };
+        window.addEventListener("primary-image-changed", handlePrimaryChange);
+        return () => window.removeEventListener("primary-image-changed", handlePrimaryChange);
+    }, []);
 
     const notifications = [
         {
@@ -87,7 +116,7 @@ export default function DashboardLayout({
                                 <span className="absolute top-2 right-2 h-2 w-2 bg-[#F59E0B] rounded-full ring-2 ring-white" />
                             </button>
                             <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#F59E0B]">
-                                <AvatarImage src="/assets/avatars/user.jpg" />
+                                <AvatarImage src={avatarUrl || ""} />
                                 <AvatarFallback className="bg-[#F59E0B] text-white font-bold">
                                     {user?.firstName?.charAt(0) || "D"}
                                 </AvatarFallback>

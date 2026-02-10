@@ -166,7 +166,7 @@ export default function DashboardPage() {
             {/* Stats Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {statsData.map((stat, i) => (
-                    <Card key={i} className="border-none shadow-sm">
+                    <Card key={i} className="border-none shadow-sm bg-white hover:shadow-md transition-all">
                         <CardContent className="p-6">
                             <div className="flex items-start justify-between">
                                 <div>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
             <div className="grid gap-8 lg:grid-cols-3">
                 {/* Weekly Revenue Chart */}
                 <div className="lg:col-span-2">
-                    <Card className="border-none shadow-sm overflow-hidden h-full">
+                    <Card className="border-none shadow-sm overflow-hidden h-full bg-white hover:shadow-md transition-all">
                         <CardContent className="p-8">
                             <div className="flex items-center justify-between mb-8">
                                 <h2 className="text-xl font-bold text-gray-900">Weekly Revenue</h2>
@@ -301,7 +301,7 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 opacity-80">
                     <Link href="/dashboard/services">
-                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white">
                             <CardContent className="flex flex-col items-center justify-center p-8 text-center">
                                 <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-orange-50">
                                     <Plus className="h-6 w-6 text-orange-400" />
@@ -311,7 +311,7 @@ export default function DashboardPage() {
                         </Card>
                     </Link>
                     <Link href="/dashboard/staffs">
-                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white">
                             <CardContent className="flex flex-col items-center justify-center p-8 text-center">
                                 <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
                                     <UserPlus className="h-6 w-6 text-blue-400" />

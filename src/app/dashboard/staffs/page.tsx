@@ -163,12 +163,12 @@ export default function StaffsPage() {
                         const extraCount = staffServices.length > 1 ? staffServices.length - 1 : 0;
 
                         return (
-                            <div key={staff.id} className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative group">
-                                <div className="flex justify-between items-start mb-6">
+                            <div key={staff.id} className="bg-white rounded-md p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative group">
+                                <div className="flex justify-between items-start mb-2">
                                     <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm ring-1 ring-gray-100">
                                         <User className="h-8 w-8 text-gray-400" />
                                     </div>
-                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex gap-2">
                                         <button
                                             onClick={() => toaster.create({ title: "Coming soon", description: "Edit functionality will be available shortly." })}
                                             className="p-2 bg-blue-50 text-blue-500 rounded-xl hover:bg-blue-100 transition-colors"
@@ -184,22 +184,24 @@ export default function StaffsPage() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-2">
                                     <div className="space-y-1">
                                         <h3 className="text-xl font-bold text-gray-900">{staff.name}</h3>
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <span className="px-3 py-1 bg-emerald-50 text-[10px] font-bold text-emerald-600 rounded-full uppercase tracking-wider border border-emerald-100">
+                                            <span className="py-1 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
                                                 {staff.role}
                                             </span>
                                             {extraCount > 0 && (
-                                                <span className="px-3 py-1 bg-gray-50 text-[10px] font-bold text-gray-400 rounded-full uppercase tracking-wider border border-gray-100">
+                                                <span className="px-3 py-1 bg-gray-50 text-[10px] font-bold text-gray-400 rounded-full uppercase tracking-wider">
                                                     +{extraCount}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="pt-6 border-t border-gray-50 space-y-3">
+                                    <hr className="border-gray-100" />
+
+                                    <div className="pt-1 space-y-3">
                                         <div className="flex items-center gap-3">
                                             <span className="text-xs font-semibold text-gray-400 w-16">Service</span>
                                             <div className="h-1.5 w-1.5 rounded-full bg-gray-300" />
