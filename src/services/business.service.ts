@@ -154,6 +154,44 @@ export interface BusinessImage {
     createdAt: string;
 }
 
+export interface DashboardUpcomingBooking {
+    id: string;
+    customerName: string;
+    serviceName: string;
+    duration: number;
+    startTime: string;
+    endTime: string;
+    status: string;
+    price: number;
+    isHomeService: boolean;
+    location: string;
+}
+
+export interface DashboardData {
+    todaysRevenue: {
+        amount: number;
+        changeFromYesterday: number;
+    };
+    todaysBookings: {
+        total: number;
+        completed: number;
+    };
+    averageRating: {
+        rating: number;
+        label: string;
+    };
+    staffOnline: {
+        online: number;
+        total: number;
+        onHomeService: number;
+    };
+    weeklyRevenue: {
+        day: string;
+        revenue: number;
+    }[];
+    upcomingBookings: DashboardUpcomingBooking[];
+}
+
 export const businessService = {
     // Get My Businesses
     getMyBusinesses: async () => {
@@ -301,6 +339,12 @@ export const businessService = {
     // Set Availability
     setAvailability: async (businessId: string, availability: OperatingHours) => {
         const response = await apiClient.put(`/spas/${businessId}/operating-hours`, availability);
+        return response.data;
+    },
+
+    // Get Dashboard Data
+    getDashboard: async (businessId: string): Promise<DashboardData> => {
+        const response = await apiClient.get(`/spas/${businessId}/dashboard`);
         return response.data;
     }
 };
