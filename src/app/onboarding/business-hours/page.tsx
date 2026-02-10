@@ -68,13 +68,12 @@ export default function BusinessHoursPage() {
 
         setIsLoading(true);
         try {
-            const payload = {
-                operatingHours: schedule
-            };
-
-            await businessService.updateProfile(businessId, payload);
+            // new endpoint is /api/v1/spas/{id}/operating-hours
+            // body is the schedule object directly according to the requirement
+            await businessService.setAvailability(businessId, schedule);
             setOperatingHours(schedule);
 
+            toaster.create({ title: "Success", description: "Operating hours set successfully", type: "success" });
             router.push('/onboarding/services');
         } catch (error: any) {
             toaster.create({
