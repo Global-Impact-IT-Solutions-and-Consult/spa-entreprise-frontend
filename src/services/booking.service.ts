@@ -29,7 +29,7 @@ export interface BookingStats {
 export const bookingService = {
     // Get bookings for a spa
     getSpaBookings: async (spaId: string, params?: { status?: string; date?: string; page?: number; limit?: number }) => {
-        const response = await apiClient.get<any>(`/spas/${spaId}/bookings`, { params });
+        const response = await apiClient.get<Booking[] | { data: Booking[] }>(`/spas/${spaId}/bookings`, { params });
         // Handle cases where response might be wrapped in { data: [...] } or direct array
         if (Array.isArray(response.data)) {
             return response.data as Booking[];

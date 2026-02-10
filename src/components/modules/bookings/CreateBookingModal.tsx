@@ -57,7 +57,8 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
                     setStaffs(staffData);
                     if (servicesData.length > 0) setSelectedService(servicesData[0].id);
                 } catch (error) {
-                    console.error("Error fetching modal data:", error);
+                    const err = error as any;
+                    console.error("Error fetching modal data:", err);
                 } finally {
                     setIsLoading(false);
                 }
@@ -97,7 +98,8 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
             onSuccess?.();
             onClose();
         } catch (error) {
-            console.error("Error creating booking:", error);
+            const err = error as any;
+            console.error("Error creating booking:", err);
             alert("Failed to create booking. Please try again.");
         } finally {
             setIsSubmitting(false);

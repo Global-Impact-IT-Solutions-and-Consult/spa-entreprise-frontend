@@ -29,8 +29,8 @@ export interface User {
     lastName: string;
     role: string;
     emailVerified: boolean;
-    business?: any;
-    businesses?: any[];
+    business?: import('./business.service').Business;
+    businesses?: import('./business.service').Business[];
     mfaEnabled?: boolean;
 }
 
@@ -53,13 +53,13 @@ export const authService = {
         if (response.data.accessToken) {
             // Only use secure flag in production (HTTPS), not in development (HTTP localhost)
             const isProduction = process.env.NODE_ENV === 'production' && window.location.protocol === 'https:';
-            Cookies.set('accessToken', response.data.accessToken, { 
-                secure: isProduction, 
-                sameSite: 'strict' 
+            Cookies.set('accessToken', response.data.accessToken, {
+                secure: isProduction,
+                sameSite: 'strict'
             });
-            Cookies.set('refreshToken', response.data.refreshToken!, { 
-                secure: isProduction, 
-                sameSite: 'strict' 
+            Cookies.set('refreshToken', response.data.refreshToken!, {
+                secure: isProduction,
+                sameSite: 'strict'
             });
         }
         return response.data;
@@ -90,7 +90,7 @@ export const authService = {
     },
 
     // Reset Password
-    resetPassword: async (data: any) => {
+    resetPassword: async (data: { email: string; otp: string; password?: string }) => {
         const response = await apiClient.post('/auth/reset-password', data);
         return response.data;
     },

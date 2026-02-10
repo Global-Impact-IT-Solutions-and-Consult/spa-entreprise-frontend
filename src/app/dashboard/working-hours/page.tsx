@@ -41,7 +41,7 @@ export default function WorkingHoursPage() {
     const businessId = user?.businesses?.[0]?.id;
     const business = user?.businesses?.[0];
 
-    const [schedule, setSchedule] = useState<any>({});
+    const [schedule, setSchedule] = useState<import("@/services/business.service").OperatingHours>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -56,9 +56,9 @@ export default function WorkingHoursPage() {
             setIsLoading(true);
             try {
                 const businessData = await businessService.getBusinessProfile(businessId);
-                const hours = (businessData as any).operatingHours || {};
+                const hours = (businessData as { operatingHours?: import("@/services/business.service").OperatingHours }).operatingHours || {};
 
-                const initialSchedule = DAYS.reduce((acc: any, day) => {
+                const initialSchedule = DAYS.reduce((acc: import("@/services/business.service").OperatingHours, day) => {
                     acc[day.id] = hours[day.id] || {
                         open: '09:00',
                         close: '21:00',
@@ -79,8 +79,8 @@ export default function WorkingHoursPage() {
         fetchBusinessData();
     }, [businessId]);
 
-    const handleDayChange = (dayId: string, field: string, value: any) => {
-        setSchedule((prev: any) => ({
+    const handleDayChange = (dayId: string, field: string, value: string | boolean) => {
+        setSchedule((prev) => ({
             ...prev,
             [dayId]: {
                 ...prev[dayId],
@@ -97,7 +97,8 @@ export default function WorkingHoursPage() {
             await businessService.setAvailability(businessId, schedule);
             toaster.create({ title: "Hours Updated", type: "success" });
         } catch (error) {
-            toaster.create({ title: "Error", description: "Failed to update working hours", type: "error" });
+            const err = error as { response?: { data?: { message?: string } } };
+            toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to update working hours", type: "error" });
         } finally {
             setIsSaving(false);
         }

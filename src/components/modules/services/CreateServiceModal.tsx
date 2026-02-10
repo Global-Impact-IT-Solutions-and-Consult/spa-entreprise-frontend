@@ -93,10 +93,11 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
             toaster.create({ title: "Service Added", type: "success" });
             resetForm();
             onClose();
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as any;
             toaster.create({
                 title: "Failed to add service",
-                description: error.response?.data?.message || "Please try again.",
+                description: err.response?.data?.message || "Please try again.",
                 type: "error"
             });
         } finally {

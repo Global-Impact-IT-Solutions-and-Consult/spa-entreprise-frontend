@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { X } from "lucide-react"
 
 // Simplified Dialog for MVP - not full headless UI but functional
 interface DialogProps {

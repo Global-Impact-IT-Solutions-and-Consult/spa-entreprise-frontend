@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, Service, Staff } from '@/services/business.service';
@@ -17,7 +16,13 @@ import { cn } from '@/lib/utils';
 import { Scissors } from 'lucide-react';
 
 // Refined Staff Card Component
-const StaffCard = ({ staff, onEdit, onDelete }: any) => {
+interface StaffCardProps {
+    staff: Staff & { serviceName?: string; tags?: string[] };
+    onEdit: () => void;
+    onDelete: () => void;
+}
+
+const StaffCard = ({ staff, onEdit, onDelete }: StaffCardProps) => {
     return (
         <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col gap-6 relative">
             <div className="flex justify-between items-start">
@@ -104,12 +109,13 @@ export default function StaffsPage() {
                 ]);
                 setServices(servicesData);
                 setStaffs(staffsData);
-            } catch (error: any) {
-                console.error("Failed to load data", error);
-                toaster.create({ 
-                    title: "Error", 
-                    description: error.response?.data?.message || "Failed to load data", 
-                    type: "error" 
+            } catch (error) {
+                const err = error as any;
+                console.error("Failed to load data", err);
+                toaster.create({
+                    title: "Error",
+                    description: err.response?.data?.message || "Failed to load data",
+                    type: "error"
                 });
             } finally {
                 setIsLoadingData(false);
@@ -143,10 +149,11 @@ export default function StaffsPage() {
             setOpen(false);
             setNewStaff({ name: '', serviceIds: [], role: '', experience: '' });
             toaster.create({ title: "Staff Added", type: "success" });
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Failed to add staff",
-                description: error.response?.data?.message || "Please try again.",
+                description: err.response?.data?.message || "Please try again.",
                 type: "error"
             });
         } finally {
@@ -173,10 +180,11 @@ export default function StaffsPage() {
             await businessService.deleteStaff(businessId, staffId);
             setStaffs(staffs.filter(s => s.id !== staffId));
             toaster.create({ title: "Staff Deleted", type: "success" });
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
                 title: "Failed to delete staff",
-                description: error.response?.data?.message || "Please try again.",
+                description: err.response?.data?.message || "Please try again.",
                 type: "error"
             });
         }
@@ -187,27 +195,28 @@ export default function StaffsPage() {
         try {
             // Check if business has at least one service and one staff
             if (services.length === 0) {
-                toaster.create({ 
-                    title: "Incomplete Onboarding", 
-                    description: "Please create at least one service before finishing.", 
-                    type: "error" 
+                toaster.create({
+                    title: "Incomplete Onboarding",
+                    description: "Please create at least one service before finishing.",
+                    type: "error"
                 });
                 setIsLoading(false);
                 return;
             }
 
             // Onboarding is complete - redirect to dashboard
-            toaster.create({ 
-                title: "Onboarding Complete!", 
-                description: "Your business profile is set up. Waiting for admin approval.", 
-                type: "success" 
+            toaster.create({
+                title: "Onboarding Complete!",
+                description: "Your business profile is set up. Waiting for admin approval.",
+                type: "success"
             });
             router.push('/dashboard');
-        } catch (error: any) {
-            toaster.create({ 
-                title: "Error", 
-                description: error.response?.data?.message || "An error occurred", 
-                type: "error" 
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toaster.create({
+                title: "Error",
+                description: err.response?.data?.message || "An error occurred",
+                type: "error"
             });
         } finally {
             setIsLoading(false);
@@ -232,7 +241,7 @@ export default function StaffsPage() {
                     </Button>
                 </div>
 
-                    {isLoadingData ? (
+                {isLoadingData ? (
                     <div className="flex-1 flex items-center justify-center">
                         <div className="text-gray-500">Loading staff...</div>
                     </div>
@@ -253,7 +262,7 @@ export default function StaffsPage() {
                             const staffServiceIds = staff.serviceIds || [];
                             const staffServices = services.filter(s => staffServiceIds.includes(s.id));
                             const serviceNames = staffServices.map(s => s.name).join(', ') || 'No services assigned';
-                            
+
                             return (
                                 <StaffCard
                                     key={staff.id}
@@ -323,12 +332,12 @@ export default function StaffsPage() {
                                 <Label className="text-sm font-medium text-gray-400">Services * (Select one or more)</Label>
                                 <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto">
                                     {services.map((service) => (
-                                        <div 
-                                            key={service.id} 
+                                        <div
+                                            key={service.id}
                                             className={cn(
                                                 "border rounded-xl p-4 flex flex-col gap-3 relative bg-white shadow-sm cursor-pointer transition-all",
-                                                newStaff.serviceIds.includes(service.id) 
-                                                    ? "border-[#E59622] bg-[#FEF5E7]" 
+                                                newStaff.serviceIds.includes(service.id)
+                                                    ? "border-[#E59622] bg-[#FEF5E7]"
                                                     : "border-gray-100 hover:border-gray-200"
                                             )}
                                             onClick={() => handleServiceToggle(service.id)}
@@ -337,11 +346,11 @@ export default function StaffsPage() {
                                                 <Scissors className="h-5 w-5 text-gray-500" />
                                             </div>
                                             <span className="text-sm font-bold text-gray-900 leading-tight">{service.name}</span>
-                                            <input 
-                                                type="checkbox" 
+                                            <input
+                                                type="checkbox"
                                                 checked={newStaff.serviceIds.includes(service.id)}
                                                 onChange={() => handleServiceToggle(service.id)}
-                                                className="absolute top-4 right-4 h-5 w-5 rounded border-gray-300 text-[#E59622] focus:ring-[#E59622] cursor-pointer" 
+                                                className="absolute top-4 right-4 h-5 w-5 rounded border-gray-300 text-[#E59622] focus:ring-[#E59622] cursor-pointer"
                                             />
                                         </div>
                                     ))}

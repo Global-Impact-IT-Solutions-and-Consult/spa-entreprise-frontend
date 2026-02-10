@@ -9,9 +9,7 @@ import {
     Briefcase,
     Calendar,
     Users,
-    BarChart3,
     Home,
-    LogOut,
     Clock
 } from "lucide-react";
 import { authService } from "@/services/auth.service";

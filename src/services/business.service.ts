@@ -33,6 +33,14 @@ export interface City {
     longitude: string;
 }
 
+export interface OperatingHours {
+    [key: string]: {
+        open: string;
+        close: string;
+        closed: boolean;
+    };
+}
+
 export interface UpdateProfileDto {
     businessTypeCode?: string;
     businessName?: string;
@@ -45,7 +53,14 @@ export interface UpdateProfileDto {
     address?: string;
     addressNote?: string;
     amenities?: string[];
-    operatingHours?: any;
+    operatingHours?: OperatingHours;
+}
+
+export interface RegisterBusinessDto {
+    businessName: string;
+    businessTypeCode: string;
+    phone: string;
+    email: string;
 }
 
 export interface CreateServiceDto {
@@ -208,7 +223,7 @@ export const businessService = {
 
     // Get All Staff for a Business
     getAllStaff: async (businessId: string) => {
-        const response = await apiClient.get<any>(`/spas/${businessId}/staff`);
+        const response = await apiClient.get<Staff[] | { data: Staff[] }>(`/spas/${businessId}/staff`);
         // Handle cases where response might be wrapped in { data: [...] } or direct array
         if (Array.isArray(response.data)) {
             return response.data as Staff[];
@@ -237,7 +252,7 @@ export const businessService = {
     },
 
     // Upload Image
-    uploadImage: async (businessId: string, file: File, isPrimary: boolean = false, caption?: string) => {
+    uploadImage: async (businessId: string, file: File, isPrimary: boolean = false, caption?: string): Promise<BusinessImage> => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('isPrimary', isPrimary.toString());
@@ -284,7 +299,7 @@ export const businessService = {
     },
 
     // Set Availability
-    setAvailability: async (businessId: string, availability: any) => {
+    setAvailability: async (businessId: string, availability: OperatingHours) => {
         const response = await apiClient.put(`/spas/${businessId}/operating-hours`, availability);
         return response.data;
     }

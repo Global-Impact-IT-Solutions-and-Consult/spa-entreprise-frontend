@@ -44,10 +44,11 @@ function MfaSetupContent() {
 
                 setQrCodeUrl(data.qrCode);
                 setSecret(data.secret);
-            } catch (error: any) {
+            } catch (error) {
+                const err = error as any;
                 toaster.create({
                     title: "Error fetching MFA setup",
-                    description: error.response?.data?.message || "Please try again.",
+                    description: err.response?.data?.message || "Please try again.",
                     type: "error"
                 });
                 if (mode !== 'unverified') router.push('/');
@@ -85,8 +86,9 @@ function MfaSetupContent() {
                 toaster.create({ title: "MFA Enabled", type: "success" });
                 router.push('/dashboard');
             }
-        } catch (error: any) {
-            const message = error.response?.data?.message || "Verification failed. Check the code and try again.";
+        } catch (error) {
+            const err = error as any;
+            const message = err.response?.data?.message || "Verification failed. Check the code and try again.";
             toaster.create({ title: "Error", description: message, type: "error" });
         } finally {
             setIsVerifying(false);
@@ -116,9 +118,11 @@ function MfaSetupContent() {
                 {qrCodeUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <div className="relative h-[200px] w-[200px] mix-blend-multiply">
-                        <img
+                        <Image
                             src={qrCodeUrl}
                             alt="MFA QR Code"
+                            width={200}
+                            height={200}
                             className="h-full w-full object-contain"
                         />
                     </div>
