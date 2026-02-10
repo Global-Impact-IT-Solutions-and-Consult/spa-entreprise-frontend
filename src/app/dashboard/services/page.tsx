@@ -10,6 +10,7 @@ import { businessService, Service } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
 import { ServiceCard } from "@/components/modules/services/ServiceCard";
 import { CreateServiceModal } from "@/components/modules/services/CreateServiceModal";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 export default function ManageServicesPage() {
     const { user } = useAuthStore();
@@ -21,6 +22,7 @@ export default function ManageServicesPage() {
     const [activeTab, setActiveTab] = useState("All");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -49,13 +51,17 @@ export default function ManageServicesPage() {
         fetchData();
     }, [businessId]);
 
-    const handleDeleteService = async (serviceId: string) => {
+    const handleDeleteService = (serviceId: string) => {
         if (!businessId) return;
-        if (!confirm('Are you sure you want to delete this service?')) return;
+        setServiceToDelete(serviceId);
+    };
+
+    const confirmDelete = async () => {
+        if (!businessId || !serviceToDelete) return;
 
         try {
-            await businessService.deleteService(businessId, serviceId);
-            setServices(services.filter(s => s.id !== serviceId));
+            await businessService.deleteService(businessId, serviceToDelete);
+            setServices(services.filter(s => s.id !== serviceToDelete));
             toaster.create({ title: "Service Deleted", type: "success" });
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
@@ -64,6 +70,8 @@ export default function ManageServicesPage() {
                 description: err.response?.data?.message || "Failed to delete service",
                 type: "error"
             });
+        } finally {
+            setServiceToDelete(null);
         }
     };
 
@@ -188,6 +196,16 @@ export default function ManageServicesPage() {
                     categoryOptions={categoryOptions}
                 />
             )}
+
+            <ConfirmModal
+                isOpen={!!serviceToDelete}
+                title="Delete Service?"
+                message="Are you sure you want to delete this service? This action cannot be undone."
+                variant="danger"
+                confirmLabel="Delete"
+                onConfirm={confirmDelete}
+                onCancel={() => setServiceToDelete(null)}
+            />
         </div>
     );
 }

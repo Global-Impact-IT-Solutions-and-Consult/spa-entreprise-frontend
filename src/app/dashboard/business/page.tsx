@@ -25,6 +25,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import { businessService, BusinessImage } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 type TabType = "About" | "Gallery" | "Settings";
 
@@ -39,6 +40,10 @@ export default function BusinessProfilePage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingImages, setIsLoadingImages] = useState(false);
     const [lightboxImage, setLightboxImage] = useState<BusinessImage | null>(null);
+    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+    const [captionInput, setCaptionInput] = useState("");
+    const [showCaptionModal, setShowCaptionModal] = useState(false);
+    const [imageToDelete, setImageToDelete] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const galleryFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,16 +98,27 @@ export default function BusinessProfilePage() {
         window.dispatchEvent(new CustomEvent("primary-image-changed", { detail: { url } }));
     }, []);
 
-    const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Stage files and show caption modal
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
-        if (!files || files.length === 0 || !businessId) return;
+        if (!files || files.length === 0) return;
+        setPendingFiles(Array.from(files));
+        setCaptionInput("");
+        setShowCaptionModal(true);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (galleryFileInputRef.current) galleryFileInputRef.current.value = '';
+    };
 
+    // Upload with optional caption
+    const handleConfirmUpload = async (caption?: string) => {
+        if (!businessId || pendingFiles.length === 0) return;
+        setShowCaptionModal(false);
         setIsUploading(true);
         try {
-            for (let i = 0; i < files.length; i++) {
-                await businessService.uploadImage(businessId, files[i], false, undefined, 'gallery');
+            for (let i = 0; i < pendingFiles.length; i++) {
+                await businessService.uploadImage(businessId, pendingFiles[i], false, caption || undefined, 'gallery');
             }
-            toaster.create({ title: `${files.length} image(s) uploaded`, type: "success" });
+            toaster.create({ title: `${pendingFiles.length} image(s) uploaded`, type: "success" });
             await fetchAllImages(false);
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
@@ -113,28 +129,34 @@ export default function BusinessProfilePage() {
             });
         } finally {
             setIsUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-            if (galleryFileInputRef.current) galleryFileInputRef.current.value = '';
+            setPendingFiles([]);
         }
     };
 
     const handleDeleteImage = async (imageId: string) => {
-        if (!businessId || !confirm('Are you sure you want to delete this image?')) return;
+        if (!businessId) return;
+        setImageToDelete(imageId);
+    };
 
-        const deletedImage = allImages.find(img => img.id === imageId);
+    const confirmDelete = async () => {
+        if (!businessId || !imageToDelete) return;
+
+        const deletedImage = allImages.find(img => img.id === imageToDelete);
         try {
-            await businessService.deleteImage(businessId, imageId);
-            if (lightboxImage?.id === imageId) setLightboxImage(null);
+            await businessService.deleteImage(businessId, imageToDelete);
+            if (lightboxImage?.id === imageToDelete) setLightboxImage(null);
             toaster.create({ title: "Image Deleted", type: "success" });
             await fetchAllImages(false);
             // If deleted image was primary, update avatar
             if (deletedImage?.isPrimary) {
-                const remaining = allImages.filter(img => img.id !== imageId);
+                const remaining = allImages.filter(img => img.id !== imageToDelete);
                 dispatchAvatarUpdate(remaining[0]?.url || null);
             }
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
             toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to delete image", type: "error" });
+        } finally {
+            setImageToDelete(null);
         }
     };
 
@@ -326,7 +348,7 @@ export default function BusinessProfilePage() {
                             <input
                                 type="file"
                                 ref={fileInputRef}
-                                onChange={handleUploadImage}
+                                onChange={handleFileSelect}
                                 accept="image/*"
                                 multiple
                                 className="hidden"
@@ -541,7 +563,7 @@ export default function BusinessProfilePage() {
                             <input
                                 type="file"
                                 ref={galleryFileInputRef}
-                                onChange={handleUploadImage}
+                                onChange={handleFileSelect}
                                 accept="image/*"
                                 multiple
                                 className="hidden"
@@ -611,16 +633,20 @@ export default function BusinessProfilePage() {
                                                 {/* Action buttons */}
                                                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     {!img.isPrimary && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleSetPrimary(img.id);
-                                                            }}
-                                                            className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-amber-500 hover:bg-amber-50 shadow-sm"
-                                                            title="Set as Primary"
-                                                        >
-                                                            <Star className="h-3.5 w-3.5" />
-                                                        </button>
+                                                        <div className="group/btn relative">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleSetPrimary(img.id);
+                                                                }}
+                                                                className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-amber-500 hover:bg-amber-50 shadow-sm"
+                                                            >
+                                                                <Star className="h-3.5 w-3.5" />
+                                                            </button>
+                                                            <div className="absolute bottom-full right-0 mb-2 w-max px-2 py-1 bg-black/80 text-white text-[10px] font-bold rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none">
+                                                                Set as Primary
+                                                            </div>
+                                                        </div>
                                                     )}
                                                     <button
                                                         onClick={(e) => {
@@ -647,6 +673,56 @@ export default function BusinessProfilePage() {
                     )}
                 </div>
             )}
+
+            {/* Caption Modal */}
+            {showCaptionModal && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="space-y-1">
+                            <h3 className="text-lg font-bold text-gray-900">Add Caption</h3>
+                            <p className="text-sm text-gray-500">
+                                {pendingFiles.length === 1
+                                    ? "Add an optional caption for your photo"
+                                    : `Add an optional caption for ${pendingFiles.length} photos`}
+                            </p>
+                        </div>
+                        <textarea
+                            value={captionInput}
+                            onChange={(e) => setCaptionInput(e.target.value)}
+                            className="w-full min-h-[100px] p-3 bg-gray-50 border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium outline-none transition-colors text-sm"
+                            placeholder="e.g. Our relaxation lounge area..."
+                            autoFocus
+                        />
+                        <div className="flex gap-3">
+                            <Button
+                                type="button"
+                                onClick={() => handleConfirmUpload()}
+                                className="flex-1 h-11 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl"
+                            >
+                                Skip
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={() => handleConfirmUpload(captionInput)}
+                                className="flex-1 h-11 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl"
+                            >
+                                Upload
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={!!imageToDelete}
+                title="Delete Image?"
+                message="Are you sure you want to delete this image? This action cannot be undone."
+                variant="danger"
+                confirmLabel="Delete"
+                onConfirm={confirmDelete}
+                onCancel={() => setImageToDelete(null)}
+            />
 
             {/* Lightbox Modal */}
             {lightboxImage && (

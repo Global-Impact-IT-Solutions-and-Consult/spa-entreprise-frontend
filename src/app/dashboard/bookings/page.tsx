@@ -27,6 +27,8 @@ import { useAuthStore } from "@/store/auth.store";
 import { bookingService, Booking } from "@/services/booking.service";
 import { businessService, Service, Staff } from "@/services/business.service";
 import { FiBell } from "react-icons/fi";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { toaster } from "@/components/ui/toaster";
 
 export default function BookingsPage() {
     const { user } = useAuthStore();
@@ -55,7 +57,9 @@ export default function BookingsPage() {
     const [filterStaff, setFilterStaff] = useState("all");
     const [filterDeliveryType, setFilterDeliveryType] = useState("all");
     const [filterDate, setFilterDate] = useState("");
+
     const [searchQuery, setSearchQuery] = useState("");
+    const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
 
     // Applied filters (only update when "Apply" is clicked)
     const [appliedFilters, setAppliedFilters] = useState({
@@ -114,7 +118,6 @@ export default function BookingsPage() {
         } finally {
             setIsLoading(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [businessId]);
 
     useEffect(() => {
@@ -198,13 +201,22 @@ export default function BookingsPage() {
         }
     };
 
-    const handleCancel = async (id: string) => {
-        if (!confirm("Are you sure you want to cancel this booking?")) return;
+    const handleCancel = (id: string) => {
+        setBookingToCancel(id);
+    };
+
+    const confirmCancel = async () => {
+        if (!bookingToCancel) return;
+
         try {
-            await bookingService.cancelBooking(id, { reason: "Cancelled by business owner" });
+            await bookingService.cancelBooking(bookingToCancel, { reason: "Cancelled by business owner" });
             fetchBookings();
+            toaster.create({ title: "Booking Cancelled", type: "success" });
         } catch (error) {
             console.error("Error cancelling booking:", error);
+            toaster.create({ title: "Cancellation Failed", description: "Could not cancel booking", type: "error" });
+        } finally {
+            setBookingToCancel(null);
         }
     };
 
@@ -571,6 +583,17 @@ export default function BookingsPage() {
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 onSuccess={fetchBookings}
+
+            />
+
+            <ConfirmModal
+                isOpen={!!bookingToCancel}
+                title="Cancel Booking?"
+                message="Are you sure you want to cancel this booking? This action cannot be undone."
+                variant="danger"
+                confirmLabel="Cancel Booking"
+                onConfirm={confirmCancel}
+                onCancel={() => setBookingToCancel(null)}
             />
         </div>
     );

@@ -14,6 +14,7 @@ import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, Service, Staff } from '@/services/business.service';
 import { cn } from '@/lib/utils';
 import { Scissors } from 'lucide-react';
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 // Refined Staff Card Component
 interface StaffCardProps {
@@ -84,6 +85,7 @@ export default function StaffsPage() {
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [services, setServices] = useState<Service[]>([]);
     const [staffs, setStaffs] = useState<Staff[]>([]);
+    const [staffToDelete, setStaffToDelete] = useState<string | null>(null);
 
     // Form state
     const [newStaff, setNewStaff] = useState({
@@ -171,14 +173,17 @@ export default function StaffsPage() {
         });
     };
 
-    const handleDeleteStaff = async (staffId: string) => {
+    const handleDeleteStaff = (staffId: string) => {
         if (!businessId) return;
+        setStaffToDelete(staffId);
+    };
 
-        if (!confirm('Are you sure you want to delete this staff member?')) return;
+    const confirmDelete = async () => {
+        if (!businessId || !staffToDelete) return;
 
         try {
-            await businessService.deleteStaff(businessId, staffId);
-            setStaffs(staffs.filter(s => s.id !== staffId));
+            await businessService.deleteStaff(businessId, staffToDelete);
+            setStaffs(staffs.filter(s => s.id !== staffToDelete));
             toaster.create({ title: "Staff Deleted", type: "success" });
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
@@ -187,6 +192,8 @@ export default function StaffsPage() {
                 description: err.response?.data?.message || "Please try again.",
                 type: "error"
             });
+        } finally {
+            setStaffToDelete(null);
         }
     };
 
@@ -391,6 +398,16 @@ export default function StaffsPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmModal
+                isOpen={!!staffToDelete}
+                title="Delete Staff?"
+                message="Are you sure you want to delete this staff member? This action cannot be undone."
+                variant="danger"
+                confirmLabel="Delete"
+                onConfirm={confirmDelete}
+                onCancel={() => setStaffToDelete(null)}
+            />
         </div>
     );
 }
