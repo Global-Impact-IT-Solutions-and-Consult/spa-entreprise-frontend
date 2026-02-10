@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
     Banknote,
-    CalendarCheck,
     Star,
     Users,
     Clock,
@@ -13,86 +12,102 @@ import {
     UserPlus,
     CalendarClock,
     Eye,
-    ChevronRight,
-    Search,
-    MapPin,
-    Calendar
+    Calendar,
+    Loader2
 } from "lucide-react";
 import Link from "next/link";
-
-// Mock Data for Approved State
-const stats = [
-    {
-        label: "Today's Revenue",
-        value: "₦84,500",
-        change: "12% from yesterday",
-        icon: Banknote,
-        iconBg: "bg-teal-50",
-        iconColor: "text-teal-600",
-        changeColor: "text-teal-600"
-    },
-    {
-        label: "Today's Booking",
-        value: "12",
-        change: "6 Booking Completed",
-        icon: Calendar,
-        iconBg: "bg-blue-50",
-        iconColor: "text-blue-500",
-        changeColor: "text-gray-400"
-    },
-    {
-        label: "Average Rating",
-        value: "4.3",
-        change: "Good Rating",
-        icon: Star,
-        iconBg: "bg-orange-50",
-        iconColor: "text-orange-400",
-        changeColor: "text-green-500"
-    },
-    {
-        label: "Staff Online",
-        value: "1/3",
-        change: "2 staff on Home Service",
-        icon: Users,
-        iconBg: "bg-purple-50",
-        iconColor: "text-purple-400",
-        changeColor: "text-gray-400"
-    }
-];
-
-const bookings = [
-    {
-        id: 1,
-        client: "Adeola Johnson",
-        service: "Therapeutic Massage",
-        duration: "60 mins",
-        time: "2:00 PM - 3:00 PM",
-        price: "₦15,000",
-        status: "Confirmed"
-    },
-    {
-        id: 2,
-        client: "Chinedu Okoro",
-        service: "Home Service • Haircut",
-        time: "4:30 PM",
-        price: "₦8,500",
-        status: "Pending"
-    },
-    {
-        id: 3,
-        client: "Funke Adebayo",
-        service: "Facial Treatment • 45 mins",
-        time: "5:00 PM - 5:45 PM",
-        price: "₦12,000",
-        status: "Confirmed"
-    }
-];
+import { useEffect, useState, useMemo } from "react";
+import { bookingService, Booking } from "@/services/booking.service";
+import { businessService, Staff } from "@/services/business.service";
 
 export default function DashboardPage() {
     const { user } = useAuthStore();
     const business = user?.businesses?.[0];
+    const businessId = business?.id;
     const status = business?.status?.toLowerCase();
     const isPending = status === 'pending_approval' || status === 'pending';
+
+    const [todayBookings, setTodayBookings] = useState<Booking[]>([]);
+    const [allStaff, setAllStaff] = useState<Staff[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (businessId && !isPending) {
+            const fetchDashboardData = async () => {
+                setIsLoading(true);
+                try {
+                    const todayString = new Date().toISOString().split('T')[0];
+                    const [bookingsData, staffData] = await Promise.all([
+                        bookingService.getSpaBookings(businessId, { date: todayString, limit: 100 }),
+                        businessService.getAllStaff(businessId)
+                    ]);
+                    setTodayBookings(bookingsData);
+                    setAllStaff(staffData);
+                } catch (error) {
+                    console.error("Error fetching dashboard data:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchDashboardData();
+        } else if (isPending) {
+            setIsLoading(false);
+        }
+    }, [businessId, isPending]);
+
+    const statsData = useMemo(() => {
+        const bookingsArray = Array.isArray(todayBookings) ? todayBookings : [];
+        const revenue = bookingsArray
+            .filter(b => b.status === 'confirmed' || b.status === 'completed')
+            .reduce((sum, b) => sum + b.totalPrice, 0);
+
+        return [
+            {
+                label: "Today's Revenue",
+                value: `₦${revenue.toLocaleString()}`,
+                change: "Total from confirmed bookings",
+                icon: Banknote,
+                iconBg: "bg-teal-50",
+                iconColor: "text-teal-600",
+                changeColor: "text-teal-600"
+            },
+            {
+                label: "Today's Booking",
+                value: bookingsArray.length.toString(),
+                change: `${bookingsArray.filter(b => b.status === 'completed').length} Booking Completed`,
+                icon: Calendar,
+                iconBg: "bg-blue-50",
+                iconColor: "text-blue-500",
+                changeColor: "text-gray-400"
+            },
+            {
+                label: "Average Rating",
+                value: business?.averageRating ? parseFloat(business.averageRating).toFixed(1) : "0.0",
+                change: `${business?.totalReviews || 0} reviews`,
+                icon: Star,
+                iconBg: "bg-amber-50",
+                iconColor: "text-amber-500",
+                changeColor: "text-amber-600"
+            },
+            {
+                label: "Total Staff",
+                value: allStaff.length.toString(),
+                change: "Assigned to your business",
+                icon: Users,
+                iconBg: "bg-purple-50",
+                iconColor: "text-purple-400",
+                changeColor: "text-gray-400"
+            }
+        ];
+    }, [todayBookings, allStaff, business]);
+
+    if (isLoading) {
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#F59E0B]" />
+            </div>
+        );
+    }
 
     if (isPending) {
         return (
@@ -118,20 +133,22 @@ export default function DashboardPage() {
                     <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            { title: "Add Service", sub: "Create new service offering", icon: Plus, bgColor: "bg-orange-50", iconColor: "text-orange-400" },
-                            { title: "Add Staff", sub: "New team member", icon: UserPlus, bgColor: "bg-blue-50", iconColor: "text-blue-400" },
-                            { title: "Set Hours", sub: "Business schedule", icon: CalendarClock, bgColor: "bg-green-50", iconColor: "text-green-400" },
-                            { title: "View Profile", sub: "Create new service offering", icon: Eye, bgColor: "bg-gray-50", iconColor: "text-gray-400" },
+                            { title: "Add Service", sub: "Create new service offering", icon: Plus, bgColor: "bg-orange-50", iconColor: "text-orange-400", href: "/dashboard/services" },
+                            { title: "Add Staff", sub: "New team member", icon: UserPlus, bgColor: "bg-blue-50", iconColor: "text-blue-400", href: "/dashboard/staffs" },
+                            { title: "Set Hours", sub: "Business schedule", icon: CalendarClock, bgColor: "bg-green-50", iconColor: "text-green-400", href: "/dashboard/working-hours" },
+                            { title: "View Profile", sub: "View your public profile", icon: Eye, bgColor: "bg-gray-50", iconColor: "text-gray-400", href: `/spas/${businessId}` },
                         ].map((action, i) => (
-                            <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                                <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                                    <div className={cn("mb-6 flex h-12 w-12 items-center justify-center rounded-lg", action.bgColor)}>
-                                        <action.icon className={cn("h-6 w-6", action.iconColor)} />
-                                    </div>
-                                    <h3 className="text-lg font-bold text-gray-900">{action.title}</h3>
-                                    <p className="mt-1 text-xs text-gray-400">{action.sub}</p>
-                                </CardContent>
-                            </Card>
+                            <Link href={action.href} key={i}>
+                                <Card className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer h-full">
+                                    <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                                        <div className={cn("mb-6 flex h-12 w-12 items-center justify-center rounded-lg", action.bgColor)}>
+                                            <action.icon className={cn("h-6 w-6", action.iconColor)} />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-gray-900">{action.title}</h3>
+                                        <p className="mt-1 text-xs text-gray-400">{action.sub}</p>
+                                    </CardContent>
+                                </Card>
+                            </Link>
                         ))}
                     </div>
                 </div>
@@ -143,7 +160,7 @@ export default function DashboardPage() {
         <div className="space-y-8">
             {/* Stats Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {stats.map((stat, i) => (
+                {statsData.map((stat, i) => (
                     <Card key={i} className="border-none shadow-sm">
                         <CardContent className="p-6">
                             <div className="flex items-start justify-between">
@@ -214,57 +231,67 @@ export default function DashboardPage() {
                 {/* Upcoming Bookings */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-gray-900">Upcoming Bookings</h2>
+                        <h2 className="text-xl font-bold text-gray-900">Today's Bookings</h2>
                         <Link href="/dashboard/bookings" className="text-xs font-medium text-[#F59E0B] hover:underline">View All</Link>
                     </div>
 
                     <div className="space-y-4">
-                        {bookings.map((booking) => (
-                            <div key={booking.id} className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-50 shadow-sm">
-                                <div className="flex-1">
-                                    <h3 className="text-sm font-bold text-gray-900 leading-none">{booking.client}</h3>
-                                    <p className="text-[10px] text-gray-400 mt-1">{booking.service}</p>
-                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-400 mt-1.5">
-                                        <Clock className="h-3 w-3" />
-                                        <span>{booking.time}</span>
+                        {todayBookings.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl border border-gray-50 text-center">
+                                <Calendar className="h-8 w-8 text-gray-200 mb-2" />
+                                <p className="text-sm text-gray-400">No bookings for today</p>
+                            </div>
+                        ) : (
+                            todayBookings.slice(0, 5).map((booking) => (
+                                <div key={booking.id} className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-50 shadow-sm">
+                                    <div className="flex-1">
+                                        <h3 className="text-sm font-bold text-gray-900 leading-none">{booking.customerName || "Guest"}</h3>
+                                        <p className="text-[10px] text-gray-400 mt-1">{booking.serviceName}</p>
+                                        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 mt-1.5">
+                                            <Clock className="h-3 w-3" />
+                                            <span>{booking.startTime} - {booking.endTime}</span>
+                                        </div>
+                                    </div>
+                                    <div className={cn(
+                                        "min-w-24 rounded-lg p-2 text-center transition-all",
+                                        booking.status === "confirmed" ? "bg-[#1A1F2C] text-white" : "bg-orange-50 text-[#F59E0B]"
+                                    )}>
+                                        <p className="text-[10px] font-bold capitalize">{booking.status.replace('_', ' ')}</p>
+                                        <p className="text-xs font-bold mt-0.5">₦{booking.totalPrice.toLocaleString()}</p>
                                     </div>
                                 </div>
-                                <div className={cn(
-                                    "min-w-20 rounded-lg p-2 text-center transition-all",
-                                    booking.status === "Confirmed" ? "bg-[#1A1F2C] text-white" : "bg-orange-50 text-[#F59E0B]"
-                                )}>
-                                    <p className="text-[10px] font-bold opacity-90">{booking.status}</p>
-                                    <p className="text-xs font-bold mt-0.5">{booking.price}</p>
-                                </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Bottom Quick Actions */}
             <div className="space-y-6">
-                <h2 className="text-xl font-bold text-gray-900">Quick Action's</h2>
+                <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 opacity-80">
-                    {/* We can reuse the same quick action cards from pending state here if needed */}
-                    <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-orange-50">
-                                <Plus className="h-6 w-6 text-orange-400" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900">Add Service</h3>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
-                                <UserPlus className="h-6 w-6 text-blue-400" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900">Add Staff</h3>
-                        </CardContent>
-                    </Card>
+                    <Link href="/dashboard/services">
+                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                            <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-orange-50">
+                                    <Plus className="h-6 w-6 text-orange-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900">Add Service</h3>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                    <Link href="/dashboard/staffs">
+                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                            <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
+                                    <UserPlus className="h-6 w-6 text-blue-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900">Add Staff</h3>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

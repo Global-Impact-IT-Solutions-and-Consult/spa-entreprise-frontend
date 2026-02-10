@@ -99,6 +99,8 @@ export interface Business {
     // Onboarding completion tracking (from backend)
     onboardingCompleted?: boolean;
     onboardingCompletedAt?: string | null;
+    averageRating?: string;
+    totalReviews?: number;
 }
 
 export interface ServiceCategory {
@@ -147,6 +149,12 @@ export const businessService = {
     // Get Business by ID
     getBusiness: async (id: string) => {
         const response = await apiClient.get<Business>(`/spas/${id}`);
+        return response.data;
+    },
+
+    // Get Business profile b   y ID
+    getBusinessProfile: async (id: string) => {
+        const response = await apiClient.get<Business>(`/spas/${id}/profile`);
         return response.data;
     },
 
@@ -200,8 +208,14 @@ export const businessService = {
 
     // Get All Staff for a Business
     getAllStaff: async (businessId: string) => {
-        const response = await apiClient.get<Staff[]>(`/spas/${businessId}/staff`);
-        return response.data;
+        const response = await apiClient.get<any>(`/spas/${businessId}/staff`);
+        // Handle cases where response might be wrapped in { data: [...] } or direct array
+        if (Array.isArray(response.data)) {
+            return response.data as Staff[];
+        } else if (response.data && Array.isArray(response.data.data)) {
+            return response.data.data as Staff[];
+        }
+        return [] as Staff[];
     },
 
     // Create Staff Member (new endpoint - staff can be assigned to multiple services)
@@ -271,7 +285,7 @@ export const businessService = {
 
     // Set Availability
     setAvailability: async (businessId: string, availability: any) => {
-        const response = await apiClient.post(`/spas/${businessId}/availability`, availability);
+        const response = await apiClient.put(`/spas/${businessId}/operating-hours`, availability);
         return response.data;
     }
 };
