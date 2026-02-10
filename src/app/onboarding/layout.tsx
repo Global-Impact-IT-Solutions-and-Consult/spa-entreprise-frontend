@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/button';
 
 const steps = [
     { id: 1, path: '/onboarding/business-info', title: 'Business Information' },
-    { id: 2, path: '/onboarding/services', title: 'Create Services' },
-    { id: 3, path: '/onboarding/staff', title: 'Add Staffs' },
+    { id: 2, path: '/onboarding/business-hours', title: 'Operating Hours' },
+    { id: 3, path: '/onboarding/services', title: 'Create Services' },
+    { id: 4, path: '/onboarding/staff', title: 'Add Staffs' },
 ];
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
@@ -26,10 +27,10 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
         try {
             await authService.logout();
             logoutStore();
-            toaster.create({ 
-                title: "Logged out", 
-                description: "You have been successfully logged out.", 
-                type: "success" 
+            toaster.create({
+                title: "Logged out",
+                description: "You have been successfully logged out.",
+                type: "success"
             });
             router.push('/auth/login');
         } catch (error) {
@@ -79,7 +80,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
                                 {isCurrent ? (
                                     <span className="text-xs font-medium opacity-80">
-                                        {stepNum} of 3
+                                        {stepNum} of {steps.length}
                                     </span>
                                 ) : isCompleted ? (
                                     <FiCheck className="text-green-500 h-5 w-5" />
@@ -110,7 +111,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
                         <div className="bg-[#E59622] text-white p-1.5 rounded-lg font-bold text-sm">WP</div>
                         <span className="font-bold">WellnessPro</span>
                     </div>
-                    <span className="text-xs font-medium bg-[#E59622] px-2 py-1 rounded">Step {currentStepIndex} of 3</span>
+                    <span className="text-xs font-medium bg-[#E59622] px-2 py-1 rounded">Step {currentStepIndex} of {steps.length}</span>
                 </div>
 
                 {/* Scrollable Content Area */}

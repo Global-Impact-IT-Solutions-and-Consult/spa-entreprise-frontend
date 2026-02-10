@@ -287,7 +287,7 @@ export default function BusinessInfoPage() {
 
             toaster.create({ title: "Success", description: "Business Information Saved", type: "success" });
             // Skip business-hours (optional) and go directly to services
-            router.push('/onboarding/services');
+            router.push('/onboarding/business-hours');
         } catch (error: any) {
             // Log the full error for debugging
             console.error('Profile update error:', error);
