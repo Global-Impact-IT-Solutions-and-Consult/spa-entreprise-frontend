@@ -7,6 +7,7 @@ import { Bell, Clock, X, Info } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { authService } from "@/services/auth.service";
 import { businessService } from "@/services/business.service";
 
 export default function DashboardLayout({
@@ -14,7 +15,7 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { user } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const business = user?.businesses?.[0];
@@ -22,6 +23,15 @@ export default function DashboardLayout({
     const isPending = status === 'pending_approval' || status === 'pending';
 
     useEffect(() => {
+        const refreshUserData = async () => {
+            try {
+                const refreshedUser = await authService.getCurrentUser();
+                updateUser(refreshedUser);
+            } catch (error) {
+                console.error("Failed to refresh user data", error);
+            }
+        };
+
         const fetchPrimaryImage = async () => {
             const businessId = business?.id;
             if (!businessId) return;
@@ -33,6 +43,8 @@ export default function DashboardLayout({
                 // Silently fail — fallback will show initials
             }
         };
+
+        refreshUserData();
         fetchPrimaryImage();
     }, [business?.id]);
 

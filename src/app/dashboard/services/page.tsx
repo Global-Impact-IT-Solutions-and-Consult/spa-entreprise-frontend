@@ -10,6 +10,7 @@ import { businessService, Service } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
 import { ServiceCard } from "@/components/modules/services/ServiceCard";
 import { CreateServiceModal } from "@/components/modules/services/CreateServiceModal";
+import { EditServiceModal } from "@/components/modules/services/EditServiceModal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 export default function ManageServicesPage() {
@@ -21,6 +22,7 @@ export default function ManageServicesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("All");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
 
@@ -154,7 +156,7 @@ export default function ManageServicesPage() {
                                 service={service}
                                 categoryName={categories.find(c => c.id === service.categoryId)?.name || 'Service'}
                                 onDelete={() => handleDeleteService(service.id)}
-                                onEdit={() => toaster.create({ title: "Coming soon", description: "Edit functionality will be available shortly." })}
+                                onEdit={() => setServiceToEdit(service)}
                             />
                         ))}
                     </div>
@@ -193,6 +195,19 @@ export default function ManageServicesPage() {
                     isOpen={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
                     onSuccess={(newService) => setServices([...services, newService])}
+                    categoryOptions={categoryOptions}
+                />
+            )}
+
+            {businessId && (
+                <EditServiceModal
+                    businessId={businessId}
+                    service={serviceToEdit}
+                    isOpen={!!serviceToEdit}
+                    onClose={() => setServiceToEdit(null)}
+                    onSuccess={(updatedService) => {
+                        setServices(services.map(s => s.id === updatedService.id ? updatedService : s));
+                    }}
                     categoryOptions={categoryOptions}
                 />
             )}

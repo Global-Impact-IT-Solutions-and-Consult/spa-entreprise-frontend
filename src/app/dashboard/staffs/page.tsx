@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select as CustomSelect } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { StaffModal } from "@/components/modules/staff/StaffModal";
 import { useAuthStore } from "@/store/auth.store";
 import { businessService, Staff, Service } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
@@ -43,13 +44,7 @@ export default function StaffsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery] = useState("");
     const [staffToDelete, setStaffToDelete] = useState<string | null>(null);
-
-    const [formData, setFormData] = useState({
-        name: "",
-        role: "",
-        experience: "",
-        serviceIds: [] as string[]
-    });
+    const [staffToEdit, setStaffToEdit] = useState<Staff | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -73,27 +68,6 @@ export default function StaffsPage() {
         fetchData();
     }, [businessId]);
 
-    const handleAddStaff = async () => {
-        if (!businessId) return;
-        if (!formData.name || !formData.role || !formData.experience || formData.serviceIds.length === 0) {
-            toaster.create({ title: "Validation Error", description: "All fields are required", type: "error" });
-            return;
-        }
-
-        setIsActionLoading(true);
-        try {
-            const newStaff = await businessService.createStaff(businessId, formData);
-            setStaffs(prev => [...prev, newStaff]);
-            setIsModalOpen(false);
-            setFormData({ name: "", role: "", experience: "", serviceIds: [] });
-            toaster.create({ title: "Staff Added", type: "success" });
-        } catch (error) {
-            const err = error as { response?: { data?: { message?: string } } };
-            toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to add staff", type: "error" });
-        } finally {
-            setIsActionLoading(false);
-        }
-    };
 
     const handleDeleteStaff = (staffId: string) => {
         if (!businessId) return;
@@ -115,14 +89,6 @@ export default function StaffsPage() {
         }
     };
 
-    const handleServiceToggle = (serviceId: string) => {
-        setFormData(prev => ({
-            ...prev,
-            serviceIds: prev.serviceIds.includes(serviceId)
-                ? prev.serviceIds.filter(id => id !== serviceId)
-                : [...prev.serviceIds, serviceId]
-        }));
-    };
 
     const filteredStaff = staffs?.filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -179,7 +145,7 @@ export default function StaffsPage() {
                                     </div>
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() => toaster.create({ title: "Coming soon", description: "Edit functionality will be available shortly." })}
+                                            onClick={() => setStaffToEdit(staff)}
                                             className="p-2 bg-blue-50 text-blue-500 rounded-xl hover:bg-blue-100 transition-colors"
                                         >
                                             <Edit2 className="h-4 w-4" />
@@ -229,98 +195,26 @@ export default function StaffsPage() {
                 </div>
             )}
 
-            {/* Add Staff Modal */}
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="bg-white rounded-3xl sm:max-w-[600px] p-0 overflow-hidden border-none text-left">
-                    <div className="p-8 space-y-8">
-                        <DialogHeader>
-                            <DialogTitle className="text-3xl font-extrabold text-gray-900 tracking-tight">Add New Staff</DialogTitle>
-                            <p className="text-gray-500 font-medium">Add new staffs and their specialized roles</p>
-                        </DialogHeader>
-
-                        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-400 uppercase tracking-widest">Staff Name</Label>
-                                <Input
-                                    placeholder="Enter full name"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="h-14 bg-gray-50 border-none focus:ring-2 focus:ring-[#F59E0B] rounded-2xl text-gray-900 font-bold px-6"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-400 uppercase tracking-widest">Role</Label>
-                                <Input
-                                    placeholder="e.g. Hair Stylist, Massage Therapist"
-                                    value={formData.role}
-                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                    className="h-14 bg-gray-50 border-none focus:ring-2 focus:ring-[#F59E0B] rounded-2xl text-gray-900 font-bold px-6"
-                                />
-                            </div>
-
-                            <div className="space-y-4">
-                                <Label className="text-sm font-bold text-gray-400 uppercase tracking-widest">Services * (Select one or more)</Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {services.map((service) => (
-                                        <div
-                                            key={service.id}
-                                            onClick={() => handleServiceToggle(service.id)}
-                                            className={cn(
-                                                "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-3 relative group",
-                                                formData.serviceIds.includes(service.id)
-                                                    ? "border-[#F59E0B] bg-amber-50/50"
-                                                    : "border-gray-50 bg-white hover:border-gray-200"
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
-                                                formData.serviceIds.includes(service.id) ? "bg-[#F59E0B] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-gray-100"
-                                            )}>
-                                                <Scissors className="h-5 w-5" />
-                                            </div>
-                                            <p className="font-bold text-gray-900 text-sm">{service.name}</p>
-                                            <Checkbox
-                                                checked={formData.serviceIds.includes(service.id)}
-                                                onCheckedChange={() => handleServiceToggle(service.id)}
-                                                className="absolute top-4 right-4 h-5 w-5 border-2 border-gray-200 data-[state=checked]:bg-[#F59E0B] data-[state=checked]:border-[#F59E0B] rounded-lg"
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-400 uppercase tracking-widest">Staff Experience *</Label>
-                                <CustomSelect
-                                    value={formData.experience}
-                                    onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                                    options={experienceLevels}
-                                    placeholder="Select experience level"
-                                    className="h-14 bg-gray-50 border-none focus:ring-2 focus:ring-[#F59E0B] rounded-2xl text-gray-900 font-bold px-6"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4 pt-4">
-                            <Button
-                                variant="ghost"
-                                onClick={() => setIsModalOpen(false)}
-                                className="flex-1 h-16 rounded-2xl font-extrabold text-gray-400 hover:text-gray-600 hover:bg-gray-50 text-lg"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleAddStaff}
-                                disabled={isActionLoading}
-                                className="flex-1 h-16 bg-[#F59E0B] hover:bg-[#D97706] text-white font-extrabold rounded-2xl shadow-xl shadow-[#F59E0B]/20 flex items-center justify-center gap-3 text-lg"
-                            >
-                                {isActionLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Save Staff"}
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {/* Staff Modal (Add/Edit) */}
+            {businessId && (
+                <StaffModal
+                    businessId={businessId}
+                    staff={staffToEdit}
+                    services={services}
+                    isOpen={isModalOpen || !!staffToEdit}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setStaffToEdit(null);
+                    }}
+                    onSuccess={(savedStaff) => {
+                        if (staffToEdit) {
+                            setStaffs(prev => prev.map(s => s.id === savedStaff.id ? savedStaff : s));
+                        } else {
+                            setStaffs(prev => [...prev, savedStaff]);
+                        }
+                    }}
+                />
+            )}
 
             <ConfirmModal
                 isOpen={!!staffToDelete}

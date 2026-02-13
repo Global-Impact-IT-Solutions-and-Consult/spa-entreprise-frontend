@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, Service, Staff } from '@/services/business.service';
+import { StaffModal } from '@/components/modules/staff/StaffModal';
 import { cn } from '@/lib/utils';
 import { Scissors } from 'lucide-react';
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -86,6 +87,7 @@ export default function StaffsPage() {
     const [services, setServices] = useState<Service[]>([]);
     const [staffs, setStaffs] = useState<Staff[]>([]);
     const [staffToDelete, setStaffToDelete] = useState<string | null>(null);
+    const [staffToEdit, setStaffToEdit] = useState<Staff | null>(null);
 
     // Form state
     const [newStaff, setNewStaff] = useState({
@@ -127,51 +129,7 @@ export default function StaffsPage() {
         loadData();
     }, [businessId]);
 
-    const handleAddStaff = async () => {
-        if (!businessId) {
-            toaster.create({ title: "Error", description: "Business ID not found", type: "error" });
-            return;
-        }
 
-        if (!newStaff.name || !newStaff.role || newStaff.serviceIds.length === 0 || !newStaff.experience) {
-            toaster.create({ title: "Validation Error", description: "Please fill all required fields and select at least one service", type: "error" });
-            return;
-        }
-
-        setIsLoading(true);
-        try {
-            const newStaffMember = await businessService.createStaff(businessId, {
-                name: newStaff.name,
-                serviceIds: newStaff.serviceIds,
-                role: newStaff.role,
-                experience: newStaff.experience
-            });
-
-            setStaffs([...staffs, newStaffMember]);
-            setOpen(false);
-            setNewStaff({ name: '', serviceIds: [], role: '', experience: '' });
-            toaster.create({ title: "Staff Added", type: "success" });
-        } catch (error) {
-            const err = error as { response?: { data?: { message?: string } } };
-            toaster.create({
-                title: "Failed to add staff",
-                description: err.response?.data?.message || "Please try again.",
-                type: "error"
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleServiceToggle = (serviceId: string) => {
-        setNewStaff(prev => {
-            if (prev.serviceIds.includes(serviceId)) {
-                return { ...prev, serviceIds: prev.serviceIds.filter(id => id !== serviceId) };
-            } else {
-                return { ...prev, serviceIds: [...prev.serviceIds, serviceId] };
-            }
-        });
-    };
 
     const handleDeleteStaff = (staffId: string) => {
         if (!businessId) return;
@@ -277,7 +235,7 @@ export default function StaffsPage() {
                                         ...staff,
                                         serviceName: serviceNames
                                     }}
-                                    onEdit={() => toaster.create({ title: "Coming soon", description: "Edit functionality will be available in the dashboard." })}
+                                    onEdit={() => setStaffToEdit(staff)}
                                     onDelete={() => handleDeleteStaff(staff.id)}
                                 />
                             );
@@ -305,99 +263,26 @@ export default function StaffsPage() {
                 </Button>
             </div>
 
-            {/* Add Staff Dialog */}
-            <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="bg-white rounded-2xl sm:max-w-2xl p-0 overflow-hidden border-none text-left h-[calc(100vh-4rem)]">
-                    <div className="p-8">
-                        <DialogHeader className="mb-8">
-                            <DialogTitle className="text-3xl font-bold text-gray-900">Add New Staff</DialogTitle>
-                            <p className="text-sm font-normal text-gray-500">Add new staffs and their specialized roles</p>
-                        </DialogHeader>
-
-                        <div className="space-y-6 h-[calc(100vh-20rem)] overflow-y-auto">
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-400">Staff Name</Label>
-                                <Input
-                                    placeholder="John Doe"
-                                    value={newStaff.name}
-                                    onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
-                                    className="h-[56px] rounded-lg border-gray-200 bg-white"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-400">Role</Label>
-                                <Input
-                                    placeholder="Hair Stylist"
-                                    value={newStaff.role}
-                                    onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
-                                    className="h-[56px] rounded-lg border-gray-200 bg-white"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-400">Services * (Select one or more)</Label>
-                                <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto">
-                                    {services.map((service) => (
-                                        <div
-                                            key={service.id}
-                                            className={cn(
-                                                "border rounded-xl p-4 flex flex-col gap-3 relative bg-white shadow-sm cursor-pointer transition-all",
-                                                newStaff.serviceIds.includes(service.id)
-                                                    ? "border-[#E59622] bg-[#FEF5E7]"
-                                                    : "border-gray-100 hover:border-gray-200"
-                                            )}
-                                            onClick={() => handleServiceToggle(service.id)}
-                                        >
-                                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                                                <Scissors className="h-5 w-5 text-gray-500" />
-                                            </div>
-                                            <span className="text-sm font-bold text-gray-900 leading-tight">{service.name}</span>
-                                            <input
-                                                type="checkbox"
-                                                checked={newStaff.serviceIds.includes(service.id)}
-                                                onChange={() => handleServiceToggle(service.id)}
-                                                className="absolute top-4 right-4 h-5 w-5 rounded border-gray-300 text-[#E59622] focus:ring-[#E59622] cursor-pointer"
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                                {newStaff.serviceIds.length === 0 && (
-                                    <p className="text-xs text-red-500">Please select at least one service</p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-400">Staff Experience *</Label>
-                                <Select
-                                    placeholder="Select experience level"
-                                    options={experienceLevels}
-                                    value={newStaff.experience}
-                                    onChange={(e) => setNewStaff({ ...newStaff, experience: e.target.value })}
-                                    className="h-[56px] rounded-lg border-gray-200"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-center gap-4 mt-10">
-                            <Button
-                                variant="outline"
-                                onClick={() => setOpen(false)}
-                                className="h-[56px] flex-1 rounded-lg border-gray-200 text-gray-500 font-bold text-lg"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleAddStaff}
-                                disabled={isLoading}
-                                className="h-[56px] flex-1 rounded-lg bg-[#E59622] hover:bg-[#d48a1f] text-white font-bold text-lg disabled:opacity-50"
-                            >
-                                {isLoading ? "Adding..." : "Save Staff"}
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {/* Staff Modal (Add/Edit) */}
+            {businessId && (
+                <StaffModal
+                    businessId={businessId}
+                    staff={staffToEdit}
+                    services={services}
+                    isOpen={open || !!staffToEdit}
+                    onClose={() => {
+                        setOpen(false);
+                        setStaffToEdit(null);
+                    }}
+                    onSuccess={(savedStaff) => {
+                        if (staffToEdit) {
+                            setStaffs(prev => prev.map(s => s.id === savedStaff.id ? savedStaff : s));
+                        } else {
+                            setStaffs(prev => [...prev, savedStaff]);
+                        }
+                    }}
+                />
+            )}
 
             <ConfirmModal
                 isOpen={!!staffToDelete}

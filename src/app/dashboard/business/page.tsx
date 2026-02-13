@@ -16,21 +16,49 @@ import {
     X,
     ZoomIn,
     Settings,
-    Info
+    Info,
+    ChevronRight
 } from "lucide-react";
+import { Country, State, City, ICountry, IState, ICity } from 'country-state-city';
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from '@/components/ui/select';
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import { businessService, BusinessImage } from "@/services/business.service";
+import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 type TabType = "About" | "Gallery" | "Settings";
 
+const businessTypeLabels: Record<string, string> = {
+    spa: "Spa and Wellness Center",
+    barbershop: "Barbershop",
+    hair_salon: "Hair Salon",
+    nail_salon: "Nail Salon",
+    beauty_salon: "Beauty Salon",
+    wellness_center: "Wellness Center",
+    fitness_center: "Wellness Center",
+    other: "Business"
+};
+
+const businessTypes = [
+    { label: "Select business type", value: "" },
+    { label: "SPA", value: "spa" },
+    { label: "Barbershop", value: "barbershop" },
+    { label: "Hair Salon", value: "hair_salon" },
+    { label: "Nail Salon", value: "nail_salon" },
+    { label: "Beauty Salon", value: "beauty_salon" },
+    { label: "Wellness Center", value: "wellness_center" },
+    { label: "Fitness Center", value: "fitness_center" },
+    { label: "Other", value: "other" }
+];
+
 export default function BusinessProfilePage() {
-    const { user } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const business = user?.businesses?.[0];
     const businessId = business?.id;
 
@@ -54,26 +82,85 @@ export default function BusinessProfilePage() {
         phone: "",
         email: "",
         address: "",
-        city: "",
-        state: "",
-        country: "Nigeria"
+        addressNote: "",
     });
+
+    // Address selection state
+    const [selectedCountryCode, setSelectedCountryCode] = useState<string>('');
+    const [selectedStateCode, setSelectedStateCode] = useState<string>('');
+    const [selectedCityName, setSelectedCityName] = useState<string>('');
+    const [selectedCountry, setSelectedCountry] = useState<ICountry | null>(null);
+    const [selectedState, setSelectedState] = useState<IState | null>(null);
+    const [selectedCity, setSelectedCity] = useState<ICity | null>(null);
+
+    // Get all countries
+    const allCountries = Country.getAllCountries();
+    const countryOptions = allCountries.map(c => ({ label: c.name, value: c.isoCode }));
+
+    // Get states and cities based on selection
+    const states = selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : [];
+    const stateOptions = states.map(s => ({ label: s.name, value: s.isoCode }));
+
+    const cities = (selectedCountryCode && selectedStateCode) ? City.getCitiesOfState(selectedCountryCode, selectedStateCode) : [];
+    const cityOptions = cities.map(c => ({ label: c.name, value: c.name }));
 
     useEffect(() => {
         if (business) {
+            const addressData = business.addressRelation;
             setFormData({
                 businessName: business.businessName || "",
                 businessTypeCode: business.businessTypeCode || "spa",
                 description: business.description || "",
                 phone: business.phone || "",
-                email: (business as unknown as { email?: string }).email || "",
-                address: business.addressRelation?.address || "",
-                city: business.addressRelation?.city?.name || "",
-                state: business.addressRelation?.state?.name || "",
-                country: business.addressRelation?.country?.name || "Nigeria"
+                email: (business as any).email || "",
+                address: addressData?.address || "",
+                addressNote: addressData?.note || "",
             });
+
+            // Set address selections from database
+            if (addressData?.country?.isoCode) {
+                setSelectedCountryCode(addressData.country.isoCode);
+                setSelectedCountry(addressData.country as unknown as ICountry);
+            }
+            if (addressData?.state?.isoCode) {
+                setSelectedStateCode(addressData.state.isoCode);
+                setSelectedState(addressData.state as unknown as IState);
+            }
+            if (addressData?.city?.name) {
+                setSelectedCityName(addressData.city.name);
+                setSelectedCity(addressData.city as unknown as ICity);
+            }
         }
     }, [business]);
+
+    // Handle country selection
+    const handleCountryChange = (isoCode: string) => {
+        setSelectedCountryCode(isoCode);
+        const country = allCountries.find(c => c.isoCode === isoCode);
+        setSelectedCountry(country || null);
+        // Reset state and city when country changes
+        setSelectedStateCode('');
+        setSelectedState(null);
+        setSelectedCityName('');
+        setSelectedCity(null);
+    };
+
+    // Handle state selection
+    const handleStateChange = (isoCode: string) => {
+        setSelectedStateCode(isoCode);
+        const state = states.find(s => s.isoCode === isoCode);
+        setSelectedState(state || null);
+        // Reset city when state changes
+        setSelectedCityName('');
+        setSelectedCity(null);
+    };
+
+    // Handle city selection
+    const handleCityChange = (cityName: string) => {
+        setSelectedCityName(cityName);
+        const city = cities.find(c => c.name === cityName);
+        setSelectedCity(city || null);
+    };
 
     // Single fetch for ALL images — used by both banner and gallery
     const fetchAllImages = useCallback(async (showLoading = true) => {
@@ -188,14 +275,69 @@ export default function BusinessProfilePage() {
         e.preventDefault();
         if (!businessId) return;
 
+        // Validate required fields
+        if (!formData.businessName || !formData.businessTypeCode || !formData.phone || !formData.description || !formData.address) {
+            toaster.create({ title: "Validation Error", description: "Please fill all required fields", type: "error" });
+            return;
+        }
+
+        // Validate address fields
+        if (!selectedCountry || !selectedState || !selectedCity) {
+            toaster.create({ title: "Validation Error", description: "Please select country, state, and city", type: "error" });
+            return;
+        }
+
         setIsSaving(true);
+
+        // Prepare address objects (same structure as onboarding)
+        const countryObject = JSON.parse(JSON.stringify({
+            name: selectedCountry.name,
+            isoCode: selectedCountry.isoCode,
+            flag: selectedCountry.flag,
+            phonecode: selectedCountry.phonecode,
+            currency: selectedCountry.currency,
+            latitude: selectedCountry.latitude,
+            longitude: selectedCountry.longitude,
+            timezones: (selectedCountry as any).timezones || [],
+        }));
+
+        const stateObject = JSON.parse(JSON.stringify({
+            name: selectedState.name,
+            isoCode: selectedState.isoCode,
+            countryCode: selectedState.countryCode,
+            latitude: selectedState.latitude,
+            longitude: selectedState.longitude,
+        }));
+
+        const cityObject = JSON.parse(JSON.stringify({
+            name: selectedCity.name,
+            countryCode: selectedCity.countryCode,
+            stateCode: selectedCity.stateCode,
+            latitude: selectedCity.latitude,
+            longitude: selectedCity.longitude,
+        }));
+
         try {
             await businessService.updateProfile(businessId, {
                 businessName: formData.businessName,
-                businessTypeCode: formData.businessTypeCode,
+                businessTypeCode: formData.businessTypeCode.toLowerCase(),
                 description: formData.description,
                 phone: formData.phone,
+                country: countryObject,
+                state: stateObject,
+                city: cityObject,
+                address: formData.address,
+                addressNote: formData.addressNote
             });
+
+            // Refresh user data in store after profile update
+            try {
+                const refreshedUser = await authService.getCurrentUser();
+                updateUser(refreshedUser);
+            } catch (refreshError) {
+                console.error("Failed to refresh user data after profile update", refreshError);
+            }
+
             toaster.create({ title: "Profile Updated", type: "success" });
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
@@ -376,7 +518,7 @@ export default function BusinessProfilePage() {
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-bold">
                             <ImageIcon className="h-4 w-4" />
-                            Spa and Wellness Center
+                            {businessTypeLabels[business?.businessTypeCode || "spa"] || "Spa and Wellness Center"}
                         </div>
                     </div>
                 </div>
@@ -432,15 +574,12 @@ export default function BusinessProfilePage() {
 
                                 <div className="space-y-2 md:col-span-2">
                                     <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Business Type</Label>
-                                    <div className="relative">
-                                        <Input
-                                            name="businessTypeCode"
-                                            value={formData.businessTypeCode}
-                                            onChange={handleInputChange}
-                                            className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium pr-12"
-                                        />
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    </div>
+                                    <Select
+                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                        options={businessTypes}
+                                        value={formData.businessTypeCode}
+                                        onChange={(e) => setFormData({ ...formData, businessTypeCode: e.target.value })}
+                                    />
                                 </div>
 
                                 <div className="space-y-2 md:col-span-2">
@@ -480,48 +619,59 @@ export default function BusinessProfilePage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Country</Label>
-                                    <div className="relative">
-                                        <Input
-                                            name="country"
-                                            value={formData.country}
-                                            onChange={handleInputChange}
-                                            className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
-                                        />
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">State</Label>
-                                    <div className="relative">
-                                        <Input
-                                            name="state"
-                                            value={formData.state}
-                                            onChange={handleInputChange}
-                                            className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
-                                        />
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">City</Label>
-                                    <Input
-                                        name="city"
-                                        value={formData.city}
-                                        onChange={handleInputChange}
+                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Country *</Label>
+                                    <Select
                                         className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                        options={countryOptions}
+                                        value={selectedCountryCode}
+                                        onChange={(e) => handleCountryChange(e.target.value)}
+                                        placeholder="Select a country"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Address</Label>
+                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">State *</Label>
+                                    <Select
+                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                        options={stateOptions}
+                                        value={selectedStateCode}
+                                        onChange={(e) => handleStateChange(e.target.value)}
+                                        disabled={!selectedCountryCode}
+                                        placeholder={selectedCountryCode ? "Select a state" : "Select country first"}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">City *</Label>
+                                    <Select
+                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                        options={cityOptions}
+                                        value={selectedCityName}
+                                        onChange={(e) => handleCityChange(e.target.value)}
+                                        disabled={!selectedStateCode}
+                                        placeholder={selectedStateCode ? "Select a city" : "Select state first"}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Street Address *</Label>
                                     <Input
                                         name="address"
                                         value={formData.address}
                                         onChange={handleInputChange}
                                         className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                        placeholder="No. 82 Yaya Abatan Rd"
+                                    />
+                                </div>
+
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Address Note (Optional)</Label>
+                                    <Input
+                                        name="addressNote"
+                                        value={formData.addressNote}
+                                        onChange={handleInputChange}
+                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                        placeholder="Floor, Building name, etc."
                                     />
                                 </div>
                             </div>
