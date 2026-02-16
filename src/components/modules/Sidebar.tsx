@@ -10,7 +10,8 @@ import {
     Calendar,
     Users,
     Home,
-    Clock
+    Clock,
+    Settings
 } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
@@ -23,6 +24,7 @@ const sidebarItems = [
     { icon: Briefcase, label: "Services", href: "/dashboard/services" },
     { icon: Users, label: "Staffs", href: "/dashboard/staffs" },
     { icon: Clock, label: "Working Hours", href: "/dashboard/working-hours" },
+    { icon: Settings, label: "Settings", href: "/dashboard/settings" },
 ];
 
 export function Sidebar() {

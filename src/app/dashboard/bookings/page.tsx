@@ -259,8 +259,8 @@ export default function BookingsPage() {
     };
 
     return (
-        <div className="space-y-8 p-8">
-            <div className="flex items-end justify-between">
+        <div className="p-8">
+            <div className="flex items-end justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Bookings Management</h1>
                     <p className="text-gray-500 mt-1">Manage appointments, track bookings, and handle scheduling for your business</p>
@@ -275,7 +275,7 @@ export default function BookingsPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {statsConfig.map((stat, index) => (
                     <Card key={index} className="border-none shadow-sm hover:shadow-md ring-1 ring-gray-100 bg-white">
                         <CardContent className="p-6 px-4">
@@ -294,7 +294,7 @@ export default function BookingsPage() {
             </div>
 
             {/* Tabs & Filters */}
-            <div className="space-y-6">
+            <div className="space-y-6 mb-8">
                 <div className="flex items-center gap-8 border-b border-gray-200">
                     {["Upcoming", "Completed", "Canceled"].map((tab) => (
                         <button
