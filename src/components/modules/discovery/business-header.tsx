@@ -98,12 +98,12 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
                         <Button
                             onClick={() => setIsSaved(!isSaved)}
                             variant="outline"
-                            className={`h-12 px-6 rounded-2xl border-gray-100 font-bold gap-2 transition-all ${isSaved ? 'bg-red-50 text-red-500 border-red-100' : 'text-gray-700 hover:bg-gray-50'}`}
+                            className={`h-12 px-6 rounded-md border-gray-100 font-bold gap-2 transition-all ${isSaved ? 'bg-red-50 text-red-500 border-red-100' : 'text-gray-700 hover:bg-gray-50'}`}
                         >
                             <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500' : ''}`} />
                             Save
                         </Button>
-                        <Button variant="outline" className="h-12 px-6 rounded-2xl border-gray-100 text-gray-700 font-bold gap-2 hover:bg-gray-50 transition-all">
+                        <Button variant="outline" className="h-12 px-6 rounded-md border-gray-100 text-gray-700 font-bold gap-2 hover:bg-gray-50 transition-all">
                             <Share2 className="w-4 h-4" />
                             Share
                         </Button>
