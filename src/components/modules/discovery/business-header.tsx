@@ -72,7 +72,7 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1">
                                             {[1, 2, 3, 4].map((s) => (
-                                                <Star key={s} className="w-4 h-4 fill-[#F5B800] text-[#F5B800]" />
+                                                <Star key={s} className="w-4 h-4 fill-[#E89D24] text-[#E89D24]" />
                                             ))}
                                             <Star className="w-4 h-4 text-gray-200" />
                                         </div>

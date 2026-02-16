@@ -30,7 +30,7 @@ export function BusinessReviewsTab({ rating, totalReviews, ratingDistribution, r
         <div className="space-y-10">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10">
                 <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Customer Review</h2>
-                <Button className="bg-[#F5B800] hover:bg-[#E5A800] text-white font-bold h-12 px-10 rounded-xl shadow-lg shadow-yellow-500/10">
+                <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold h-12 px-10 rounded-xl shadow-lg shadow-yellow-500/10">
                     Write a Review
                 </Button>
             </div>
@@ -43,7 +43,7 @@ export function BusinessReviewsTab({ rating, totalReviews, ratingDistribution, r
                         {[1, 2, 3, 4, 5].map((s) => (
                             <Star
                                 key={s}
-                                className={`w-6 h-6 ${s <= Math.floor(rating) ? "fill-[#F5B800] text-[#F5B800]" : "text-gray-200"}`}
+                                className={`w-6 h-6 ${s <= Math.floor(rating) ? "fill-[#E89D24] text-[#E89D24]" : "text-gray-200"}`}
                             />
                         ))}
                     </div>
@@ -56,7 +56,7 @@ export function BusinessReviewsTab({ rating, totalReviews, ratingDistribution, r
                             <span className="text-sm font-bold text-gray-500 w-12">{dist.stars} stars</span>
                             <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
                                 <div
-                                    className="h-full bg-[#F5B800] rounded-full"
+                                    className="h-full bg-[#E89D24] rounded-full"
                                     style={{ width: `${(dist.count / totalReviews) * 100}%` }}
                                 />
                             </div>
@@ -84,7 +84,7 @@ export function BusinessReviewsTab({ rating, totalReviews, ratingDistribution, r
                                         {[1, 2, 3, 4, 5].map((s) => (
                                             <Star
                                                 key={s}
-                                                className={`w-3.5 h-3.5 ${s <= review.rating ? "fill-[#F5B800] text-[#F5B800]" : "text-gray-200"}`}
+                                                className={`w-3.5 h-3.5 ${s <= review.rating ? "fill-[#E89D24] text-[#E89D24]" : "text-gray-200"}`}
                                             />
                                         ))}
                                         <span className="ml-2 text-xs text-gray-400 font-medium">{review.date}</span>

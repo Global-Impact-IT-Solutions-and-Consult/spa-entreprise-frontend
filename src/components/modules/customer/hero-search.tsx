@@ -5,24 +5,17 @@ import { MapPin, Scissors, Calendar } from "lucide-react";
 
 export function HeroSearch() {
     return (
-        <section className="relative bg-gradient-to-br from-gray-50 to-gray-100 py-12 md:py-20">
+        <section className="relative bg-gradient-to-br from-gray-50 to-gray-100 py-12 md:py-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
             {/* Background Image Overlay */}
             <div className="absolute inset-0 opacity-10">
                 <div
-                    className="w-full h-full bg-cover bg-center"
+                    className="w-full h-full bg-cover bg-center rounded-md"
                     style={{
                         backgroundImage: "url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=80')"
                     }}
                 />
             </div>
-
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-8 md:mb-10">
-                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-                        Find & Book Premium<br className="md:hidden" /> Wellness Services
-                    </h1>
-                </div>
-
                 {/* Search Bar */}
                 <div className="max-w-4xl mx-auto bg-white rounded-2xl md:rounded-full shadow-xl p-3 md:p-2">
                     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-2">
@@ -59,7 +52,7 @@ export function HeroSearch() {
                         </div>
 
                         {/* Search Button */}
-                        <Button className="bg-[#F5B800] hover:bg-[#E5A800] text-white rounded-lg md:rounded-full px-8 py-4 md:py-6 font-semibold w-full md:w-auto">
+                        <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white rounded-lg md:rounded-full px-8 py-4 md:py-6 font-semibold w-full md:w-auto">
                             Search
                         </Button>
                     </div>

@@ -28,7 +28,7 @@ export function CustomerHeader() {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo and Brand */}
                     <Link href="/" className="flex items-center space-x-2">
-                        <div className="bg-[#F5B800] px-2 py-1 rounded">
+                        <div className="bg-[#E89D24] px-2 py-1 rounded">
                             <span className="text-white font-bold text-sm">WP</span>
                         </div>
                         <div className="hidden sm:block">
@@ -38,7 +38,7 @@ export function CustomerHeader() {
 
                     {/* Desktop: City Selector */}
                     <div className="hidden md:flex items-center space-x-2">
-                        <select className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5B800]">
+                        <select className="px-3 py-2 text-sm">
                             <option>Lagos</option>
                             <option>Abuja</option>
                             <option>Port Harcourt</option>
@@ -53,8 +53,8 @@ export function CustomerHeader() {
                                 key={link.href}
                                 href={link.href}
                                 className={`flex items-center space-x-1 transition font-medium ${isActive(link.href)
-                                        ? "text-[#F5B800]"
-                                        : "text-gray-700 hover:text-[#F5B800]"
+                                    ? "text-[#E89D24]"
+                                    : "text-gray-700 hover:text-[#E89D24]"
                                     }`}
                             >
                                 <link.icon className="w-4 h-4" />
@@ -66,7 +66,7 @@ export function CustomerHeader() {
                     {/* Desktop: Sign In Button */}
                     <div className="hidden md:flex items-center space-x-4">
                         <Link href="/auth/login">
-                            <Button variant="outline" className="flex items-center space-x-2 border-gray-300 hover:border-[#F5B800] hover:text-[#F5B800]">
+                            <Button variant="outline" className="flex items-center space-x-2 border-gray-300 hover:border-[#E89D24] hover:text-[#E89D24]">
                                 <User className="w-4 h-4" />
                                 <span>Sign in</span>
                             </Button>
@@ -103,7 +103,7 @@ export function CustomerHeader() {
                 {/* Drawer Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200">
                     <div className="flex items-center space-x-2">
-                        <div className="bg-[#F5B800] px-2 py-1 rounded">
+                        <div className="bg-[#E89D24] px-2 py-1 rounded">
                             <span className="text-white font-bold text-sm">WP</span>
                         </div>
                         <h3 className="font-bold text-lg">WellnessPro</h3>
@@ -119,7 +119,7 @@ export function CustomerHeader() {
                 {/* City Selector in Drawer */}
                 <div className="p-4 border-b border-gray-200">
                     <label className="block text-xs font-medium text-gray-600 mb-2">Select City</label>
-                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5B800]">
+                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E89D24]">
                         <option>Lagos</option>
                         <option>Abuja</option>
                         <option>Port Harcourt</option>
@@ -134,8 +134,8 @@ export function CustomerHeader() {
                             key={link.href}
                             href={link.href}
                             className={`flex items-center space-x-3 rounded-lg px-3 py-3 transition font-medium ${isActive(link.href)
-                                    ? "text-[#F5B800] bg-gray-50"
-                                    : "text-gray-700 hover:text-[#F5B800] hover:bg-gray-50"
+                                ? "text-[#E89D24] bg-gray-50"
+                                : "text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
                                 }`}
                             onClick={() => setMobileMenuOpen(false)}
                         >
@@ -148,7 +148,7 @@ export function CustomerHeader() {
                 {/* Sign In Button at Bottom */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
                     <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-                        <Button className="w-full bg-[#F5B800] hover:bg-[#E5A800] text-white flex items-center justify-center space-x-2 py-3">
+                        <Button className="w-full bg-[#E89D24] hover:bg-[#E5A800] text-white flex items-center justify-center space-x-2 py-3">
                             <User className="w-4 h-4" />
                             <span>Sign in</span>
                         </Button>

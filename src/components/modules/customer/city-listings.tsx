@@ -37,8 +37,8 @@ export function CityListings() {
                             href={`/cities/${city.name.toLowerCase()}`}
                             className="group"
                         >
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center hover:shadow-lg hover:border-[#F5B800] transition-all duration-300">
-                                <div className="bg-white w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#F5B800] transition-colors">
+                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center hover:shadow-lg hover:border-[#E89D24] transition-all duration-300">
+                                <div className="bg-white w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#E89D24] transition-colors">
                                     <MapPin className="w-7 h-7 md:w-8 md:h-8 text-gray-600 group-hover:text-white transition-colors" />
                                 </div>
                                 <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-1">{city.name}</h3>
@@ -49,9 +49,9 @@ export function CityListings() {
 
                     {/* View All Card */}
                     <Link href="/cities" className="group">
-                        <div className="bg-[#F5B800] border border-[#F5B800] rounded-2xl p-8 text-center hover:shadow-lg hover:bg-[#E5A800] transition-all duration-300">
+                        <div className="bg-[#E89D24] border border-[#E89D24] rounded-2xl p-8 text-center hover:shadow-lg hover:bg-[#E5A800] transition-all duration-300">
                             <div className="bg-white w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <MapPin className="w-7 h-7 md:w-8 md:h-8 text-[#F5B800]" />
+                                <MapPin className="w-7 h-7 md:w-8 md:h-8 text-[#E89D24]" />
                             </div>
                             <h3 className="text-lg md:text-xl font-bold text-white mb-1">View All</h3>
                             <p className="text-sm text-white">20+ cities</p>

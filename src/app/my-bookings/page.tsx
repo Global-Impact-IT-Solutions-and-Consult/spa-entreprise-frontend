@@ -56,8 +56,8 @@ export default function MyBookingsPage() {
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
                             className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === tab
-                                    ? "bg-[#F5B800] text-white shadow-sm"
-                                    : "text-gray-500 hover:text-gray-700"
+                                ? "bg-[#E89D24] text-white shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
                                 }`}
                         >
                             {tab}
@@ -66,7 +66,7 @@ export default function MyBookingsPage() {
                 </div>
 
                 {/* Bookings Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {activeTab === "Upcoming" ? (
                         MOCK_BOOKINGS.map((booking) => (
                             <BookingCard key={booking.id} booking={booking} />

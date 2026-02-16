@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { ServiceCard } from "@/components/modules/discovery/service-card";
-import { Search, MapPin, SlidersHorizontal, Heart, Store, Home } from "lucide-react";
+import { Search, MapPin, SlidersHorizontal, Heart, Store, Home, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const MOCK_SERVICES = [
@@ -102,6 +102,7 @@ const MOCK_SERVICES = [
 
 export default function DiscoverPage() {
     const [activeFilter, setActiveFilter] = useState("All Services");
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     const filters = [
         { id: "All Services", label: "All Services", icon: null },
@@ -111,7 +112,7 @@ export default function DiscoverPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50/50">
+        <div className="min-h-screen bg-[#F9FAFB]">
             <CustomerHeader />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -124,47 +125,48 @@ export default function DiscoverPage() {
                 </div>
 
                 {/* Search & Filter Container */}
-                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-12">
+                <div className="bg-white p-6 rounded-md border border-gray-100 shadow-sm mb-12">
                     {/* Search Bar */}
-                    <div className="flex flex-col md:flex-row gap-4 mb-8">
+                    <div className="flex flex-col md:flex-row gap-4 mb-8 border border-gray-200 rounded-md p-2">
                         <div className="flex-1 relative">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <input
                                 type="text"
                                 placeholder="Search services"
-                                className="w-full pl-12 pr-4 h-14 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#F5B800] focus:border-transparent transition-all"
+                                className="w-full pl-12 pr-4 h-12 focus:outline-none transition-all cursor-pointer"
                             />
                         </div>
                         <div className="relative md:w-64">
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <select className="w-full pl-12 pr-4 h-14 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#F5B800] focus:border-transparent appearance-none transition-all cursor-pointer">
+                            <select className="w-full pl-12 pr-4 h-12 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-200 appearance-none focus:border-transparent transition-all cursor-pointer">
                                 <option>Lagos</option>
                                 <option>Abuja</option>
                                 <option>Port Harcourt</option>
                             </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         </div>
-                        <Button className="h-14 px-10 bg-[#F5B800] hover:bg-[#E5A800] text-white font-bold rounded-2xl shadow-lg shadow-yellow-500/20">
+                        <Button className="h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold rounded-md shadow-lg shadow-yellow-500/20">
                             Search
                         </Button>
                     </div>
 
                     {/* Filter Bar */}
-                    <div className="flex flex-col gap-6">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-gray-900">Filter by</h3>
-                            <button className="flex items-center gap-2 text-sm font-bold text-[#F5B800] hover:text-[#E5A800] transition-colors">
+                    <div className={`flex flex-col gap-6`}>
+                        <div className={`flex items-center ${showAdvanced ? "justify-between" : "justify-end"}`}>
+                            <h3 className={`text-xl font-bold text-gray-900 ${showAdvanced ? "" : "hidden"}`}>Filter by</h3>
+                            <button onClick={() => setShowAdvanced(!showAdvanced)} className="flex items-center gap-2 text-sm font-bold text-[#E89D24] hover:text-[#E5A800] transition-colors">
                                 <SlidersHorizontal className="w-4 h-4" />
                                 Advance Filter Option
                             </button>
                         </div>
-                        <div className="flex flex-wrap gap-3">
+                        <div className={`flex flex-wrap gap-3 ${showAdvanced ? "" : "hidden"}`}>
                             {filters.map((filter) => (
                                 <button
                                     key={filter.id}
                                     onClick={() => setActiveFilter(filter.id)}
                                     className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-sm font-bold transition-all border ${activeFilter === filter.id
-                                            ? "bg-[#F5B800] border-[#F5B800] text-white shadow-md"
-                                            : "bg-white border-gray-100 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                                        ? "bg-[#E89D24] border-[#E89D24] text-white shadow-md"
+                                        : "bg-white border-gray-100 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
                                         }`}
                                 >
                                     {filter.icon && <filter.icon className={`w-4 h-4 ${activeFilter === filter.id ? 'text-white' : 'text-gray-400'}`} />}

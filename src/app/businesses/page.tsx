@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
-import { Search, MapPin, Star, Building2, Scissors, Info, Filter } from "lucide-react";
+import { Search, MapPin, Star, Building2, Scissors, Info, Filter, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const MOCK_BUSINESSES = [
@@ -62,7 +62,7 @@ export default function BusinessDirectoryPage() {
     const [activeTab, setActiveTab] = useState("All Businesses");
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-[#F9FAFB]">
             <CustomerHeader />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -75,17 +75,17 @@ export default function BusinessDirectoryPage() {
                 </div>
 
                 {/* Filter Container */}
-                <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-sm mb-12">
+                <div className="bg-white p-6 md:p-8 rounded-md border border-gray-100 shadow-sm mb-12">
                     {/* Search Input */}
-                    <div className="relative mb-8">
+                    <div className="relative mb-8 border border-gray-200 rounded-md p-2">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <div className="flex flex-col md:flex-row gap-4">
                             <input
                                 type="text"
                                 placeholder="Search Business name"
-                                className="flex-1 pl-14 pr-4 h-14 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#F5B800] transition-all bg-gray-50/30"
+                                className="flex-1 pl-14 pr-4 h-12 focus:outline-none"
                             />
-                            <Button className="h-14 px-12 bg-[#F5B800] hover:bg-[#E5A800] font-bold text-white rounded-2xl shadow-lg shadow-yellow-500/10">
+                            <Button className="h-12 px-12 bg-[#E89D24] hover:bg-[#E5A800] font-bold text-white rounded-md shadow-lg shadow-yellow-500/10">
                                 Search
                             </Button>
                         </div>
@@ -101,53 +101,78 @@ export default function BusinessDirectoryPage() {
                             {/* Business Type */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Business Type</label>
-                                <select className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#F5B800] transition-all">
-                                    <option>All Businesses</option>
-                                    <option>Barbershop</option>
-                                    <option>Spa & Wellness</option>
-                                    <option>Nail Studio</option>
-                                </select>
+                                <div className="relative">
+                                    <select className="w-full h-12 px-4 rounded-md border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none">
+                                        <option>All Businesses</option>
+                                        <option>Barbershop</option>
+                                        <option>Spa & Wellness</option>
+                                        <option>Nail Studio</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                </div>
                             </div>
 
                             {/* Service Offered */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Service Offered</label>
-                                <select className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#F5B800] transition-all">
-                                    <option>All Service</option>
-                                    <option>Haircut</option>
-                                    <option>Massage</option>
-                                    <option>Facials</option>
-                                </select>
+                                <div className="relative">
+                                    <select className="w-full h-12 px-4 rounded-md border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none">
+                                        <option>All Service</option>
+                                        <option>Haircut</option>
+                                        <option>Massage</option>
+                                        <option>Facials</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                </div>
                             </div>
 
                             {/* Minimum Rating */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Minimum Rating</label>
-                                <select className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#F5B800] transition-all">
-                                    <option>All Rating</option>
-                                    <option>4.5+</option>
-                                    <option>4.0+</option>
-                                    <option>3.5+</option>
-                                </select>
+                                <div className="relative">
+                                    <select className="w-full h-12 px-4 rounded-md border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none">
+                                        <option>All Rating</option>
+                                        <option>4.5+</option>
+                                        <option>4.0+</option>
+                                        <option>3.5+</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                </div>
                             </div>
 
                             {/* Location Radius */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Location</label>
-                                <select className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#F5B800] transition-all">
-                                    <option>Within 5 miles</option>
-                                    <option>Within 10 miles</option>
-                                    <option>Within 20 miles</option>
-                                </select>
+                                <div className="relative">
+                                    <select className="w-full h-12 px-4 rounded-md border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none">
+                                        <option>Within 5 miles</option>
+                                        <option>Within 10 miles</option>
+                                        <option>Within 20 miles</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                </div>
+                            </div>
+
+                            {/* Location Radius */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Location</label>
+                                <div className="relative">
+                                    <select className="w-full h-12 px-4 rounded-md border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none">
+                                        <option>Within 5 miles</option>
+                                        <option>Within 10 miles</option>
+                                        <option>Within 20 miles</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                </div>
                             </div>
                         </div>
 
                         {/* Bottom Filter Controls */}
                         <div className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-4">
                             <label className="flex items-center gap-3 cursor-pointer group self-start">
-                                <div className="relative w-6 h-6 rounded-md border-2 border-gray-200 group-hover:border-[#F5B800] transition-colors">
+                                <div className="relative w-6 h-6 rounded-md border-2 border-gray-200 group-hover:border-[#E89D24] transition-colors">
                                     <input type="checkbox" className="absolute opacity-0 w-full h-full cursor-pointer peer" />
-                                    <div className="absolute inset-0 bg-[#F5B800] rounded-sm scale-0 peer-checked:scale-100 transition-transform" />
+                                    <div className="absolute inset-0 bg-[#E89D24] rounded-sm scale-0 peer-checked:scale-100 transition-transform" />
                                 </div>
                                 <span className="text-sm font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Verified businesses only</span>
                             </label>
@@ -156,7 +181,7 @@ export default function BusinessDirectoryPage() {
                                 <Button variant="ghost" className="flex-1 sm:flex-none h-12 px-8 font-bold text-gray-500 hover:text-gray-700">
                                     Reset All
                                 </Button>
-                                <Button className="flex-1 sm:flex-none h-12 px-8 bg-[#F5B800] hover:bg-[#E5A800] font-bold text-white rounded-xl">
+                                <Button className="flex-1 sm:flex-none h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] font-bold text-white rounded-xl">
                                     Apply Filters
                                 </Button>
                             </div>

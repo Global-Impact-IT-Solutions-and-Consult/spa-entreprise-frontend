@@ -2,107 +2,122 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, MapPin, Star, CheckCircle2, Clock } from "lucide-react";
+import { Heart, MapPin, Star, BadgeCheck, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 
 interface BusinessDirectoryCardProps {
     business: {
-        id: string;
+        id: string | number;
         name: string;
         location: string;
         description: string;
         rating: number;
         reviews: number;
         image: string;
-        isOpen: boolean;
-        isVerified: boolean;
-        startingPrice: string;
+        isOpen?: boolean;
+        isVerified?: boolean;
+        verified?: boolean;
+        startingPrice?: string;
+        price?: string;
     };
 }
 
 export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) {
-    const [isFavorite, setIsFavorite] = useState(false);
+    const verified = business.verified ?? business.isVerified;
+    const price = business.price ?? business.startingPrice;
 
     // For the demo, we use precision-cut as the ID if it matches our mock business
-    const businessId = business.name.toLowerCase().includes("precision") ? "precision-cut" : business.id;
+    const businessId = typeof business.id === 'string' && business.name.toLowerCase().includes("precision") ? "precision-cut" : business.id;
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group flex flex-col h-full">
-            {/* Image Container */}
-            <Link href={`/businesses/${businessId}`} className="block relative h-48 md:h-56 overflow-hidden">
+        <div
+            className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col"
+        >
+            {/* Image */}
+            <Link href={`/businesses/${businessId}`} className="relative h-48 bg-gray-200 block overflow-hidden group">
                 <Image
                     src={business.image}
                     alt={business.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                {/* Badges Overlay */}
-                <div className="absolute top-4 left-4 flex gap-2">
-                    {business.isVerified && (
-                        <div className="bg-blue-600 text-white p-1.5 rounded-full shadow-lg">
-                            <CheckCircle2 className="w-4 h-4" />
+                {/* Badges */}
+                <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                    {verified && (
+                        <div className="bg-blue-500 rounded-full p-1.5 shadow-sm">
+                            <BadgeCheck className="w-4 h-4 text-white" />
                         </div>
                     )}
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        className="ml-auto bg-white/90 backdrop-blur-sm rounded-full p-1.5 hover:bg-gray-100 transition-colors shadow-sm"
+                    >
+                        <Heart className="w-4 h-4 text-gray-600" />
+                    </button>
                 </div>
-                <button
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setIsFavorite(!isFavorite);
-                    }}
-                    className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm hover:bg-white transition-colors z-10"
-                >
-                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
-                </button>
             </Link>
 
             {/* Content */}
-            <div className="p-5 flex flex-col flex-1">
+            <div className="p-4 flex flex-col flex-1">
+                {/* Business Name */}
                 <div className="flex items-center justify-between mb-2">
-                    <Link href={`/businesses/${businessId}`} className="flex items-center gap-2 hover:text-[#F5B800] transition-colors">
-                        <span className="p-1.5 bg-gray-50 rounded-lg text-gray-700">
-                            <Clock className="w-4 h-4" />
-                        </span>
-                        <h3 className="text-lg font-bold text-gray-900 line-clamp-1">{business.name}</h3>
+                    <Link href={`/businesses/${businessId}`} className="flex items-center gap-2 group/title">
+                        <Building2 className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover/title:text-[#E89D24] transition-colors" />
+                        <h3 className="font-bold text-gray-900 text-xs md:text-sm line-clamp-1 group-hover/title:text-[#E89D24] transition-colors">{business.name}</h3>
                     </Link>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md ${business.isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}>
+                    <div className={`rounded px-2 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wider ${business.isOpen ? "bg-[#63C68B1A] text-[#63C68B]" : "bg-red-50 text-red-500"}`}>
                         {business.isOpen ? "Open" : "Closed"}
-                    </span>
-                </div>
-                {/* ... existing fields ... */}
-                <div className="flex items-center gap-1.5 text-gray-500 text-sm mb-3 font-medium">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <span>{business.location}</span>
+                    </div>
                 </div>
 
-                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-4 flex-1 font-medium">
+                {/* Location */}
+                <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+                    <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-gray-400" />
+                    <span className="line-clamp-1">{business.location}</span>
+                </div>
+
+                {/* Description */}
+                <p className="text-xs text-gray-500 mb-4 line-clamp-2 ml-4 flex-1">
                     {business.description}
                 </p>
 
-                {/* Rating & reviews */}
-                <div className="flex items-center gap-1.5 mb-5">
-                    <span className="text-sm font-bold text-gray-900">{business.rating}</span>
-                    <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                                key={star}
-                                className={`w-3.5 h-3.5 ${star <= Math.floor(business.rating) ? 'fill-[#F5B800] text-[#F5B800]' : 'text-gray-200'}`}
-                            />
-                        ))}
+                <hr className="mb-4" />
+
+                {/* Rating */}
+                <div className="flex items-center gap-4 mb-4 flex-wrap">
+                    <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-[#E89D24] text-[#E89D24]" />
+                        <span className="font-semibold text-xs text-gray-900">{business.rating}</span>
                     </div>
-                    <span className="text-xs text-gray-400 font-medium">({business.reviews} reviews)</span>
+                    <div className="flex items-center gap-1">
+                        <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                                <Star
+                                    key={i}
+                                    className={`w-2 h-2 ${i < Math.floor(business.rating)
+                                        ? "fill-[#E89D24] text-[#E89D24]"
+                                        : "fill-gray-200 text-gray-200"
+                                        }`}
+                                />
+                            ))}
+                        </div>
+                        <span className="text-[10px] md:text-xs text-gray-400">({business.reviews} reviews)</span>
+                    </div>
                 </div>
 
-                {/* Pricing & Action */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">From</span>
-                        <span className="text-lg font-bold text-gray-900">₦{business.startingPrice}</span>
+                <hr className="mb-4" />
+
+                {/* Price and Button */}
+                <div className="flex items-center justify-between gap-2 mt-auto">
+                    <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-bold text-gray-400 tracking-wider uppercase">From</p>
+                        <p className="font-bold text-gray-900 text-sm md:text-base">₦{price}</p>
                     </div>
                     <Link href={`/businesses/${businessId}`}>
-                        <Button className="bg-[#F5B800] hover:bg-[#E5A800] text-white font-bold h-11 px-6 rounded-xl transition-all active:scale-95 shadow-lg shadow-yellow-500/10">
+                        <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs md:text-sm font-bold h-10 px-4 md:px-6 rounded-lg transition-all active:scale-95 shadow-lg shadow-yellow-500/10">
                             View More
                         </Button>
                     </Link>

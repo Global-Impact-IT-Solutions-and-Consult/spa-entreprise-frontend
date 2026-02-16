@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, Clock, MapPin, Star } from "lucide-react";
+import { Heart, Clock, MapPin, Star, Store, House } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { BsShop } from "react-icons/bs";
 
 interface ServiceCardProps {
     service: {
@@ -56,35 +57,36 @@ export function ServiceCard({ service }: ServiceCardProps) {
             {/* Content */}
             <div className="p-4">
                 <div className="mb-3">
-                    <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1 group-hover:text-[#F5B800] transition-colors line-clamp-1">
+                    <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1 group-hover:text-[#E89D24] transition-colors line-clamp-1">
                         {service.title}
                     </h3>
-                    <Link href={`/businesses/${businessId}`} className="text-sm text-gray-500 font-medium hover:text-[#F5B800] transition-colors">
+                    <Link href={`/businesses/${businessId}`} className="text-sm text-gray-500 font-medium hover:text-[#E89D24] transition-colors">
                         {service.businessName}
                     </Link>
                 </div>
-                {/* ... existing content ... */}
+                <hr className="my-3" />
                 {/* Time & Buffer */}
-                <div className="flex items-center gap-4 mb-4 border-b border-gray-50 pb-4">
+                <div className="flex items-center gap-4 border-b border-gray-50">
                     <div className="flex items-center gap-1.5 text-gray-600">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium">{service.duration}</span>
+                        <Clock className="w-3 h-3 text-gray-400" />
+                        <span className="text-xs font-medium">{service.duration}</span>
                     </div>
-                    <div className="text-gray-300 text-xs">Buffer <span className="text-gray-800 font-semibold">{service.buffer}</span></div>
+                    <div className="text-gray-400 text-xs">Buffer <span className="text-gray-800 font-semibold">{service.buffer}</span></div>
                 </div>
+                <hr className="my-3" />
 
                 {/* Pricing Layout */}
                 <div className="grid grid-cols-2 gap-4 mb-5">
                     <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-gray-500">
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                            <Store className="w-3 h-3 text-gray-400" />
                             <span className="text-[10px] font-bold uppercase tracking-wide">In Store</span>
                         </div>
                         <p className="text-lg font-bold text-gray-900">₦{service.inStorePrice}</p>
                     </div>
                     <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-gray-500">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                            <House className="w-3 h-3 text-gray-400" />
                             <span className="text-[10px] font-bold uppercase tracking-wide">Home Service</span>
                         </div>
                         <p className="text-lg font-bold text-gray-900">₦{service.homePrice}</p>
@@ -97,7 +99,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                         <MapPin className="w-3.5 h-3.5" />
                         <span className="text-xs font-medium">{service.location} • {service.distance}</span>
                     </div>
-                    <Button className="bg-[#F5B800] hover:bg-[#E5A800] text-white text-xs font-bold px-4 h-9 rounded-lg transition-transform active:scale-95 shadow-sm">
+                    <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs font-bold px-4 h-9 rounded transition-transform active:scale-95 shadow-sm">
                         Book Service
                     </Button>
                 </div>

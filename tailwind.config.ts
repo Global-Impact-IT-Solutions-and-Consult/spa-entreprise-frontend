@@ -28,6 +28,10 @@ const config: Config = {
                 md: "calc(var(--radius) - 2px)",
                 sm: "calc(var(--radius) - 4px)",
             },
+            fontFamily: {
+                inter: ["var(--font-inter)", "sans-serif"],
+                playfair: ["var(--font-playfair-display)", "serif"],
+            },
         },
     },
     plugins: [],

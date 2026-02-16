@@ -35,13 +35,13 @@ export function BusinessStaffTab({ staffs }: BusinessStaffTabProps) {
                             </Avatar>
                             <div className="pt-2">
                                 <h4 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h4>
-                                <p className="text-[#F5B800] font-bold text-sm mb-3">{member.role}</p>
+                                <p className="text-[#E89D24] font-bold text-sm mb-3">{member.role}</p>
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center gap-1">
                                         {[1, 2, 3, 4, 5].map((s) => (
                                             <Star
                                                 key={s}
-                                                className={`w-3.5 h-3.5 ${s <= Math.floor(member.rating) ? "fill-[#F5B800] text-[#F5B800]" : "text-gray-200"}`}
+                                                className={`w-3.5 h-3.5 ${s <= Math.floor(member.rating) ? "fill-[#E89D24] text-[#E89D24]" : "text-gray-200"}`}
                                             />
                                         ))}
                                     </div>

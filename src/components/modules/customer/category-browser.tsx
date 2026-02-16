@@ -40,11 +40,11 @@ const categories = [
 
 export function CategoryBrowser() {
     return (
-        <section className="py-12 md:py-16 bg-white">
+        <section className="py-12 md:py-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between mb-8 md:mb-10">
                     <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Browse Category</h2>
-                    <Link href="/categories" className="text-[#F5B800] hover:text-[#E5A800] font-semibold text-sm md:text-base">
+                    <Link href="/categories" className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">
                         View All
                     </Link>
                 </div>
@@ -58,7 +58,7 @@ export function CategoryBrowser() {
                                 href={`/categories/${category.name.toLowerCase()}`}
                                 className="group"
                             >
-                                <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                                <div className="bg-white rounded-2xl p-6 md:p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                                     <div className={`${category.color} w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 group-hover:scale-110 transition-transform`}>
                                         <IconComponent className={`w-6 h-6 md:w-8 md:h-8 ${category.iconColor}`} />
                                     </div>

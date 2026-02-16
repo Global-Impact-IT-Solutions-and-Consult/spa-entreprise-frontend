@@ -150,7 +150,7 @@ export default function BusinessDetailsPage() {
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={`px-8 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab
-                                        ? "bg-[#F5B800] text-white shadow-lg shadow-yellow-500/20"
+                                        ? "bg-[#E89D24] text-white shadow-lg shadow-yellow-500/20"
                                         : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
                                         }`}
                                 >
