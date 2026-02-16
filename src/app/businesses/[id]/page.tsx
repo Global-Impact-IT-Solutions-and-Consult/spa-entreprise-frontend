@@ -7,12 +7,16 @@ import { BusinessHeader } from "@/components/modules/discovery/business-header";
 import { BusinessInfoSidebar } from "@/components/modules/discovery/business-info-sidebar";
 import { ServiceCard } from "@/components/modules/discovery/service-card";
 import { Button } from "@/components/ui/button";
+import { BusinessStaffTab } from "@/components/modules/discovery/business-staff-tab";
+import { BusinessAboutTab } from "@/components/modules/discovery/business-about-tab";
+import { BusinessReviewsTab } from "@/components/modules/discovery/business-reviews-tab";
+import { BusinessGalleryTab } from "@/components/modules/discovery/business-gallery-tab";
 
 const MOCK_BUSINESS = {
     id: "precision-cut",
     name: "Precision Cut Barbershop",
     rating: 4.6,
-    reviews: 184,
+    reviews: 247,
     category: "Barbershop",
     distance: "1.2 mi away",
     startingPrice: "4,500",
@@ -22,6 +26,42 @@ const MOCK_BUSINESS = {
     phone: "(415) 555-0123",
     email: "info@precisioncutbarbers.com",
     status: "Open now • Closes at 7:00 PM",
+    description: `Established in 2015, Precision Cut Barbershop has been serving the Downtown community with exceptional barbering services. Our shop combines traditional barbering techniques with modern styles to provide the perfect look for every client.\n\nWe specialize in precision haircuts, detailed beard work, and traditional straight razor shaves. Our barbers are trained in the latest techniques and trends, ensuring you always leave looking your best.`,
+    ratingDistribution: [
+        { stars: 5, count: 173 },
+        { stars: 4, count: 49 },
+        { stars: 3, count: 15 },
+        { stars: 2, count: 7 },
+        { stars: 1, count: 3 },
+    ],
+    gallery: [
+        "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80",
+        "https://images.unsplash.com/photo-1512690196246-86e580db7940?w=800&q=80",
+        "https://images.unsplash.com/photo-1621605815841-28d9446e3a53?w=800&q=80",
+        "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80",
+        "https://images.unsplash.com/photo-1599351431613-18ef1fdd27e1?w=800&q=80",
+        "https://images.unsplash.com/photo-1516914943479-89db7d9ae7d1?w=800&q=80",
+    ],
+    staffs: [
+        {
+            id: "st1",
+            name: "Marcus Johnson",
+            role: "Expert Barber",
+            rating: 4.6,
+            reviews: 184,
+            description: "Specializes in skin fades, traditional straight razor shaves, and beard artistry. Trained in London and New York.",
+            specialties: ["Skin Fades", "Straight Razor", "Beard Work"],
+        },
+        {
+            id: "st2",
+            name: "Marcus Johnson",
+            role: "Expert Barber",
+            rating: 4.6,
+            reviews: 184,
+            description: "Specializes in skin fades, traditional straight razor shaves, and beard artistry. Trained in London and New York.",
+            specialties: ["Skin Fades", "Straight Razor", "Beard Work"],
+        }
+    ],
     hours: [
         { day: "Monday", time: "9:00 AM - 7:00 PM" },
         { day: "Tuesday", time: "9:00 AM - 7:00 PM" },
@@ -33,6 +73,27 @@ const MOCK_BUSINESS = {
     ]
 };
 
+const MOCK_REVIEWS = [
+    {
+        id: "r1",
+        userName: "Michael Chen",
+        rating: 5,
+        date: "2 weeks ago",
+        comment: "Marcus gave me the best fade I've ever had! Attention to detail is incredible. The hot towel treatment was the perfect finishing touch. Will definitely be back regularly.",
+        service: "Skin Fade & Beard Trim",
+        provider: "Marcus",
+    },
+    {
+        id: "r2",
+        userName: "Sarah Johnson",
+        rating: 4,
+        date: "3 weeks ago",
+        comment: "Took my 8-year-old son here for his first real haircut. David was amazing with him - so patient and made the experience fun. My son loves his new haircut and can't wait to come back!",
+        service: "Kids Haircut",
+        provider: "David",
+    },
+];
+
 const MOCK_SERVICES = [
     {
         id: "s1",
@@ -40,9 +101,11 @@ const MOCK_SERVICES = [
         businessName: "Precision Cut Barbershop",
         category: "Nail Service",
         duration: "60min",
-        bufferTime: "20min",
+        buffer: "20min",
         inStorePrice: "7,000",
-        homeServicePrice: "15,000",
+        homePrice: "15,000",
+        rating: 4.8,
+        reviews: 124,
         image: "https://images.unsplash.com/photo-1604654894610-df4906ecefe7?w=800&q=80",
         location: "Ikeja GRA",
         distance: "1.2 mi",
@@ -53,9 +116,11 @@ const MOCK_SERVICES = [
         businessName: "Precision Cut Barbershop",
         category: "Barbing",
         duration: "60min",
-        bufferTime: "20min",
+        buffer: "20min",
         inStorePrice: "7,000",
-        homeServicePrice: "15,000",
+        homePrice: "15,000",
+        rating: 4.7,
+        reviews: 98,
         image: "https://images.unsplash.com/photo-1599351431247-f57933842922?w=800&q=80",
         location: "Downtown",
         distance: "0.8 mi",
@@ -68,7 +133,7 @@ export default function BusinessDetailsPage() {
     const tabs = ["Services", "About", "Reviews", "Gallery", "Staff's"];
 
     return (
-        <div className="min-h-screen bg-gray-50/30">
+        <div className="min-h-screen bg-gray-50/10">
             <CustomerHeader />
 
             <BusinessHeader business={MOCK_BUSINESS} />
@@ -77,16 +142,16 @@ export default function BusinessDetailsPage() {
                 <div className="flex flex-col lg:flex-row gap-12">
 
                     {/* Main Content Area */}
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         {/* Tabs */}
-                        <div className="bg-gray-100/50 p-1.5 rounded-2xl flex flex-wrap gap-1 mb-10 w-fit">
+                        <div className="bg-gray-100/50 p-1.5 rounded-2xl flex gap-1 mb-10 w-fit w-full overflow-auto">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={`px-8 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab
-                                            ? "bg-[#F5B800] text-white shadow-lg shadow-yellow-500/20"
-                                            : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
+                                        ? "bg-[#F5B800] text-white shadow-lg shadow-yellow-500/20"
+                                        : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
                                         }`}
                                 >
                                     {tab}
@@ -94,30 +159,40 @@ export default function BusinessDetailsPage() {
                             ))}
                         </div>
 
-                        {/* Tab Search/Title Area (Mock for now) */}
-                        <div className="mb-8 flex items-center justify-between">
-                            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-                                Our {activeTab}
-                            </h2>
-                        </div>
-
                         {/* Render Active Tab Content */}
                         {activeTab === "Services" && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {MOCK_SERVICES.map((service) => (
-                                    <ServiceCard key={service.id} service={service} />
-                                ))}
+                            <div>
+                                <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-8">Our Services</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {MOCK_SERVICES.map((service) => (
+                                        <ServiceCard key={service.id} service={service} />
+                                    ))}
+                                </div>
                             </div>
                         )}
 
-                        {activeTab !== "Services" && (
-                            <div className="bg-white rounded-3xl border border-dashed border-gray-200 p-20 flex flex-col items-center justify-center text-center">
-                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                    <span className="text-2xl">⏳</span>
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-1">{activeTab} coming soon</h3>
-                                <p className="text-gray-500 text-sm">We are working on this section. Check back later!</p>
-                            </div>
+                        {activeTab === "About" && (
+                            <BusinessAboutTab
+                                businessName={MOCK_BUSINESS.name}
+                                description={MOCK_BUSINESS.description}
+                            />
+                        )}
+
+                        {activeTab === "Reviews" && (
+                            <BusinessReviewsTab
+                                rating={MOCK_BUSINESS.rating}
+                                totalReviews={MOCK_BUSINESS.reviews}
+                                ratingDistribution={MOCK_BUSINESS.ratingDistribution}
+                                reviews={MOCK_REVIEWS}
+                            />
+                        )}
+
+                        {activeTab === "Gallery" && (
+                            <BusinessGalleryTab images={MOCK_BUSINESS.gallery} />
+                        )}
+
+                        {activeTab === "Staff's" && (
+                            <BusinessStaffTab staffs={MOCK_BUSINESS.staffs} />
                         )}
                     </div>
 

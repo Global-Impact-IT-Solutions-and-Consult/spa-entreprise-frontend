@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
-import { Heart, Clock, MapPin, Star, ChevronRight } from "lucide-react";
+import { Heart, Clock, MapPin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -25,6 +26,9 @@ interface ServiceCardProps {
 
 export function ServiceCard({ service }: ServiceCardProps) {
     const [isFavorite, setIsFavorite] = useState(false);
+
+    // For the demo, we use precision-cut as the ID if it matches our mock business
+    const businessId = service.businessName.toLowerCase().includes("precision") ? "precision-cut" : service.id;
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group">
@@ -55,9 +59,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
                     <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1 group-hover:text-[#F5B800] transition-colors line-clamp-1">
                         {service.title}
                     </h3>
-                    <p className="text-sm text-gray-500 font-medium">{service.businessName}</p>
+                    <Link href={`/businesses/${businessId}`} className="text-sm text-gray-500 font-medium hover:text-[#F5B800] transition-colors">
+                        {service.businessName}
+                    </Link>
                 </div>
-
+                {/* ... existing content ... */}
                 {/* Time & Buffer */}
                 <div className="flex items-center gap-4 mb-4 border-b border-gray-50 pb-4">
                     <div className="flex items-center gap-1.5 text-gray-600">

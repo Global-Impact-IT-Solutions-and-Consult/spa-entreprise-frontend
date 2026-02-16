@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 const MOCK_BUSINESSES = [
     {
-        id: "1",
+        id: "precision-cut",
         name: "Elite Barber Lounge",
         location: "Lekki Phase 1, Lagos",
         description: "Premium barbershop offering haircuts, beard grooming, and traditional shaves with modern styling techniques.",
