@@ -116,7 +116,7 @@ export default function DashboardLayout({
                                 <span className="absolute top-2 right-2 h-2 w-2 bg-[#F59E0B] rounded-full ring-2 ring-white" />
                             </button>
                             <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#F59E0B]">
-                                <AvatarImage src={avatarUrl || ""} />
+                                <AvatarImage src={avatarUrl || undefined} />
                                 <AvatarFallback className="bg-[#F59E0B] text-white font-bold">
                                     {user?.firstName?.charAt(0) || "D"}
                                 </AvatarFallback>

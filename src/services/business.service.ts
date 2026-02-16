@@ -116,6 +116,8 @@ export interface Business {
     onboardingCompletedAt?: string | null;
     averageRating?: string;
     totalReviews?: number;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface ServiceCategory {

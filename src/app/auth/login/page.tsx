@@ -56,6 +56,14 @@ function LoginContent() {
                 // Store user in auth store
                 setAuthStore(data.user, data.accessToken, data.refreshToken || '');
 
+                // If user is admin, redirect directly to admin dashboard (bypass onboarding)
+                if (data.user.role === 'admin') {
+                    toaster.create({ title: "Login successful", type: "success" });
+                    router.push('/admin');
+                    setIsLoading(false);
+                    return;
+                }
+
                 // Small delay to ensure cookies are set before making API calls
                 // This is especially important on localhost where cookie setting might be async
                 await new Promise(resolve => setTimeout(resolve, 100));

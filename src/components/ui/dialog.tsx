@@ -15,7 +15,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 
     return (
         <div
-            className="fixed top-0 inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0 h-full"
+            className="fixed top-0 inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0 h-full"
             onClick={() => onOpenChange(false)}
         >
             <div onClick={(e) => e.stopPropagation()} className="w-full h-full flex items-center justify-center">
@@ -27,7 +27,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 
 export function DialogContent({ children, className }: { children: React.ReactNode, className?: string }) {
     return (
-        <div className={cn("relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg md:w-full animate-in zoom-in-95 slide-in-from-bottom-5", className)}>
+        <div className={cn("relative z-[101] grid w-full max-w-lg gap-4 border bg-white p-6 shadow-lg duration-200 sm:rounded-lg md:w-full animate-in zoom-in-95 slide-in-from-bottom-5", className)}>
             {children}
         </div>
     )
