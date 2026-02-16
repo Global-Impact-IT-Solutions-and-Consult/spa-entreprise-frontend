@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import {
+    Share2,
     CheckCircle2,
+    Bell,
     MapPin,
     Save,
     ChevronDown,
@@ -27,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from '@/components/ui/select';
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
+import CustomInput from '@/components/ui/InputGroup';
 import { businessService, BusinessImage } from "@/services/business.service";
 import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
@@ -501,127 +504,139 @@ export default function BusinessProfilePage() {
             </div>
 
             {/* Business Info Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 mt-2">
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100">
-                            <MapPin className="h-6 w-6 text-gray-900" />
+                    <h2 className="text-4xl font-black text-gray-900 tracking-tight">
+                        {business?.businessName || "Precision Cut Barbershop"}
+                    </h2>
+
+                    <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
+                        <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-0.5">
+                                {[1, 2, 3, 4].map(i => (
+                                    <Star key={i} className="h-4 w-4 fill-[#F59E0B] text-[#F59E0B]" />
+                                ))}
+                                <Star className="h-4 w-4 fill-[#F59E0B] text-[#F59E0B] opacity-50" />
+                            </div>
+                            <span className="text-gray-900 font-bold ml-1">4.6</span>
+                            <span className="text-gray-400 font-medium">(184 reviews)</span>
                         </div>
-                        <h2 className="text-4xl font-black text-gray-900 tracking-tight">
-                            {business?.businessName || "Serenity Spa & Wellness"}
-                        </h2>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 text-sm font-bold">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Verified Business
-                        </div>
-                        <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-bold">
+
+                        <div className="h-1 w-1 rounded-full bg-gray-300" />
+
+                        <div className="flex items-center gap-2 text-gray-500">
                             <ImageIcon className="h-4 w-4" />
-                            {businessTypeLabels[business?.businessTypeCode || "spa"] || "Spa and Wellness Center"}
+                            <span>{businessTypeLabels[business?.businessTypeCode || "spa"] || "Barbershop"}</span>
                         </div>
                     </div>
                 </div>
+
+                <div className="flex items-center gap-3">
+                    <Button variant="outline" className="h-11 px-6 rounded-xl font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        Live
+                    </Button>
+                    <Button variant="outline" className="h-11 px-6 rounded-xl font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700">
+                        <Share2 className="h-4 w-4" />
+                        Share
+                    </Button>
+                </div>
             </div>
 
-            {/* Tabs */}
-            <div className="border-b border-gray-200 mb-8">
-                <nav className="flex gap-1">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.label}
-                            onClick={() => tab.label !== "Settings" && setActiveTab(tab.label)}
-                            disabled={tab.label === "Settings"}
-                            className={cn(
-                                "flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all relative",
-                                activeTab === tab.label
-                                    ? "text-[#F59E0B] border-b-2 border-[#F59E0B]"
-                                    : tab.label === "Settings"
-                                        ? "text-gray-300 cursor-not-allowed"
-                                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                            )}
-                        >
-                            {tab.icon}
-                            {tab.label}
-                            {tab.label === "Gallery" && totalImageCount > 0 && (
-                                <span className="text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-bold">{totalImageCount}</span>
-                            )}
-                            {tab.label === "Settings" && (
-                                <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-bold">Soon</span>
-                            )}
-                        </button>
-                    ))}
+            {/* Tabs Navigation */}
+            <div className="border-b border-gray-100 mb-8">
+                <nav className="flex gap-8">
+                    {tabs.filter(t => t.label !== "Settings").map((tab) => {
+                        const isActive = activeTab === tab.label;
+                        return (
+                            <button
+                                key={tab.label}
+                                onClick={() => setActiveTab(tab.label)}
+                                className={cn(
+                                    "flex items-center gap-2 px-2 py-4 text-sm font-bold transition-all relative",
+                                    isActive
+                                        ? "text-[#F59E0B]"
+                                        : "text-gray-400 hover:text-gray-600"
+                                )}
+                            >
+                                {tab.label === "About" ? <Info className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
+                                {tab.label}
+                                {isActive && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#F59E0B] rounded-t-full shadow-sm shadow-amber-200" />
+                                )}
+                            </button>
+                        );
+                    })}
                 </nav>
             </div>
 
             {/* Tab Content */}
             {activeTab === "About" && (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 md:p-12 space-y-12 animate-in fade-in duration-300 mb-8">
-                    <form className="space-y-12" onSubmit={handleSaveProfile}>
+                <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-10 space-y-10 animate-in fade-in duration-300 mb-8">
+                    <form className="space-y-10" onSubmit={handleSaveProfile}>
                         <section className="space-y-8">
                             <h3 className="text-2xl font-bold text-gray-900">Business Information</h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Business Name</Label>
-                                    <Input
+                                <div className="md:col-span-2">
+                                    <CustomInput
+                                        label="Business Name"
                                         name="businessName"
                                         value={formData.businessName}
                                         onChange={handleInputChange}
-                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                        placeholder="Business Name"
+                                        labelClassName="uppercase tracking-widest text-[11px] font-bold"
                                     />
                                 </div>
 
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Business Type</Label>
-                                    <Select
-                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
-                                        options={businessTypes}
-                                        value={formData.businessTypeCode}
-                                        onChange={(e) => setFormData({ ...formData, businessTypeCode: e.target.value })}
-                                    />
-                                </div>
-
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Business Description</Label>
-                                    <textarea
-                                        name="description"
-                                        value={formData.description}
-                                        onChange={handleInputChange}
-                                        className="w-full min-h-[160px] p-4 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium outline-none transition-colors"
-                                        placeholder="Enter your business description here..."
-                                    />
-                                    <p className="text-xs text-gray-400 font-medium">Maximum 500 characters. This appears on your public profile.</p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Contact Phone *</Label>
-                                    <div className="relative">
-                                        <Input
-                                            name="phone"
-                                            value={formData.phone}
-                                            onChange={handleInputChange}
-                                            className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                <div className="md:col-span-2">
+                                    <div className="space-y-1.5 w-full">
+                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Business Type</Label>
+                                        <Select
+                                            className="h-[56px] bg-white border border-gray-200 focus:border-[#F59E0B] rounded-lg text-gray-900 font-medium"
+                                            options={businessTypes}
+                                            value={formData.businessTypeCode}
+                                            onChange={(e) => setFormData({ ...formData, businessTypeCode: e.target.value })}
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Contact Email *</Label>
-                                    <div className="relative">
-                                        <Input
-                                            name="email"
-                                            value={formData.email}
+                                <div className="md:col-span-2">
+                                    <div className="space-y-1.5 w-full">
+                                        <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Business Description</Label>
+                                        <textarea
+                                            name="description"
+                                            value={formData.description}
                                             onChange={handleInputChange}
-                                            className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                            className="w-full min-h-[160px] p-4 bg-white border border-gray-200 focus:border-[#F59E0B] rounded-lg text-gray-900 font-medium outline-none transition-all focus:ring-1 focus:ring-[#F59E0B]"
+                                            placeholder="Enter your business description here..."
                                         />
+                                        <p className="text-[11px] text-gray-400 font-medium">Maximum 500 characters. This appears on your public profile.</p>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Country *</Label>
+                                <CustomInput
+                                    label="Contact Phone *"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    placeholder="+234 801 234 5678"
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
+
+                                <CustomInput
+                                    label="Contact Email *"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    placeholder="contact@business.com"
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
+
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Country *</Label>
                                     <Select
-                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                        className="h-[56px] bg-white border border-gray-200 focus:border-[#F59E0B] rounded-lg text-gray-900 font-medium"
                                         options={countryOptions}
                                         value={selectedCountryCode}
                                         onChange={(e) => handleCountryChange(e.target.value)}
@@ -629,10 +644,10 @@ export default function BusinessProfilePage() {
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">State *</Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">State *</Label>
                                     <Select
-                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
+                                        className="h-[56px] bg-white border border-gray-200 focus:border-[#F59E0B] rounded-lg text-gray-900 font-medium"
                                         options={stateOptions}
                                         value={selectedStateCode}
                                         onChange={(e) => handleStateChange(e.target.value)}
@@ -641,37 +656,32 @@ export default function BusinessProfilePage() {
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">City *</Label>
-                                    <Select
-                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
-                                        options={cityOptions}
-                                        value={selectedCityName}
-                                        onChange={(e) => handleCityChange(e.target.value)}
-                                        disabled={!selectedStateCode}
-                                        placeholder={selectedStateCode ? "Select a city" : "Select state first"}
-                                    />
-                                </div>
+                                <CustomInput
+                                    label="City *"
+                                    name="cityName"
+                                    value={selectedCityName}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCityChange(e.target.value)}
+                                    placeholder="City"
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
 
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Street Address *</Label>
-                                    <Input
-                                        name="address"
-                                        value={formData.address}
-                                        onChange={handleInputChange}
-                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
-                                        placeholder="No. 82 Yaya Abatan Rd"
-                                    />
-                                </div>
+                                <CustomInput
+                                    label="Address *"
+                                    name="address"
+                                    value={formData.address}
+                                    onChange={handleInputChange}
+                                    placeholder="Street Address"
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
 
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Address Note (Optional)</Label>
-                                    <Input
+                                <div className="md:col-span-2">
+                                    <CustomInput
+                                        label="Address Note (Optional)"
                                         name="addressNote"
                                         value={formData.addressNote}
                                         onChange={handleInputChange}
-                                        className="h-14 bg-white border-2 border-gray-100 focus:border-[#F59E0B] rounded-xl text-gray-900 font-medium"
-                                        placeholder="Floor, Building name, etc."
+                                        placeholder="Address notes"
+                                        labelClassName="uppercase tracking-widest text-[11px] font-bold"
                                     />
                                 </div>
                             </div>
@@ -681,9 +691,9 @@ export default function BusinessProfilePage() {
                             <Button
                                 type="submit"
                                 disabled={isSaving}
-                                className="w-full h-16 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold text-lg rounded-2xl shadow-xl shadow-[#F59E0B]/20 flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+                                className="w-full h-14 bg-[#E8951E] hover:bg-[#D48616] text-white font-bold text-base rounded-lg flex items-center justify-center gap-3 transition-all active:scale-[0.99] shadow-md shadow-amber-100"
                             >
-                                {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : <Save className="h-6 w-6" />}
+                                {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </Button>
                         </div>
@@ -694,31 +704,26 @@ export default function BusinessProfilePage() {
             {activeTab === "Gallery" && (
                 <div className="space-y-8 animate-in fade-in duration-300 mb-8">
                     {/* Gallery Header */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-50">
                         <div>
-                            <h3 className="text-2xl font-bold text-gray-900">Photo Gallery</h3>
-                            <p className="text-gray-500 mt-1 text-sm">
-                                Upload and manage all your business images. Set any image as your primary photo.
-                            </p>
+                            <h3 className="text-xl font-bold text-gray-900">Gallery</h3>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <Button
-                                onClick={() => galleryFileInputRef.current?.click()}
-                                disabled={isUploading}
-                                className="h-11 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl px-6 flex items-center gap-2"
-                            >
-                                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                                Upload Photos
-                            </Button>
-                            <input
-                                type="file"
-                                ref={galleryFileInputRef}
-                                onChange={handleFileSelect}
-                                accept="image/*"
-                                multiple
-                                className="hidden"
-                            />
-                        </div>
+                        <Button
+                            onClick={() => galleryFileInputRef.current?.click()}
+                            disabled={isUploading}
+                            className="h-11 bg-[#E8951E] hover:bg-[#D48616] text-white font-bold rounded-lg px-6 flex items-center gap-2 shadow-sm"
+                        >
+                            <Upload className="h-4 w-4" />
+                            Upload image
+                        </Button>
+                        <input
+                            type="file"
+                            ref={galleryFileInputRef}
+                            onChange={handleFileSelect}
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                        />
                     </div>
 
                     {isLoadingImages ? (
@@ -727,95 +732,42 @@ export default function BusinessProfilePage() {
                             <p className="text-sm text-gray-500 font-medium">Loading gallery...</p>
                         </div>
                     ) : allImages.length === 0 ? (
-                        <div className="bg-white rounded-3xl border-2 border-dashed border-gray-200 p-16 flex flex-col items-center justify-center gap-4">
+                        <div className="bg-white rounded-[2rem] border-2 border-dashed border-gray-100 p-16 flex flex-col items-center justify-center gap-4">
                             <div className="p-4 bg-amber-50 rounded-2xl">
                                 <ImageIcon className="h-10 w-10 text-[#F59E0B]" />
                             </div>
                             <h4 className="text-lg font-bold text-gray-900">No gallery images yet</h4>
                             <p className="text-gray-500 text-sm text-center max-w-md">
-                                Upload photos of your business to showcase your services, facilities, and activities to potential customers.
+                                Upload photos of your business to showcase your services, facilities, and activities.
                             </p>
-                            <Button
-                                onClick={() => galleryFileInputRef.current?.click()}
-                                className="mt-2 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl px-8 h-12"
-                            >
-                                <Upload className="h-4 w-4 mr-2" />
-                                Upload Your First Photo
-                            </Button>
                         </div>
                     ) : (
-                        <div className="space-y-10">
-                            {Object.entries(groupedGallery).map(([category, imgs]) => (
-                                <div key={category} className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <h4 className="text-lg font-bold text-gray-900">
-                                            {categoryLabels[category] || category}
-                                        </h4>
-                                        <span className="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-bold">
-                                            {imgs.length} photo{imgs.length !== 1 ? "s" : ""}
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {imgs.map((img) => (
-                                            <div
-                                                key={img.id}
-                                                className="relative aspect-square rounded-2xl overflow-hidden group border border-gray-100 bg-gray-50 cursor-pointer"
-                                                onClick={() => setLightboxImage(img)}
-                                            >
-                                                <Image
-                                                    src={img.url}
-                                                    alt={img.caption || "Gallery image"}
-                                                    width={300}
-                                                    height={300}
-                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                />
-                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <ZoomIn className="h-8 w-8 text-white drop-shadow-lg" />
-                                                </div>
-                                                {/* Primary badge */}
-                                                {img.isPrimary && (
-                                                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm">
-                                                        <Star className="h-3 w-3 fill-current" />
-                                                        Primary
-                                                    </div>
-                                                )}
-                                                {/* Action buttons */}
-                                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    {!img.isPrimary && (
-                                                        <div className="group/btn relative">
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleSetPrimary(img.id);
-                                                                }}
-                                                                className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-amber-500 hover:bg-amber-50 shadow-sm"
-                                                            >
-                                                                <Star className="h-3.5 w-3.5" />
-                                                            </button>
-                                                            <div className="absolute bottom-full right-0 mb-2 w-max px-2 py-1 bg-black/80 text-white text-[10px] font-bold rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none">
-                                                                Set as Primary
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDeleteImage(img.id);
-                                                        }}
-                                                        className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-red-500 hover:bg-red-50 shadow-sm"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </button>
-                                                </div>
-                                                {img.caption && (
-                                                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-8">
-                                                        <p className="text-white text-xs font-medium truncate">{img.caption}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {allImages.map((img) => (
+                                <div
+                                    key={img.id}
+                                    className="relative aspect-square rounded-2xl overflow-hidden group border border-gray-100 bg-gray-50 cursor-pointer"
+                                    onClick={() => setLightboxImage(img)}
+                                >
+                                    <Image
+                                        src={img.url}
+                                        alt={img.caption || "Gallery image"}
+                                        fill
+                                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+
+                                    {/* Action buttons */}
+                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteImage(img.id);
+                                            }}
+                                            className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-red-500 hover:bg-red-50 shadow-sm"
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -890,9 +842,8 @@ export default function BusinessProfilePage() {
                         <Image
                             src={lightboxImage.url}
                             alt={lightboxImage.caption || "Gallery image"}
-                            width={1200}
-                            height={800}
-                            className="w-full h-full object-contain rounded-2xl"
+                            fill
+                            className="object-contain rounded-2xl"
                             onClick={(e) => e.stopPropagation()}
                         />
                         {lightboxImage.caption && (
