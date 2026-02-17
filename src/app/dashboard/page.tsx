@@ -141,7 +141,7 @@ export default function DashboardPage() {
                             { title: "Add Service", sub: "Create new service offering", icon: Plus, bgColor: "bg-orange-50", iconColor: "text-orange-400", href: "/dashboard/services" },
                             { title: "Add Staff", sub: "New team member", icon: UserPlus, bgColor: "bg-blue-50", iconColor: "text-blue-400", href: "/dashboard/staffs" },
                             { title: "Set Hours", sub: "Business schedule", icon: CalendarClock, bgColor: "bg-green-50", iconColor: "text-green-400", href: "/dashboard/working-hours" },
-                            { title: "View Profile", sub: "View your public profile", icon: Eye, bgColor: "bg-gray-50", iconColor: "text-gray-400", href: `/spas/${businessId}` },
+                            { title: "View Profile", sub: "View your public profile", icon: Eye, bgColor: "bg-gray-50", iconColor: "text-gray-400", href: `/dashboard/business` },
                         ].map((action, i) => (
                             <Link href={action.href} key={i}>
                                 <Card className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer h-full">

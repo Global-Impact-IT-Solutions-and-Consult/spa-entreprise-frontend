@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, CreateServiceDto, Service } from '@/services/business.service';
+import { EditServiceModal } from '@/components/modules/services/EditServiceModal';
 import { cn } from '@/lib/utils';
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
@@ -91,6 +92,7 @@ export default function ServicesPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
+    const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
 
     // Form State
     const [serviceName, setServiceName] = useState('');
@@ -381,7 +383,7 @@ export default function ServicesPage() {
                                     service={service}
                                     categoryName={categories.find(c => c.id === service.categoryId)?.name || 'Service'}
                                     onDelete={() => handleDeleteService(service.id)}
-                                    onEdit={() => toaster.create({ title: "Coming soon", description: "Edit functionality will be available in the dashboard." })}
+                                    onEdit={() => setServiceToEdit(service)}
                                 />
                             ))}
                         </div>
@@ -653,6 +655,20 @@ export default function ServicesPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Edit Service Modal */}
+            {businessId && (
+                <EditServiceModal
+                    businessId={businessId}
+                    service={serviceToEdit}
+                    isOpen={!!serviceToEdit}
+                    onClose={() => setServiceToEdit(null)}
+                    onSuccess={(updatedService) => {
+                        setServices(services.map(s => s.id === updatedService.id ? updatedService : s));
+                    }}
+                    categoryOptions={categoryOptions}
+                />
+            )}
 
             <ConfirmModal
                 isOpen={!!serviceToDelete}

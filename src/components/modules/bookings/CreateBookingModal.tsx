@@ -203,7 +203,7 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
                                             type="date"
                                             value={selectedDate}
                                             onChange={(e) => setSelectedDate(e.target.value)}
-                                            className="h-14 pl-4 pr-12 rounded-xl border-2"
+                                            className="h-14 pl-4 pr-4 rounded-xl border-2"
                                         />
                                     </div>
                                 </section>

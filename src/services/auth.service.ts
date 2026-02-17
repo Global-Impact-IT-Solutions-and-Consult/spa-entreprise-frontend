@@ -92,6 +92,7 @@ export const authService = {
     // Reset Password
     resetPassword: async (data: { email: string; otp: string; password?: string }) => {
         const response = await apiClient.post('/auth/reset-password', data);
+        console.log(response.data);
         return response.data;
     },
 
