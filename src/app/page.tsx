@@ -1,30 +1,28 @@
-"use client";
-
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { CustomerHeader } from "@/components/modules/customer/customer-header";
+import { HeroSearch } from "@/components/modules/customer/hero-search";
+import { CategoryBrowser } from "@/components/modules/customer/category-browser";
+import { FeaturedBusinesses } from "@/components/modules/customer/featured-businesses";
+import { TrustFeatures } from "@/components/modules/customer/trust-features";
+import { CityListings } from "@/components/modules/customer/city-listings";
+import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="max-w-md text-center">
-        <h1 className="mb-6 text-4xl font-bold text-gray-900">Welcome to ServiceHub</h1>
-        <p className="mb-8 text-lg text-gray-600">
-          Your tailored solution for managing your service business.
-        </p>
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-          <Link href="/auth/login">
-            <Button size="lg" className="w-full sm:w-auto bg-[#2D5B5E] hover:bg-[#254E50]">
-              Log In
-            </Button>
-          </Link>
-          <Link href="/auth/register">
-            <Button size="lg" variant="outline" className="w-full sm:w-auto">
-              Get Started
-            </Button>
-          </Link>
+    <div className="min-h-screen bg-[#F9FAFB]">
+      <CustomerHeader />
+      <main>
+        <div className="mb-5 md:mb-6 mt-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+              Find & Book Premium<br className="md:hidden" /> Wellness Services
+          </h1>
         </div>
-      </div>
+        <HeroSearch />
+        <CategoryBrowser />
+        <FeaturedBusinesses />
+        <TrustFeatures />
+        <CityListings />
+      </main>
+      <CustomerFooter />
     </div>
   );
 }
