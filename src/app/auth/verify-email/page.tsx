@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
 import { toaster } from "@/components/ui/toaster";
 import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store/auth.store';
 
 import Image from 'next/image';
 
@@ -48,11 +49,41 @@ function VerifyEmailContent() {
 
         setIsLoading(true);
         try {
-            await authService.verifyEmail({ email, otp: code });
-            toaster.create({ title: "Email verified!", description: "You can now login.", type: "success" });
-            if (redirectTo === 'login') {
-                router.push(`/auth/login?email=${encodeURIComponent(email)}`);
+            const response = await authService.verifyEmail({ email, otp: code });
+
+            // Handle logical login state
+            const user = response.user;
+            const accessToken = response.accessToken || response.access_token;
+            const refreshToken = response.refreshToken || response.refresh_token;
+
+            if (user && accessToken && refreshToken) {
+                // Update global auth store
+                useAuthStore.getState().login(user, accessToken, refreshToken);
+
+                toaster.create({
+                    title: "Email verified successfully!",
+                    description: `Welcome ${user.firstName || ''}, you are now logged in.`,
+                    type: "success"
+                });
+
+                // Conditional Redirect based on role and onboarding status
+                if (user.role === 'business') {
+                    // Check if onboarding is completed
+                    const hasCompletedOnboarding = user.businesses?.some(b => b.onboardingCompleted) || false;
+
+                    if (!hasCompletedOnboarding) {
+                        router.push('/onboarding/business-info');
+                    } else {
+                        router.push('/dashboard');
+                    }
+                } else if (user.role === 'admin') {
+                    router.push('/admin');
+                } else {
+                    router.push('/');
+                }
             } else {
+                // Fallback if tokens didn't come back for some reason
+                toaster.create({ title: "Email verified!", description: "Please log in with your credentials.", type: "success" });
                 router.push('/auth/login');
             }
         } catch (error) {

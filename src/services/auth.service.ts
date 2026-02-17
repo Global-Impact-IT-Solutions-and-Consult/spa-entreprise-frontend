@@ -39,6 +39,9 @@ export interface AuthResponse {
     refreshToken?: string;
     user?: User;
     message?: string;
+    // New fields potentially from verify-email or other endpoints
+    access_token?: string;
+    refresh_token?: string;
 }
 
 export const authService = {
@@ -73,7 +76,26 @@ export const authService = {
 
     // Verify Email
     verifyEmail: async (data: VerifyEmailDto) => {
-        const response = await apiClient.post('/auth/verify-email', data);
+        const response = await apiClient.post<AuthResponse>('/auth/verify-email', data);
+
+        // Handle automatic login if tokens are provided
+        const accessToken = response.data.accessToken || response.data.access_token;
+        const refreshToken = response.data.refreshToken || response.data.refresh_token;
+
+        if (accessToken) {
+            const isProduction = typeof window !== 'undefined' && process.env.NODE_ENV === 'production' && window.location.protocol === 'https:';
+            Cookies.set('accessToken', accessToken, {
+                secure: isProduction,
+                sameSite: 'strict'
+            });
+            if (refreshToken) {
+                Cookies.set('refreshToken', refreshToken, {
+                    secure: isProduction,
+                    sameSite: 'strict'
+                });
+            }
+        }
+
         return response.data;
     },
 

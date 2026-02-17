@@ -17,10 +17,13 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: !!Cookies.get('accessToken'), // Initialize based on token existence
 
-            login: (user) => {
+            login: (user, accessToken, refreshToken) => {
                 set({ user, isAuthenticated: true });
-                // Cookie setting is handled in authService usually, but redundancy here or there is fine. 
-                // We'll rely on authService for headers/cookies, store for UI state.
+
+                // Ensure cookies are set (redundancy for direct calls to store)
+                const isProduction = typeof window !== 'undefined' && process.env.NODE_ENV === 'production' && window.location.protocol === 'https:';
+                Cookies.set('accessToken', accessToken, { secure: isProduction, sameSite: 'strict' });
+                Cookies.set('refreshToken', refreshToken, { secure: isProduction, sameSite: 'strict' });
             },
 
             logout: () => {
