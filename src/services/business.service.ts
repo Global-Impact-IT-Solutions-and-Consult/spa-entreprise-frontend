@@ -146,6 +146,46 @@ export interface Staff {
     serviceIds?: string[];
 }
 
+export interface SearchSpasParams {
+    city?: string;
+    page?: number;
+    limit?: number;
+    serviceTypes?: string[];
+    minPrice?: number;
+    maxPrice?: number;
+    minRating?: number;
+    sortBy?: 'rating' | 'price' | 'newest' | 'name';
+    sortOrder?: 'asc' | 'desc';
+}
+
+export interface SpaSearchResult {
+    id: string;
+    businessName: string;
+    city: string;
+    address: string;
+    averageRating: number | null;
+    totalReviews: number;
+    primaryImageUrl: string | null;
+    // Added for compatibility with existing UI
+    name?: string;
+    location?: string;
+    image?: string;
+    rating?: number;
+    reviews?: number;
+}
+
+export interface PaginationMeta {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+
+export interface SearchSpasResponse {
+    data: SpaSearchResult[];
+    meta: PaginationMeta;
+}
+
 export interface BusinessImage {
     id: string;
     businessId: string;
@@ -229,6 +269,18 @@ export const businessService = {
     // Get Service Categories
     getServiceCategories: async () => {
         const response = await apiClient.get<ServiceCategory[]>('/service-categories');
+        return response.data;
+    },
+
+    // List all Spas (Public)
+    listSpas: async (params?: { page?: number; limit?: number; sortBy?: string; sortOrder?: string }) => {
+        const response = await apiClient.get<SearchSpasResponse>('/spas', { params });
+        return response.data;
+    },
+
+    // Search Spas by location and filters (Public)
+    searchSpas: async (params: SearchSpasParams) => {
+        const response = await apiClient.get<SearchSpasResponse>('/spas/search', { params });
         return response.data;
     },
 

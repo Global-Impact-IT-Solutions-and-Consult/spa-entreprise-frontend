@@ -1,58 +1,56 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
-
-const businesses = [
-    {
-        id: "precision-cut", // Changed to string to match directory patterns
-        name: "Elite Barber Lounge",
-        location: "Lekki Phase 1, Lagos",
-        description: "Premium barbershop offering haircuts, beard grooming, and traditional shaves with modern styling techniques.",
-        rating: 4.7,
-        reviews: 124,
-        price: "3,000",
-        image: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80",
-        isOpen: true,
-        verified: true,
-    },
-    {
-        id: "2",
-        name: "Facial Star",
-        location: "Ring Rd, Warri, Delta",
-        description: "We specialize in facial massages, to bring bring out the glow of your skin",
-        rating: 4.5,
-        reviews: 184,
-        price: "10,000",
-        image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80",
-        isOpen: true,
-        verified: false,
-    },
-    {
-        id: "3",
-        name: "Glow Beauty Salon",
-        location: "Abuja Central",
-        description: "Full-service beauty salon specializing in hair styling, makeup, facials, and nail services. Certified...",
-        rating: 4.7,
-        reviews: 154,
-        price: "4,500",
-        image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=80",
-        isOpen: true,
-        verified: true,
-    },
-    {
-        id: "4",
-        name: "Serenity Spa & Wellness",
-        location: "Victoria Island, Lagos",
-        description: "Premium wellness center offering spa treatments, massage therapy, and relaxation services in a tranquil...",
-        rating: 4.7,
-        reviews: 98,
-        price: "6,500",
-        image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&q=80",
-        isOpen: true,
-        verified: true,
-    },
-];
+import { businessService, SpaSearchResult } from "@/services/business.service";
+import { Loader2 } from "lucide-react";
 
 export function FeaturedBusinesses() {
+    const [businesses, setBusinesses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchFeatured = async () => {
+            try {
+                // Fetch top rated businesses
+                const response = await businessService.listSpas({ limit: 4, sortBy: 'rating', sortOrder: 'desc' });
+
+                // Map API results to the format expected by BusinessDirectoryCard
+                const mappedBusinesses = response.data.map((b: SpaSearchResult) => ({
+                    id: b.id,
+                    name: b.businessName,
+                    location: `${b.city}, ${b.address}`,
+                    description: "Premium spa and wellness services for your relaxation and beauty needs.", // Fallback description
+                    rating: b.averageRating || 0,
+                    reviews: b.totalReviews || 0,
+                    price: "5,000", // Fallback price as it's not in the list API
+                    image: b.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&q=80",
+                    isOpen: true,
+                    verified: true,
+                }));
+
+                setBusinesses(mappedBusinesses);
+            } catch (error) {
+                console.error("Failed to fetch featured businesses:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFeatured();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="py-12 bg-gray-50 flex justify-center items-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[#E89D24]" />
+            </div>
+        );
+    }
+
+    if (businesses.length === 0) return null;
+
     return (
         <section className="py-12 md:py-16 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
