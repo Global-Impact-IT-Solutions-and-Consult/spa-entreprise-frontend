@@ -280,6 +280,11 @@ export interface DashboardData {
     upcomingBookings: DashboardUpcomingBooking[];
 }
 
+export interface CityWithCount {
+    city: string;
+    businessCount: number;
+}
+
 export const businessService = {
     // Get My Businesses
     getMyBusinesses: async () => {
@@ -598,6 +603,12 @@ export const businessService = {
     // Get Dashboard Data
     getDashboard: async (businessId: string): Promise<DashboardData> => {
         const response = await apiClient.get(`/spas/${businessId}/dashboard`);
+        return response.data;
+    },
+
+    // Get Cities with Business Counts (Public)
+    getCitiesWithBusinessCounts: async (): Promise<CityWithCount[]> => {
+        const response = await apiClient.get<CityWithCount[]>('/spas/cities');
         return response.data;
     }
 };

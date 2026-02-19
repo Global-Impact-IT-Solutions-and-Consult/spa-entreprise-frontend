@@ -3,44 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MapPin, Loader2 } from "lucide-react";
-import { businessService } from "@/services/business.service";
-
-interface CityStat {
-    name: string;
-    businesses: number;
-}
+import { businessService, CityWithCount } from "@/services/business.service";
 
 export function CityListings() {
-    const [cityStats, setCityStats] = useState<CityStat[]>([]);
-    const [otherTotal, setOtherTotal] = useState(0);
+    const [cities, setCities] = useState<CityWithCount[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const majorCities = ["Lagos", "Abuja", "Port Harcourt"];
-
     useEffect(() => {
-        const fetchStats = async () => {
+        const fetchCities = async () => {
             try {
-                // 1. Fetch counts for major cities in parallel
-                const cityPromises = majorCities.map(async (cityName) => {
-                    const res = await businessService.searchSpas({ city: cityName, limit: 1 });
-                    return { name: cityName, businesses: res.meta.total };
-                });
-
-                // 2. Fetch global total
-                const globalTotalPromise = businessService.listSpas({ limit: 1 });
-
-                const [cities, globalRes] = await Promise.all([
-                    Promise.all(cityPromises),
-                    globalTotalPromise
-                ]);
-
-                // 3. Calculate "Others"
-                const top3Sum = cities.reduce((acc, curr) => acc + curr.businesses, 0);
-                const totalBusinesses = globalRes.meta.total;
-                const remaining = Math.max(0, totalBusinesses - top3Sum);
-
-                setCityStats(cities);
-                setOtherTotal(remaining);
+                const data = await businessService.getCitiesWithBusinessCounts();
+                setCities(data);
             } catch (error) {
                 console.error("Failed to fetch city stats:", error);
             } finally {
@@ -48,7 +21,7 @@ export function CityListings() {
             }
         };
 
-        fetchStats();
+        fetchCities();
     }, []);
 
     if (loading) {
@@ -59,6 +32,12 @@ export function CityListings() {
         );
     }
 
+    // Show the top cities (up to 3) and aggregate the rest into a summary card
+    const topCities = cities.slice(0, 3);
+    const remainingCities = cities.slice(3);
+    const remainingTotal = remainingCities.reduce((acc, c) => acc + c.businessCount, 0);
+    const totalCities = cities.length;
+
     return (
         <section className="py-16 md:py-24 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -66,14 +45,14 @@ export function CityListings() {
                     <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'var(--font-playfair)' }}>
                         Available in Major Cities
                     </h2>
-                    <p className="text-sm md:text-base text-gray-600">Find wellness services across Nigeria's top cities</p>
+                    <p className="text-sm md:text-base text-gray-600">Find wellness services across Nigeria&apos;s top cities</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    {cityStats.map((city, index) => (
+                    {topCities.map((city, index) => (
                         <Link
                             key={index}
-                            href={`/businesses?city=${encodeURIComponent(city.name)}`}
+                            href={`/businesses?city=${encodeURIComponent(city.city)}`}
                             className="group"
                         >
                             <div className="bg-white border border-gray-100 rounded-2xl p-8 md:p-12 text-center shadow-sm hover:shadow-xl hover:border-[#E89D24]/30 transition-all duration-500 hover:-translate-y-1">
@@ -81,9 +60,9 @@ export function CityListings() {
                                     <MapPin className="w-8 h-8 md:w-10 md:h-10 text-gray-400 group-hover:text-[#E89D24] transition-colors" />
                                 </div>
                                 <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-playfair)' }}>
-                                    {city.name}
+                                    {city.city}
                                 </h3>
-                                <p className="text-sm md:text-base text-gray-500 font-medium">{city.businesses} Businesses</p>
+                                <p className="text-sm md:text-base text-gray-500 font-medium">{city.businessCount} {city.businessCount === 1 ? 'Business' : 'Businesses'}</p>
                             </div>
                         </Link>
                     ))}
@@ -95,9 +74,9 @@ export function CityListings() {
                                 <MapPin className="w-8 h-8 md:w-10 md:h-10 text-gray-400 group-hover:text-[#E89D24] transition-colors" />
                             </div>
                             <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'var(--font-playfair)' }}>
-                                20 + Cities
+                                {totalCities-3}+ Cities
                             </h3>
-                            <p className="text-sm md:text-base text-gray-500 font-medium">{otherTotal} Businesses</p>
+                            <p className="text-sm md:text-base text-gray-500 font-medium">{remainingTotal} Businesses</p>
                         </div>
                     </Link>
                 </div>
