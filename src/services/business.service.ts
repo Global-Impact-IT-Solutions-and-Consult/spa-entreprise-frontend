@@ -70,7 +70,7 @@ export interface CreateServiceDto {
     price: number;
     duration: number;
     bufferTime?: number;
-    deliveryType: 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH';
+    deliveryType: 'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH';
     homeServicePrice?: number;
     maxServiceRadius?: number;
 }

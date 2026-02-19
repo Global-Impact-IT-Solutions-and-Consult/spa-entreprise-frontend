@@ -92,7 +92,7 @@ export default function BusinessDetailsPage() {
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h2>
                         <p className="text-gray-600 mb-8">{error || "Business not found."}</p>
                         <Button
-                            href="/businesses"
+                            onClick={() => window.location.href = '/discover'}
                             className="bg-[#E89D24] hover:bg-[#E5A800] text-white px-8 py-3 rounded-xl font-bold"
                         >
                             Back to Directory

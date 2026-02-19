@@ -60,7 +60,7 @@ const ServiceCard = ({ service, categoryName, onDelete, onEdit }: ServiceCardPro
                 </div>
                 <div className="flex items-center gap-2 text-gray-400">
                     <FiHome className="h-4 w-4" />
-                    <span className="text-xs font-medium text-gray-400">{service.deliveryType === 'HOME_SERVICE_ONLY' ? 'Home Service' : service.deliveryType === 'BOTH' ? 'Both' : 'On Site'}</span>
+                    <span className="text-xs font-medium text-gray-400">{service.deliveryType === 'HOME_SERVICE' ? 'Home Service' : service.deliveryType === 'BOTH' ? 'Both' : 'On Site'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-400 pl-4 border-l border-gray-50">
                     {service.deliveryType === 'BOTH' && (
@@ -74,7 +74,7 @@ const ServiceCard = ({ service, categoryName, onDelete, onEdit }: ServiceCardPro
                     <p className="text-lg font-bold text-gray-900 leading-none">₦{service.price.toLocaleString()}</p>
                 </div>
                 <div className="col-span-1 pl-4 border-l border-gray-50">
-                    {(service.deliveryType === 'BOTH' || service.deliveryType === 'HOME_SERVICE_ONLY') && service.homeServicePrice && (
+                    {(service.deliveryType === 'BOTH' || service.deliveryType === 'HOME_SERVICE') && service.homeServicePrice && (
                         <p className="text-lg font-bold text-gray-900 leading-none">₦{service.homeServicePrice.toLocaleString()}</p>
                     )}
                 </div>
@@ -102,7 +102,7 @@ export default function ServicesPage() {
     const [serviceDuration, setServiceDuration] = useState('');
     const [bufferTime, setBufferTime] = useState('10');
     const [selectedCategory, setSelectedCategory] = useState('');
-    const [deliveryType, setDeliveryType] = useState<'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH'>('IN_LOCATION_ONLY');
+    const [deliveryType, setDeliveryType] = useState<'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH'>('IN_LOCATION_ONLY');
     const [serviceRadius, setServiceRadius] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [serviceImage, setServiceImage] = useState<File | null>(null);
@@ -145,19 +145,25 @@ export default function ServicesPage() {
             toaster.create({ title: "Session Error", description: "Business ID missing.", type: "error" });
             return;
         }
-        if (!serviceName || !serviceDescription || !servicePrice || !serviceDuration || !selectedCategory) {
+        if (!serviceName || !serviceDescription || !serviceDuration || !selectedCategory) {
             toaster.create({ title: "Validation Error", description: "Please fill all required fields", type: "error" });
             return;
         }
 
+        // Validate onsite service price if delivery type includes home service
+        if ((deliveryType === 'IN_LOCATION_ONLY' || deliveryType === 'BOTH') && !servicePrice) {
+            toaster.create({ title: "Validation Error", description: "Onsite service price is required", type: "error" });
+            return;
+        }
+
         // Validate home service price if delivery type includes home service
-        if ((deliveryType === 'HOME_SERVICE_ONLY' || deliveryType === 'BOTH') && !homeServicePrice) {
+        if ((deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && !homeServicePrice) {
             toaster.create({ title: "Validation Error", description: "Home service price is required", type: "error" });
             return;
         }
 
         // Validate service radius if delivery type includes home service
-        if ((deliveryType === 'HOME_SERVICE_ONLY' || deliveryType === 'BOTH') && !serviceRadius) {
+        if ((deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && !serviceRadius) {
             toaster.create({ title: "Validation Error", description: "Service radius is required for home service", type: "error" });
             return;
         }
@@ -195,7 +201,7 @@ export default function ServicesPage() {
             }
 
             // Add home service fields if delivery type includes home service
-            if (deliveryType === 'HOME_SERVICE_ONLY' || deliveryType === 'BOTH') {
+            if (deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') {
                 payload.homeServicePrice = parseFloat(homeServicePrice);
                 payload.maxServiceRadius = parseFloat(serviceRadius);
             }
@@ -251,6 +257,7 @@ export default function ServicesPage() {
             setServiceRadius('');
             setServiceRadius('');
             setServiceImage(null);
+            setImagePreview(null);
 
         } catch (error) {
             const err = error as { response?: { data?: { message?: string, errors?: { field: string; messages?: string[]; message?: string }[] }, status?: number } };
@@ -536,11 +543,11 @@ export default function ServicesPage() {
                                     placeholder="On Site & Home Service"
                                     options={[
                                         { label: 'On Site Only', value: 'IN_LOCATION_ONLY' },
-                                        { label: 'Home Service Only', value: 'HOME_SERVICE_ONLY' },
+                                        // { label: 'Home Service Only', value: 'HOME_SERVICE' },
                                         { label: 'On Site & Home Service', value: 'BOTH' },
                                     ]}
                                     value={deliveryType}
-                                    onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH')}
+                                    onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH')}
                                     className="h-[56px] rounded-lg border-gray-200"
                                 />
                             </div>
@@ -554,6 +561,7 @@ export default function ServicesPage() {
                                             type="number"
                                             placeholder="7,000"
                                             value={servicePrice}
+                                            disabled={deliveryType === 'HOME_SERVICE'}
                                             onChange={(e) => setServicePrice(e.target.value)}
                                             className="h-[56px] rounded-lg border-gray-200 pl-8 bg-white"
                                         />
@@ -575,7 +583,7 @@ export default function ServicesPage() {
                                 </div>
                             </div>
 
-                            {(deliveryType === 'HOME_SERVICE_ONLY' || deliveryType === 'BOTH') && (
+                            {(deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && (
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-400">Service Radius (km)</Label>
                                     <Input

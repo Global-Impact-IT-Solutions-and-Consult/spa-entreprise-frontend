@@ -267,7 +267,7 @@ function DiscoverContent() {
                             variant="outline"
                             onClick={() => {
                                 setTempSearch("");
-                                setFilters({ search: "", city: "Lagos", category: "All Categories", limit: 12 });
+                                setFilters({ search: "", state: "", city: "", category: "All Categories", limit: 12 });
                                 setActiveFilter("All Services");
                             }}
                             className="mt-6 rounded-xl"

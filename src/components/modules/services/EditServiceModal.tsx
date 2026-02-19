@@ -27,7 +27,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
     const [serviceDuration, setServiceDuration] = useState('');
     const [bufferTime, setBufferTime] = useState('10');
     const [selectedCategory, setSelectedCategory] = useState('');
-    const [deliveryType, setDeliveryType] = useState<'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH'>('IN_LOCATION_ONLY');
+    const [deliveryType, setDeliveryType] = useState<'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH'>('IN_LOCATION_ONLY');
     const [serviceRadius, setServiceRadius] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,7 +43,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
 
             // Map deliveryType to uppercase for internal state matching the modal's expected values
             const type = service.deliveryType?.toUpperCase();
-            if (type === 'IN_LOCATION_ONLY' || type === 'HOME_SERVICE_ONLY' || type === 'BOTH') {
+            if (type === 'IN_LOCATION_ONLY' || type === 'HOME_SERVICE' || type === 'BOTH') {
                 setDeliveryType(type);
             } else {
                 // Fallback for unexpected or mixed-case values
@@ -82,7 +82,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                 bufferTime: bufferTime ? parseInt(bufferTime) : 15,
             };
 
-            if (deliveryType === 'HOME_SERVICE_ONLY' || deliveryType === 'BOTH') {
+            if (deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') {
                 payload.homeServicePrice = parseFloat(homeServicePrice);
                 payload.maxServiceRadius = parseFloat(serviceRadius);
             }
@@ -185,11 +185,11 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                                 placeholder="On Site & Home Service"
                                 options={[
                                     { label: 'On Site Only', value: 'IN_LOCATION_ONLY' },
-                                    { label: 'Home Service Only', value: 'HOME_SERVICE_ONLY' },
+                                    { label: 'Home Service Only', value: 'HOME_SERVICE' },
                                     { label: 'On Site & Home Service', value: 'BOTH' },
                                 ]}
                                 value={deliveryType}
-                                onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH')}
+                                onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH')}
                                 className="h-[56px] rounded-lg border-gray-200"
                             />
                         </div>

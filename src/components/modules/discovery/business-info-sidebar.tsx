@@ -8,7 +8,7 @@ interface BusinessSidebarProps {
         address?: string;
         addressDetails?: {
             address: string;
-        };
+        } | null;
         phone: string;
         email: string;
         hours?: {

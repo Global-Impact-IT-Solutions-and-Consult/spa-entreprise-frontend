@@ -64,11 +64,19 @@ function LoginContent() {
                     return;
                 }
 
+                // If user is customer, redirect to homepage
+                if (data.user.role === 'customer') {
+                    toaster.create({ title: "Login successful", type: "success" });
+                    router.push('/');
+                    setIsLoading(false);
+                    return;
+                }
+
                 // Small delay to ensure cookies are set before making API calls
                 // This is especially important on localhost where cookie setting might be async
                 await new Promise(resolve => setTimeout(resolve, 100));
 
-                // Fetch user's businesses
+                // Business role: Fetch user's businesses
                 try {
                     const businesses = await businessService.getMyBusinesses();
 

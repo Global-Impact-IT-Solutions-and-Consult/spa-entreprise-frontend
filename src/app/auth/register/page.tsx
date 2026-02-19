@@ -14,9 +14,12 @@ import { cn } from '@/lib/utils';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 
+type AccountType = 'customer' | 'business';
+
 export default function RegisterPage() {
     const router = useRouter();
     const { setTempCredentials } = useOnboardingStore();
+    const [accountType, setAccountType] = useState<AccountType>('customer');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -64,7 +67,7 @@ export default function RegisterPage() {
                 password,
                 first_name: firstName,
                 last_name: lastName,
-                role: 'business'
+                role: accountType
             });
 
             toaster.create({
@@ -74,7 +77,7 @@ export default function RegisterPage() {
             });
 
             setTempCredentials({ email: email, password: password });
-            router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&redirectTo=login`);
+            router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&role=${accountType}`);
 
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
@@ -87,6 +90,36 @@ export default function RegisterPage() {
 
     return (
         <AuthLayout>
+            {/* Role Picker */}
+            <div className="flex justify-center mb-6">
+                <div className="bg-gray-100 p-1 rounded-full inline-flex">
+                    <button
+                        type="button"
+                        onClick={() => setAccountType('customer')}
+                        className={cn(
+                            "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200",
+                            accountType === 'customer'
+                                ? "bg-[#6C5CE7] text-white shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
+                        )}
+                    >
+                        User
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setAccountType('business')}
+                        className={cn(
+                            "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200",
+                            accountType === 'business'
+                                ? "bg-[#6C5CE7] text-white shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
+                        )}
+                    >
+                        Businesses
+                    </button>
+                </div>
+            </div>
+
             <div className="flex flex-col text-center mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an account</h1>
                 <p className="text-sm text-gray-500">
@@ -186,7 +219,8 @@ export default function RegisterPage() {
                         </svg>
                     </div>
                     <label className="text-[13px] leading-relaxed text-gray-500">
-                        I agree to the <Link href="/terms" className="text-[#E59622] font-semibold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-[#E59622] font-semibold hover:underline">Privacy Policy</Link>. I confirm that i have the authority to register this business.
+                        I agree to the <Link href="/terms" className="text-[#E59622] font-semibold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-[#E59622] font-semibold hover:underline">Privacy Policy</Link>.
+                        {accountType === 'business' && ' I confirm that i have the authority to register this business.'}
                     </label>
                 </div>
 
@@ -196,7 +230,7 @@ export default function RegisterPage() {
                     onClick={handleRegister}
                     disabled={isLoading}
                 >
-                    {isLoading ? "Creating..." : "Create Business Account"}
+                    {isLoading ? "Creating..." : "Create Account"}
                 </Button>
 
                 <SocialButtons />
