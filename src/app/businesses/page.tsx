@@ -8,7 +8,7 @@ import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
 import { Search, ChevronDown, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { businessService, BusinessType, SpaSearchResult } from "@/services/business.service";
+import { businessService, BusinessType, SpaSearchResult, isBusinessOpen } from "@/services/business.service";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function BusinessDirectoryContent() {
@@ -79,9 +79,9 @@ function BusinessDirectoryContent() {
                 sortOrder: 'desc',
             };
 
-            if (currentFilters.search) params.businessName = currentFilters.search;
+
             if (currentFilters.city) params.city = currentFilters.city;
-            if (currentFilters.category !== "All Businesses") params.serviceTypes = [currentFilters.category];
+            if (currentFilters.category !== "All Businesses") params.serviceTypes = JSON.stringify([currentFilters.category]);
             if (currentFilters.minRating !== "All Rating") params.minRating = parseFloat(currentFilters.minRating);
 
             const response = await businessService.searchSpasWithEnrichment(params);
@@ -287,56 +287,67 @@ function BusinessDirectoryContent() {
                     </div>
                 </div>
 
-                {/* Grid Header */}
-                <div className="flex items-center justify-between mb-10">
-                    <h2 className="text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
-                        {filters.search ? `Search Results for "${filters.search}"` : "All Businesses"}
-                    </h2>
-                    <p className="text-sm font-medium text-gray-500">{total} results found</p>
-                </div>
+                {/* Client-side name filtering */}
+                {(() => {
+                    const filteredBusinesses = filters.search
+                        ? businesses.filter(b => (b.businessName || b.name || '').toLowerCase().includes(filters.search.toLowerCase()))
+                        : businesses;
 
-                {/* Business Grid */}
-                {
-                    loading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                            {[1, 2, 3, 4, 5, 6].map((i) => (
-                                <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm p-4 h-[400px]">
-                                    <Skeleton className="h-48 w-full rounded-xl mb-4" />
-                                    <Skeleton className="h-6 w-3/4 mb-2" />
-                                    <Skeleton className="h-4 w-1/2 mb-4" />
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-4 w-full" />
-                                        <Skeleton className="h-4 w-5/6" />
+                    return (
+                        <>
+                            {/* Grid Header */}
+                            <div className="flex items-center justify-between mb-10">
+                                <h2 className="text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
+                                    {filters.search ? `Search Results for "${filters.search}"` : "All Businesses"}
+                                </h2>
+                                <p className="text-sm font-medium text-gray-500">{filteredBusinesses.length} results found</p>
+                            </div>
+
+                            {/* Business Grid */}
+                            {
+                                loading ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                                            <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm p-4 h-[400px]">
+                                                <Skeleton className="h-48 w-full rounded-xl mb-4" />
+                                                <Skeleton className="h-6 w-3/4 mb-2" />
+                                                <Skeleton className="h-4 w-1/2 mb-4" />
+                                                <div className="space-y-2">
+                                                    <Skeleton className="h-4 w-full" />
+                                                    <Skeleton className="h-4 w-5/6" />
+                                                </div>
+                                                <div className="mt-auto flex justify-between items-center pt-8">
+                                                    <Skeleton className="h-8 w-24" />
+                                                    <Skeleton className="h-10 w-28" />
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div className="mt-auto flex justify-between items-center pt-8">
-                                        <Skeleton className="h-8 w-24" />
-                                        <Skeleton className="h-10 w-28" />
+                                ) : filteredBusinesses.length > 0 ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                                        {filteredBusinesses.map((business) => (
+                                            <BusinessDirectoryCard
+                                                key={business.id}
+                                                business={{
+                                                    ...business,
+                                                    isVerified: business.status === 'APPROVED',
+                                                    isOpen: isBusinessOpen(business.operatingHours),
+                                                }}
+                                            />
+                                        ))}
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : businesses.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                            {businesses.map((business) => (
-                                <BusinessDirectoryCard
-                                    key={business.id}
-                                    business={{
-                                        ...business,
-                                        isVerified: true,
-                                        isOpen: true,
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
-                            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">No businesses found</h3>
-                            <p className="text-gray-500">Try adjusting your filters or search terms.</p>
-                            <Button variant="outline" onClick={handleReset} className="mt-6 rounded-xl">Clear All Filters</Button>
-                        </div>
-                    )
-                }
+                                ) : (
+                                    <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
+                                        <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2">No businesses found</h3>
+                                        <p className="text-gray-500">Try adjusting your filters or search terms.</p>
+                                        <Button variant="outline" onClick={handleReset} className="mt-6 rounded-xl">Clear All Filters</Button>
+                                    </div>
+                                )
+                            }
+                        </>
+                    );
+                })()}
 
                 {/* Pagination */}
                 {

@@ -64,10 +64,12 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
                                     <CheckCircle2 className="w-3.5 h-3.5" />
                                     Verified Business
                                 </div>
-                                <div className="flex items-center gap-2 bg-[#192131] text-white px-3 py-1.5 rounded text-xs font-medium">
-                                    <MapPin className="w-3.5 h-3.5" />
-                                    {business.distance || "Near you"}
-                                </div>
+                                {business.distance && (
+                                    <div className="flex items-center gap-2 bg-[#192131] text-white px-3 py-1.5 rounded text-xs font-medium">
+                                        <MapPin className="w-3.5 h-3.5" />
+                                        {business.distance}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="mt-10">

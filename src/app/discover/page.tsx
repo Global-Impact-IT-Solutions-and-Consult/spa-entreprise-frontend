@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { State, City, IState, ICity } from "country-state-city";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
@@ -14,12 +14,10 @@ function DiscoverContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    // Data State
-    const [services, setServices] = useState<EnrichedService[]>([]);
+    // All services fetched once from GET /spas/services
+    const [allServices, setAllServices] = useState<EnrichedService[]>([]);
     const [categories, setCategories] = useState<ServiceCategory[]>([]);
     const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [total, setTotal] = useState(0);
 
     const [states, setStates] = useState<IState[]>([]);
     const [cities, setCities] = useState<ICity[]>([]);
@@ -33,10 +31,13 @@ function DiscoverContent() {
         state: searchParams.get("state") || "",
         city: searchParams.get("city") || "",
         category: searchParams.get("category") || "All Categories",
-        limit: parseInt(searchParams.get("limit") || "12"),
     });
 
     const [tempSearch, setTempSearch] = useState(filters.search);
+
+    // Client-side pagination — show items in increments of 10
+    const PAGE_SIZE = 10;
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     const deliveryFilters = [
         { id: "All Services", label: "All Services", icon: null },
@@ -45,15 +46,22 @@ function DiscoverContent() {
         { id: "Home Service", label: "Home Service", icon: Home },
     ];
 
-    // Fetch Categories and States
+    // Fetch all services + categories + states on mount (one time)
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true);
             try {
-                const data = await businessService.getServiceCategories();
-                setCategories(data);
+                const [servicesData, categoriesData] = await Promise.all([
+                    businessService.getAllServices(),
+                    businessService.getServiceCategories()
+                ]);
+                setAllServices(servicesData);
+                setCategories(categoriesData);
                 setStates(State.getStatesOfCountry(countryCode));
             } catch (error) {
-                console.error("Failed to fetch categories/states:", error);
+                console.error("Failed to fetch data:", error);
+            } finally {
+                setLoading(false);
             }
         };
         fetchData();
@@ -73,63 +81,73 @@ function DiscoverContent() {
         }
     }, [filters.state, states]);
 
-    // Main Fetch Function
-    const fetchServices = useCallback(async (currentFilters: typeof filters, isLoadMore = false) => {
-        if (isLoadMore) setLoadingMore(true);
-        else setLoading(true);
+    // Client-side filtering
+    const filteredServices = useMemo(() => {
+        let result = allServices;
 
-        try {
-            const params: any = {
-                limit: currentFilters.limit,
-                sortBy: 'newest',
-                sortOrder: 'desc',
-            };
-
-            if (currentFilters.search) params.serviceName = currentFilters.search;
-            if (currentFilters.city) params.city = currentFilters.city;
-            if (currentFilters.category !== "All Categories") params.serviceTypes = [currentFilters.category];
-
-            const response = await businessService.searchServices(params);
-
-            // Client-side filtering for delivery type
-            let result = response.data;
-            if (activeFilter === "In-Store") {
-                result = result.filter(s => s.deliveryType?.toLowerCase() === 'in_location_only' || s.deliveryType?.toLowerCase() === 'both');
-            } else if (activeFilter === "Home Service") {
-                result = result.filter(s => s.deliveryType?.toLowerCase() === 'home_service_only' || s.deliveryType?.toLowerCase() === 'both');
-            }
-
-            setServices(result);
-            setTotal(response.meta.total);
-        } catch (error) {
-            console.error("Failed to fetch services:", error);
-        } finally {
-            setLoading(false);
-            setLoadingMore(false);
+        // Search by service name
+        if (filters.search) {
+            const searchTerm = filters.search.toLowerCase();
+            result = result.filter(s =>
+                s.name.toLowerCase().includes(searchTerm) ||
+                s.businessName.toLowerCase().includes(searchTerm)
+            );
         }
-    }, [activeFilter]);
 
-    // Sync with Filters/URL
+        // Filter by city
+        if (filters.city) {
+            const cityTerm = filters.city.toLowerCase();
+            result = result.filter(s => s.location?.toLowerCase().includes(cityTerm));
+        }
+
+        // Filter by category
+        if (filters.category !== "All Categories") {
+            result = result.filter(s => s.category?.id === filters.category);
+        }
+
+        // Filter by delivery type
+        if (activeFilter === "In-Store") {
+            result = result.filter(s => s.deliveryType?.toLowerCase() === 'in_location_only' || s.deliveryType?.toLowerCase() === 'both');
+        } else if (activeFilter === "Home Service") {
+            result = result.filter(s => s.deliveryType?.toLowerCase() === 'home_service_only' || s.deliveryType?.toLowerCase() === 'both');
+        }
+
+        return result;
+    }, [allServices, filters, activeFilter]);
+
+    // Visible services (paginated slice)
+    const visibleServices = filteredServices.slice(0, visibleCount);
+    const hasMore = visibleCount < filteredServices.length;
+
+    // Reset pagination when filters change
     useEffect(() => {
-        fetchServices(filters);
+        setVisibleCount(PAGE_SIZE);
+    }, [filters, activeFilter]);
 
+    // Sync URL with filters
+    useEffect(() => {
         const params = new URLSearchParams();
         if (filters.search) params.set("search", filters.search);
         if (filters.state) params.set("state", filters.state);
         if (filters.city) params.set("city", filters.city);
         if (filters.category !== "All Categories") params.set("category", filters.category);
         if (activeFilter !== "All Services") params.set("type", activeFilter);
-        if (filters.limit > 12) params.set("limit", filters.limit.toString());
 
         router.push(`/discover?${params.toString()}`, { scroll: false });
-    }, [filters, activeFilter, fetchServices, router]);
+    }, [filters, activeFilter, router]);
 
     const handleSearch = () => {
-        setFilters(prev => ({ ...prev, search: tempSearch, limit: 12 }));
+        setFilters(prev => ({ ...prev, search: tempSearch }));
     };
 
     const handleLoadMore = () => {
-        setFilters(prev => ({ ...prev, limit: prev.limit + 12 }));
+        setVisibleCount(prev => prev + PAGE_SIZE);
+    };
+
+    const handleReset = () => {
+        setTempSearch("");
+        setFilters({ search: "", state: "", city: "", category: "All Categories" });
+        setActiveFilter("All Services");
     };
 
     return (
@@ -165,7 +183,7 @@ function DiscoverContent() {
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <select
                                 value={filters.state}
-                                onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value, city: "", limit: 12 }))}
+                                onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value, city: "" }))}
                                 className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
                             >
                                 <option value="">Select State</option>
@@ -180,7 +198,7 @@ function DiscoverContent() {
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <select
                                 value={filters.city}
-                                onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value, limit: 12 }))}
+                                onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value }))}
                                 disabled={!filters.state}
                                 className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
                             >
@@ -195,7 +213,7 @@ function DiscoverContent() {
                             <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <select
                                 value={filters.category}
-                                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value, limit: 12 }))}
+                                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
                                 className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
                             >
                                 <option>All Categories</option>
@@ -216,7 +234,7 @@ function DiscoverContent() {
                     {/* Delivery Type Filters */}
                     <div className="flex flex-col gap-6">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-gray-900">Delivery Type</h3>
+                            <h3 className="text-xl font-bold text-gray-900">Filter by</h3>
                             <button onClick={() => setShowAdvanced(!showAdvanced)} className="flex items-center gap-2 text-sm font-bold text-[#E89D24] hover:text-[#E5A800] transition-colors">
                                 <SlidersHorizontal className="w-4 h-4" />
                                 {showAdvanced ? "Hide filters" : "Advance Filter Option"}
@@ -242,7 +260,9 @@ function DiscoverContent() {
 
                 {/* Results Info */}
                 <div className="mb-8 flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-500">Showing <span className="text-gray-900 font-bold">{services.length} services</span></p>
+                    <p className="text-sm font-medium text-gray-500">
+                        Showing <span className="text-gray-900 font-bold">{visibleServices.length}</span> of <span className="text-gray-900 font-bold">{filteredServices.length} services</span>
+                    </p>
                 </div>
 
                 {/* Services Grid */}
@@ -252,24 +272,20 @@ function DiscoverContent() {
                             <ServiceSkeleton key={i} />
                         ))}
                     </div>
-                ) : services.length > 0 ? (
+                ) : visibleServices.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                        {services.map((service) => (
+                        {visibleServices.map((service) => (
                             <ServiceCard key={service.id} service={service} />
                         ))}
                     </div>
                 ) : (
                     <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
-                        <Loader2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-xl font-bold text-gray-900 mb-2">No services found</h3>
                         <p className="text-gray-500">Try adjusting your filters or search terms.</p>
                         <Button
                             variant="outline"
-                            onClick={() => {
-                                setTempSearch("");
-                                setFilters({ search: "", state: "", city: "", category: "All Categories", limit: 12 });
-                                setActiveFilter("All Services");
-                            }}
+                            onClick={handleReset}
                             className="mt-6 rounded-xl"
                         >
                             Clear All Filters
@@ -278,22 +294,14 @@ function DiscoverContent() {
                 )}
 
                 {/* Load More */}
-                {!loading && services.length > 0 && services.length < total * 2 && ( // Rough estimate since total is spas
+                {!loading && hasMore && (
                     <div className="flex justify-center pt-8 border-t border-gray-100">
                         <Button
                             variant="outline"
-                            disabled={loadingMore}
                             onClick={handleLoadMore}
                             className="h-12 px-10 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition-colors min-w-[200px]"
                         >
-                            {loadingMore ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                    Loading...
-                                </>
-                            ) : (
-                                "Load More Services"
-                            )}
+                            Load More Services
                         </Button>
                     </div>
                 )}

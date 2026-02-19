@@ -12,7 +12,7 @@ import { BusinessStaffTab } from "@/components/modules/discovery/business-staff-
 import { BusinessAboutTab } from "@/components/modules/discovery/business-about-tab";
 import { BusinessReviewsTab } from "@/components/modules/discovery/business-reviews-tab";
 import { BusinessGalleryTab } from "@/components/modules/discovery/business-gallery-tab";
-import { businessService, Business, Service, Staff, BusinessImage } from "@/services/business.service";
+import { businessService, Business, Service, Staff, BusinessImage, BusinessReview, isBusinessOpen } from "@/services/business.service";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -25,6 +25,11 @@ export default function BusinessDetailsPage() {
     const [services, setServices] = useState<Service[]>([]);
     const [staff, setStaff] = useState<Staff[]>([]);
     const [gallery, setGallery] = useState<BusinessImage[]>([]);
+    const [reviews, setReviews] = useState<BusinessReview[]>([]);
+    const [reviewStats, setReviewStats] = useState<{ averageRating: number; ratingDistribution: { stars: number; count: number }[] }>({
+        averageRating: 0,
+        ratingDistribution: []
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -36,17 +41,28 @@ export default function BusinessDetailsPage() {
             setLoading(true);
             setError(null);
             try {
-                const [businessData, servicesData, galleryData] = await Promise.all([
+                const [businessData, servicesData, staffData, galleryData, reviewsData] = await Promise.all([
                     businessService.getBusinessProfile(id),
                     businessService.getServices(id),
-                    // businessService.getAllStaff(id),
-                    businessService.getGalleryImages(id)
+                    businessService.getAllStaff(id),
+                    businessService.getGalleryImages(id),
+                    businessService.getBusinessReviews(id).catch(() => ({
+                        data: [],
+                        meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+                        averageRating: 0,
+                        ratingDistribution: []
+                    }))
                 ]);
 
                 setBusiness(businessData);
                 setServices(servicesData);
-                // setStaff(staffData);
+                setStaff(staffData);
                 setGallery(galleryData);
+                setReviews(reviewsData.data);
+                setReviewStats({
+                    averageRating: reviewsData.averageRating,
+                    ratingDistribution: reviewsData.ratingDistribution
+                });
             } catch (err: any) {
                 console.error("Error fetching business profile data:", err);
                 setError(err.message || "Failed to load business profile. Please try again later.");
@@ -104,6 +120,9 @@ export default function BusinessDetailsPage() {
         );
     }
 
+    // Compute open/closed status from operating hours
+    const isOpen = isBusinessOpen(business.operatingHours);
+
     // Transform API data for components
     const transformedBusiness = {
         ...business,
@@ -111,19 +130,19 @@ export default function BusinessDetailsPage() {
         rating: typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0),
         reviews: business.totalReviews || 0,
         category: business.businessTypeCode || "Wellness",
-        distance: "1.2 mi away", // Potential future enhancement
+        distance: "", // No placeholder — only show if API provides it
         startingPrice: services.length > 0 ? Math.min(...services.map(s => s.price)).toLocaleString() : "---",
         bannerImage: business.coverImage || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1600&q=80",
         profileImage: business.primaryImageUrl || "https://images.unsplash.com/photo-1512690196246-86e580db7940?w=800&q=80",
         address: business.address || business.addressDetails?.address || "Lagos, Nigeria",
         phone: business.phone || "---",
         email: business.email || "---",
-        status: business.operatingHours ? "Open now" : "Contact for hours", // Simplified for now
+        status: isOpen ? "Open now" : "Closed",
         description: business.description || "No description available.",
         gallery: gallery.map(img => img.url),
         staffs: staff.map(s => ({
             ...s,
-            rating: 4.5, // Mock as backend doesn't provide staff ratings yet
+            rating: 4.5, // Backend doesn't provide staff ratings yet
             reviews: 0,
             description: "Experienced wellness professional.",
             specialties: []
@@ -134,6 +153,18 @@ export default function BusinessDetailsPage() {
             isToday: new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() === day.toLowerCase()
         })) : []
     };
+
+    // Map API reviews to the component's expected format
+    const mappedReviews = reviews.map(r => ({
+        id: r.id,
+        userName: `${r.user.firstName} ${r.user.lastName}`,
+        userAvatar: undefined,
+        rating: r.rating,
+        date: new Date(r.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+        comment: r.comment,
+        service: r.service?.name || "General",
+        provider: r.staff?.name || "---"
+    }));
 
     return (
         <div className="min-h-screen bg-gray-50/10">
@@ -175,11 +206,10 @@ export default function BusinessDetailsPage() {
                                                     ...service,
                                                     businessName: business.businessName,
                                                     businessId: business.id,
-                                                    image: transformedBusiness.profileImage, // Fallback image for service
+                                                    image: transformedBusiness.profileImage,
                                                     rating: transformedBusiness.rating,
                                                     reviews: transformedBusiness.reviews,
                                                     location: transformedBusiness.address,
-                                                    distance: transformedBusiness.distance
                                                 }}
                                             />
                                         ))}
@@ -201,10 +231,10 @@ export default function BusinessDetailsPage() {
 
                         {activeTab === "Reviews" && (
                             <BusinessReviewsTab
-                                rating={transformedBusiness.rating}
-                                totalReviews={transformedBusiness.reviews}
-                                ratingDistribution={[]} // Mock if backend doesn't provide
-                                reviews={[]} // Mock until review endpoint is confirmed
+                                rating={reviewStats.averageRating || transformedBusiness.rating}
+                                totalReviews={reviews.length || transformedBusiness.reviews}
+                                ratingDistribution={reviewStats.ratingDistribution}
+                                reviews={mappedReviews}
                             />
                         )}
 

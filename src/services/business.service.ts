@@ -285,6 +285,45 @@ export interface CityWithCount {
     businessCount: number;
 }
 
+export interface BusinessReview {
+    id: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
+    user: {
+        id: string;
+        firstName: string;
+        lastName: string;
+    };
+    service?: {
+        id: string;
+        name: string;
+    };
+    staff?: {
+        id: string;
+        name: string;
+    };
+}
+
+export interface ReviewsResponse {
+    data: BusinessReview[];
+    meta: PaginationMeta;
+    averageRating: number;
+    ratingDistribution: { stars: number; count: number }[];
+}
+
+// Utility: check if a business is currently open based on operating hours
+export function isBusinessOpen(operatingHours?: OperatingHours): boolean {
+    if (!operatingHours) return false;
+    const now = new Date();
+    const dayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const todayHours = operatingHours[dayName];
+    if (!todayHours || todayHours.closed) return false;
+
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    return currentTime >= todayHours.open && currentTime <= todayHours.close;
+}
+
 export const businessService = {
     // Get My Businesses
     getMyBusinesses: async () => {
@@ -344,7 +383,7 @@ export const businessService = {
     searchSpasWithEnrichment: async (params: SearchSpasParams) => {
         // 1. Get search results
         // Use /spas/search ONLY if city is provided, otherwise fallback to /spas
-        const endpoint = params.city ? '/spas/search' : '/spas';
+        const endpoint = params.city || params.serviceTypes ? '/spas/search' : '/spas';
         const searchResponse = await apiClient.get<SearchSpasResponse>(endpoint, { params });
         const businesses = searchResponse.data.data;
         const meta = searchResponse.data.meta;
@@ -390,44 +429,30 @@ export const businessService = {
         };
     },
 
-    // Search Services (fetches spas then their services in parallel)
-    searchServices: async (params: SearchSpasParams): Promise<SearchServicesResponse> => {
-        // 1. Get spas based on search/city/filters
-        const endpoint = params.city ? '/spas/search' : '/spas';
-        const searchResponse = await apiClient.get<SearchSpasResponse>(endpoint, { params });
-        const spas = searchResponse.data.data;
-        const meta = searchResponse.data.meta;
+    // Get All Services (from GET /spas/services — no server-side filtering/pagination)
+    getAllServices: async (): Promise<EnrichedService[]> => {
+        const response = await apiClient.get('/spas/services');
+        const rawServices = Array.isArray(response.data) ? response.data : (response.data?.data || []);
 
-        // 2. For each spa, fetch services in parallel
-        const servicesPromises = spas.map(async (spa) => {
-            try {
-                const servicesRes = await apiClient.get<Service[]>(`/spas/${spa.id}/services`);
-                const services = servicesRes.data;
-
-                // Map services to EnrichedService format
-                return services.map(service => ({
-                    ...service,
-                    businessName: spa.businessName,
-                    businessId: spa.id,
-                    rating: spa.averageRating || 0,
-                    reviews: spa.totalReviews || 0,
-                    location: spa.addressDetails?.city?.name || (typeof spa.city === 'string' ? spa.city : (spa.city as any)?.name) || "Lagos",
-                    distance: "0.8 mi",
-                    image: spa.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
-                }));
-            } catch (error) {
-                console.error(`Failed to fetch services for spa ${spa.id}:`, error);
-                return [];
-            }
-        });
-
-        const allServicesArrays = await Promise.all(servicesPromises);
-        const allServices = allServicesArrays.flat();
-
-        return {
-            data: allServices,
-            meta
-        };
+        // Map to EnrichedService format
+        return rawServices.map((service: any) => ({
+            id: service.id,
+            name: service.name,
+            description: service.description || '',
+            category: service.category || { id: '', name: 'General' },
+            duration: service.duration || 0,
+            bufferTime: service.bufferTime || 0,
+            price: service.price || 0,
+            homeServicePrice: service.homeServicePrice || null,
+            deliveryType: service.deliveryType || 'IN_LOCATION_ONLY',
+            isActive: service.isActive ?? true,
+            businessName: service.businessName || service.spa?.businessName || 'Wellness Business',
+            businessId: service.businessId || service.spa?.id || service.spaId || '',
+            rating: service.spa?.averageRating || service.rating || 0,
+            reviews: service.spa?.totalReviews || service.reviews || 0,
+            location: service.business?.city,
+            image: service.spa?.primaryImageUrl || service.image || 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80',
+        }));
     },
 
     // Get Featured Businesses with starting prices (Parallel enrichment)
@@ -609,6 +634,12 @@ export const businessService = {
     // Get Cities with Business Counts (Public)
     getCitiesWithBusinessCounts: async (): Promise<CityWithCount[]> => {
         const response = await apiClient.get<CityWithCount[]>('/spas/cities');
+        return response.data;
+    },
+
+    // Get Business Reviews (Public)
+    getBusinessReviews: async (businessId: string, params?: { page?: number; limit?: number }): Promise<ReviewsResponse> => {
+        const response = await apiClient.get<ReviewsResponse>(`/spas/${businessId}/reviews`, { params });
         return response.data;
     }
 };

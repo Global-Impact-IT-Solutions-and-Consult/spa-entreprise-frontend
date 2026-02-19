@@ -106,7 +106,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                 <div className="flex items-center justify-between pt-1">
                     <div className="flex items-center gap-1 text-gray-500">
                         <MapPin className="w-3.5 h-3.5" />
-                        <span className="text-xs font-medium">{service.location} • {service.distance}</span>
+                        <span className="text-xs font-medium">{service.location}{service.distance ? ` • ${service.distance}` : ''}</span>
                     </div>
                     <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs font-bold px-4 h-9 rounded transition-transform active:scale-95 shadow-sm">
                         Book Service

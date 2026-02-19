@@ -265,13 +265,13 @@ export default function BookingsPage() {
                     <h1 className="text-3xl font-bold text-gray-900">Bookings Management</h1>
                     <p className="text-gray-500 mt-1">Manage appointments, track bookings, and handle scheduling for your business</p>
                 </div>
-                <Button
+                {/* <Button
                     onClick={() => setIsCreateModalOpen(true)}
                     className="bg-[#F59E0B] hover:bg-[#D97706] text-white gap-2 h-11 px-6 font-bold mb-1"
                 >
                     <Plus className="h-5 w-5" />
                     New Booking
-                </Button>
+                </Button> */}
             </div>
 
             {/* Stats Grid */}
