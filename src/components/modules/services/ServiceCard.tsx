@@ -55,11 +55,11 @@ export const ServiceCard = ({ service, categoryName, onDelete, onEdit }: Service
                 <div className="flex items-center gap-2 text-gray-400">
                     <Store className="h-4 w-4" />
                     <span className="text-xs font-medium text-gray-400">
-                        {service.deliveryType.toLowerCase() === 'home_service_only' ? 'Home Service' : 'On Site'}
+                        {service.deliveryType?.toLowerCase() === 'home_service_only' ? 'Home Service' : 'On Site'}
                     </span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-400 pl-4 border-l border-gray-50">
-                    {service.deliveryType.toLowerCase() === 'both' && (
+                    {service.deliveryType?.toLowerCase() === 'both' && (
                         <>
                             <FiHome className="h-4 w-4" />
                             <span className="text-xs font-medium text-gray-400">Home Service</span>
@@ -70,7 +70,7 @@ export const ServiceCard = ({ service, categoryName, onDelete, onEdit }: Service
                     <p className="text-lg font-bold text-gray-900 leading-none">₦{(service.price || 0).toLocaleString()}</p>
                 </div>
                 <div className="col-span-1 pl-4 border-l border-gray-50">
-                    {(service.deliveryType.toLowerCase() === 'both' || service.deliveryType.toLowerCase() === 'home_service_only') && service.homeServicePrice && (
+                    {(service.deliveryType?.toLowerCase() === 'both' || service.deliveryType?.toLowerCase() === 'home_service_only') && service.homeServicePrice && (
                         <p className="text-lg font-bold text-gray-900 leading-none">₦{(service.homeServicePrice || 0).toLocaleString()}</p>
                     )}
                 </div>

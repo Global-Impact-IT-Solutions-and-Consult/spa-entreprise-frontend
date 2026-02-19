@@ -82,7 +82,7 @@ export default function ManageServicesPage() {
 
     const filteredServices = activeTab === "All"
         ? services
-        : services.filter(s => categories.find(c => c.id === s.categoryId)?.name === activeTab);
+        : services.filter(s => (s.category?.name || s.category?.id) === activeTab);
 
     return (
         <div className="">
@@ -150,11 +150,11 @@ export default function ManageServicesPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredServices.map((service) => (
+                        {filteredServices.map((service, index) => (
                             <ServiceCard
-                                key={service.id}
+                                key={service.id || `service-${index}`}
                                 service={service}
-                                categoryName={categories.find(c => c.id === service.categoryId)?.name || 'Service'}
+                                categoryName={service.category?.name || 'Service'}
                                 onDelete={() => handleDeleteService(service.id)}
                                 onEdit={() => setServiceToEdit(service)}
                             />

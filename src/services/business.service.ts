@@ -82,40 +82,57 @@ export interface CreateStaffDto {
     experience: string;
 }
 
-export interface AddressRelation {
-    id: string;
-    businessId: string;
+export interface AddressDetails {
     country: Country;
     state: State;
     city: City;
     address: string;
     note?: string | null;
+}
+
+export interface AddressRelation extends AddressDetails {
+    id: string;
+    businessId: string;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface BusinessOwner {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
 }
 
 export interface Business {
     id: string;
     businessName: string;
-    status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
-    userId: string;
+    status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+    userId?: string;
     businessTypeCode?: string;
     phone?: string;
+    email?: string;
     cacNumber?: string;
     description?: string;
-    // New addressRelation structure (preferred)
+    addressDetails?: AddressDetails | null;
     addressRelation?: AddressRelation | null;
     // Legacy fields (for backward compatibility)
     country?: Country;
     state?: State;
-    city?: City;
+    city?: string | City;
     address?: string;
     addressNote?: string;
     // Onboarding completion tracking (from backend)
     onboardingCompleted?: boolean;
     onboardingCompletedAt?: string | null;
-    averageRating?: string;
+    averageRating?: string | number;
     totalReviews?: number;
+    primaryImageUrl?: string | null;
+    coverImage?: string | null;
+    amenities?: string[] | null;
+    operatingHours?: OperatingHours;
+    owner?: BusinessOwner;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -125,15 +142,25 @@ export interface ServiceCategory {
     name: string;
 }
 
+export interface BusinessType {
+    id: string;
+    code: string;
+    name: string;
+}
+
 export interface Service {
     id: string;
     name: string;
     description: string;
-    categoryId: string;
+    categoryId?: string; // Keep for backward compatibility in some components
+    category: {
+        id: string;
+        name: string;
+    };
     price: number;
     duration: number;
     bufferTime?: number;
-    deliveryType: 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH';
+    deliveryType: 'in_location_only' | 'home_service_only' | 'both' | string;
     homeServicePrice?: number;
     serviceRadius?: number;
 }
@@ -161,9 +188,11 @@ export interface SearchSpasParams {
 export interface SpaSearchResult {
     id: string;
     businessName: string;
+    description: string;
     city: string;
     address: string;
-    averageRating: number | null;
+    addressDetails?: AddressDetails;
+    averageRating: string | number | null;
     totalReviews: number;
     primaryImageUrl: string | null;
     // Added for compatibility with existing UI
@@ -183,6 +212,22 @@ export interface PaginationMeta {
 
 export interface SearchSpasResponse {
     data: SpaSearchResult[];
+    meta: PaginationMeta;
+}
+
+export interface EnrichedService extends Omit<Service, 'id'> {
+    id: string;
+    businessName: string;
+    businessId: string;
+    rating: number | string;
+    reviews: number;
+    location: string;
+    distance?: string;
+    image: string;
+}
+
+export interface SearchServicesResponse {
+    data: EnrichedService[];
     meta: PaginationMeta;
 }
 
@@ -268,7 +313,13 @@ export const businessService = {
 
     // Get Service Categories
     getServiceCategories: async () => {
-        const response = await apiClient.get<ServiceCategory[]>('/service-categories');
+        const response = await apiClient.get<ServiceCategory[]>('/spas/service-categories');
+        return response.data;
+    },
+
+    // Get Business Types (e.g., Spa, Barbershop)
+    getBusinessTypes: async () => {
+        const response = await apiClient.get<BusinessType[]>('/spas/business-types');
         return response.data;
     },
 
@@ -282,6 +333,144 @@ export const businessService = {
     searchSpas: async (params: SearchSpasParams) => {
         const response = await apiClient.get<SearchSpasResponse>('/spas/search', { params });
         return response.data;
+    },
+
+    // Search Spas with starting prices enriched in parallel
+    searchSpasWithEnrichment: async (params: SearchSpasParams) => {
+        // 1. Get search results
+        // Use /spas/search ONLY if city is provided, otherwise fallback to /spas
+        const endpoint = params.city ? '/spas/search' : '/spas';
+        const searchResponse = await apiClient.get<SearchSpasResponse>(endpoint, { params });
+        const businesses = searchResponse.data.data;
+        const meta = searchResponse.data.meta;
+
+        // 2. Fetch full business details and services for each business in parallel
+        const enrichedData = await Promise.all(
+            businesses.map(async (business) => {
+                try {
+                    // Fetch full business and services in parallel for efficiency
+                    const [fullBusinessRes, servicesRes] = await Promise.all([
+                        apiClient.get<Business>(`/spas/${business.id}`),
+                        apiClient.get<Service[]>(`/spas/${business.id}/services`)
+                    ]);
+
+                    const fullBusiness = fullBusinessRes.data;
+                    const services = servicesRes.data;
+
+                    // Find lowest price
+                    let startingPrice = "---";
+                    if (services && services.length > 0) {
+                        const minPrice = Math.min(...services.map(s => s.price));
+                        startingPrice = minPrice.toLocaleString();
+                    }
+
+                    return {
+                        ...business,
+                        ...fullBusiness,
+                        startingPrice
+                    };
+                } catch (error) {
+                    console.error(`Failed to enrich business ${business.id}:`, error);
+                    return {
+                        ...business,
+                        startingPrice: "---"
+                    };
+                }
+            })
+        );
+
+        return {
+            data: enrichedData,
+            meta
+        };
+    },
+
+    // Search Services (fetches spas then their services in parallel)
+    searchServices: async (params: SearchSpasParams): Promise<SearchServicesResponse> => {
+        // 1. Get spas based on search/city/filters
+        const endpoint = params.city ? '/spas/search' : '/spas';
+        const searchResponse = await apiClient.get<SearchSpasResponse>(endpoint, { params });
+        const spas = searchResponse.data.data;
+        const meta = searchResponse.data.meta;
+
+        // 2. For each spa, fetch services in parallel
+        const servicesPromises = spas.map(async (spa) => {
+            try {
+                const servicesRes = await apiClient.get<Service[]>(`/spas/${spa.id}/services`);
+                const services = servicesRes.data;
+
+                // Map services to EnrichedService format
+                return services.map(service => ({
+                    ...service,
+                    businessName: spa.businessName,
+                    businessId: spa.id,
+                    rating: spa.averageRating || 0,
+                    reviews: spa.totalReviews || 0,
+                    location: spa.addressDetails?.city?.name || (typeof spa.city === 'string' ? spa.city : (spa.city as any)?.name) || "Lagos",
+                    distance: "0.8 mi",
+                    image: spa.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
+                }));
+            } catch (error) {
+                console.error(`Failed to fetch services for spa ${spa.id}:`, error);
+                return [];
+            }
+        });
+
+        const allServicesArrays = await Promise.all(servicesPromises);
+        const allServices = allServicesArrays.flat();
+
+        return {
+            data: allServices,
+            meta
+        };
+    },
+
+    // Get Featured Businesses with starting prices (Parallel enrichment)
+    getFeaturedBusinesses: async (limit: number = 4) => {
+        // 1. Get businesses
+        const businessesResponse = await apiClient.get<SearchSpasResponse>('/spas', {
+            params: { limit, sortBy: 'rating', sortOrder: 'desc' }
+        });
+        const businesses = businessesResponse.data.data;
+
+        // 2. Fetch services for each business in parallel to get starting prices
+        const enrichedBusinesses = await Promise.all(
+            businesses.map(async (business) => {
+                try {
+                    const servicesResponse = await apiClient.get<Service[]>(`/spas/${business.id}/services`);
+                    const services = servicesResponse.data;
+
+                    // Find lowest price
+                    let startingPrice = "---";
+                    if (services && services.length > 0) {
+                        const minPrice = Math.min(...services.map(s => s.price));
+                        startingPrice = minPrice.toLocaleString();
+                    }
+
+                    return {
+                        ...business,
+                        startingPrice,
+                        // Add compatibility fields
+                        image: business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
+                        location: business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : (business.city as any)?.name) || "Lagos",
+                        rating: typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0),
+                        reviews: business.totalReviews
+                    };
+                } catch (error) {
+                    console.error(`Failed to fetch services for business ${business.id}:`, error);
+                    return {
+                        ...business,
+                        startingPrice: "---",
+                        image: business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
+                        location: business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : (business.city as any)?.name) || "Lagos",
+                        rating: typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0),
+                        reviews: business.totalReviews
+                    };
+                }
+            })
+        );
+
+        return enrichedBusinesses;
     },
 
     // Get Services for a Business

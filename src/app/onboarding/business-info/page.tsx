@@ -102,9 +102,13 @@ export default function BusinessInfoPage() {
                         setSelectedStateCode(addressData.state.isoCode);
                         setSelectedState(addressData.state);
                     }
-                    if (addressData?.city?.name) {
-                        setSelectedCityName(addressData.city.name);
-                        setSelectedCity(addressData.city);
+                    if (addressData?.city) {
+                        if (typeof addressData.city === 'object' && 'name' in addressData.city) {
+                            setSelectedCityName(addressData.city.name);
+                            setSelectedCity(addressData.city as unknown as ICity);
+                        } else if (typeof addressData.city === 'string') {
+                            setSelectedCityName(addressData.city);
+                        }
                     }
                 } else if (businessId) {
                     // If we have a businessId but getMyBusinesses didn't return it,
@@ -137,9 +141,13 @@ export default function BusinessInfoPage() {
                             setSelectedStateCode(addressData.state.isoCode);
                             setSelectedState(addressData.state);
                         }
-                        if (addressData?.city?.name) {
-                            setSelectedCityName(addressData.city.name);
-                            setSelectedCity(addressData.city);
+                        if (addressData?.city) {
+                            if (typeof addressData.city === 'object' && 'name' in addressData.city) {
+                                setSelectedCityName(addressData.city.name);
+                                setSelectedCity(addressData.city as unknown as ICity);
+                            } else if (typeof addressData.city === 'string') {
+                                setSelectedCityName(addressData.city);
+                            }
                         }
                     } catch (fetchError) {
                         const err = fetchError as { response?: { status?: number } };

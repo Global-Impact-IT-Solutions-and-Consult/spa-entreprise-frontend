@@ -39,8 +39,17 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
             setHomeServicePrice(service.homeServicePrice?.toString() || '');
             setServiceDuration(service.duration.toString());
             setBufferTime(service.bufferTime?.toString() || '15');
-            setSelectedCategory(service.categoryId);
-            setDeliveryType(service.deliveryType);
+            setSelectedCategory(service.category?.id || '');
+
+            // Map deliveryType to uppercase for internal state matching the modal's expected values
+            const type = service.deliveryType?.toUpperCase();
+            if (type === 'IN_LOCATION_ONLY' || type === 'HOME_SERVICE_ONLY' || type === 'BOTH') {
+                setDeliveryType(type);
+            } else {
+                // Fallback for unexpected or mixed-case values
+                setDeliveryType('IN_LOCATION_ONLY');
+            }
+
             setServiceRadius(service.serviceRadius?.toString() || '');
         }
     }, [service, isOpen]);

@@ -2,31 +2,53 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { State, City, IState, ICity } from "country-state-city";
 import { Button } from "@/components/ui/button";
-import { MapPin, Scissors, Calendar } from "lucide-react";
-import { businessService, ServiceCategory } from "@/services/business.service";
+import { MapPin, Scissors, Calendar, ChevronDown } from "lucide-react";
+import { businessService, BusinessType } from "@/services/business.service";
 
 export function HeroSearch() {
     const router = useRouter();
-    const [categories, setCategories] = useState<ServiceCategory[]>([]);
-    const [city, setCity] = useState("Lagos");
+    const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([]);
+    const [states, setStates] = useState<IState[]>([]);
+    const [cities, setCities] = useState<ICity[]>([]);
+
+    const [selectedState, setSelectedState] = useState("");
+    const [city, setCity] = useState("");
     const [category, setCategory] = useState("");
     const [date, setDate] = useState("");
 
+    const countryCode = "NG";
+
     useEffect(() => {
-        const fetchCategories = async () => {
+        const fetchBusinessTypes = async () => {
             try {
-                const data = await businessService.getServiceCategories();
-                setCategories(data);
+                const data = await businessService.getBusinessTypes();
+                setBusinessTypes(data);
             } catch (error) {
-                console.error("Failed to fetch categories:", error);
+                console.error("Failed to fetch business types:", error);
             }
         };
-        fetchCategories();
+        fetchBusinessTypes();
+        setStates(State.getStatesOfCountry(countryCode));
     }, []);
+
+    useEffect(() => {
+        if (selectedState) {
+            const stateObj = states.find(s => s.name === selectedState);
+            if (stateObj) {
+                setCities(City.getCitiesOfState(countryCode, stateObj.isoCode));
+            } else {
+                setCities([]);
+            }
+        } else {
+            setCities([]);
+        }
+    }, [selectedState, states]);
 
     const handleSearch = () => {
         const params = new URLSearchParams();
+        if (selectedState) params.append("state", selectedState);
         if (city) params.append("city", city);
         if (category) params.append("category", category);
         if (date) params.append("date", date);
@@ -47,51 +69,77 @@ export function HeroSearch() {
             </div>
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Search Bar */}
-                <div className="max-w-4xl mx-auto bg-white rounded-2xl md:rounded-full shadow-xl p-3 md:p-2">
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-2">
-                        {/* Location Input */}
-                        <div className="flex items-center flex-1 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none focus-within:ring-2 focus-within:ring-[#E89D24] focus-within:ring-inset transition-all">
+                <div className="max-w-5xl mx-auto bg-white rounded-2xl md:rounded-full shadow-xl p-3 md:p-2">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-1">
+
+                        {/* State Dropdown */}
+                        <div className="flex items-center flex-1 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none transition-all relative">
                             <MapPin className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
-                            <input
-                                type="text"
-                                placeholder="Lagos, Nigeria"
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                                className="flex-1 outline-none text-sm bg-transparent"
-                            />
+                            <select
+                                value={selectedState}
+                                onChange={(e) => {
+                                    setSelectedState(e.target.value);
+                                    setCity("");
+                                }}
+                                className="flex-1 outline-none text-sm appearance-none bg-transparent cursor-pointer font-medium"
+                            >
+                                <option value="">Select State</option>
+                                {states.map((s) => (
+                                    <option key={s.isoCode} value={s.name}>{s.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="w-4 h-4 text-gray-400 pointer-events-none absolute right-4" />
                         </div>
 
-                        {/* Service Dropdown */}
-                        <div className="flex items-center flex-1 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none focus-within:ring-2 focus-within:ring-[#E89D24] focus-within:ring-inset transition-all">
+                        {/* City Dropdown */}
+                        <div className={`flex items-center flex-1 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none transition-all relative ${!selectedState ? 'opacity-50' : ''}`}>
+                            <MapPin className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
+                            <select
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                                disabled={!selectedState}
+                                className="flex-1 outline-none text-sm appearance-none bg-transparent cursor-pointer font-medium"
+                            >
+                                <option value="">Select City</option>
+                                {cities.map((c, i) => (
+                                    <option key={`${c.name}-${i}`} value={c.name}>{c.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="w-4 h-4 text-gray-400 pointer-events-none absolute right-4" />
+                        </div>
+
+                        {/* Business Type Dropdown */}
+                        <div className="flex items-center flex-1 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none transition-all relative">
                             <Scissors className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
                             <select
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                className="flex-1 outline-none text-sm appearance-none bg-transparent cursor-pointer"
+                                className="flex-1 outline-none text-sm appearance-none bg-transparent cursor-pointer font-medium"
                             >
-                                <option value="">All Services</option>
-                                {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                <option value="">All Business Types</option>
+                                {businessTypes.map((type) => (
+                                    <option key={type.id} value={type.id}>{type.name}</option>
                                 ))}
                             </select>
+                            <ChevronDown className="w-4 h-4 text-gray-400 pointer-events-none absolute right-4" />
                         </div>
 
                         {/* Date Input */}
-                        <div className="flex items-center flex-1 px-4 py-3 border border-gray-200 rounded-lg md:rounded-none md:border-0 focus-within:ring-2 focus-within:ring-[#E89D24] focus-within:ring-inset transition-all">
+                        <div className="flex items-center flex-1 px-4 py-3 border border-gray-200 rounded-lg md:rounded-none md:border-0 transition-all">
                             <Calendar className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
                             <input
                                 type="date"
                                 placeholder="Select Date"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
-                                className="flex-1 outline-none text-sm bg-transparent cursor-pointer"
+                                className="flex-1 outline-none text-sm bg-transparent cursor-pointer font-medium"
                             />
                         </div>
 
                         {/* Search Button */}
                         <Button
                             onClick={handleSearch}
-                            className="bg-[#E89D24] hover:bg-[#E5A800] text-white rounded-lg md:rounded-full px-8 py-4 md:py-6 font-semibold w-full md:w-auto transition-all active:scale-95"
+                            className="bg-[#E89D24] hover:bg-[#E5A800] text-white rounded-lg md:rounded-full px-8 py-4 md:py-6 font-semibold w-full md:w-auto transition-all active:scale-95 shadow-lg shadow-yellow-500/20"
                         >
                             Search
                         </Button>

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
-import { businessService, SpaSearchResult } from "@/services/business.service";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { businessService } from "@/services/business.service";
 
 export function FeaturedBusinesses() {
     const [businesses, setBusinesses] = useState<any[]>([]);
@@ -13,18 +13,18 @@ export function FeaturedBusinesses() {
     useEffect(() => {
         const fetchFeatured = async () => {
             try {
-                // Fetch top rated businesses
-                const response = await businessService.listSpas({ limit: 4, sortBy: 'rating', sortOrder: 'desc' });
+                // Fetch top rated businesses with starting prices enriched in service
+                const enrichedData = await businessService.getFeaturedBusinesses(3);
 
-                // Map API results to the format expected by BusinessDirectoryCard
-                const mappedBusinesses = response.data.map((b: SpaSearchResult) => ({
+                // Map to UI format
+                const mappedBusinesses = enrichedData.map((b) => ({
                     id: b.id,
                     name: b.businessName,
-                    location: `${b.city}, ${b.address}`,
-                    description: "Premium spa and wellness services for your relaxation and beauty needs.", // Fallback description
+                    location: `${b.city}`,
+                    description: b.description || "Premium spa and wellness services for your relaxation and beauty needs.",
                     rating: b.averageRating || 0,
                     reviews: b.totalReviews || 0,
-                    price: "5,000", // Fallback price as it's not in the list API
+                    price: b.startingPrice,
                     image: b.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&q=80",
                     isOpen: true,
                     verified: true,
@@ -43,9 +43,31 @@ export function FeaturedBusinesses() {
 
     if (loading) {
         return (
-            <div className="py-12 bg-gray-50 flex justify-center items-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#E89D24]" />
-            </div>
+            <section className="py-12 md:py-16 bg-gray-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between mb-8 md:mb-10">
+                        <Skeleton className="h-10 w-64" />
+                        <Skeleton className="h-6 w-20" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm p-4 h-[400px]">
+                                <Skeleton className="h-48 w-full rounded-xl mb-4" />
+                                <Skeleton className="h-6 w-3/4 mb-2" />
+                                <Skeleton className="h-4 w-1/2 mb-4" />
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-5/6" />
+                                </div>
+                                <div className="mt-auto flex justify-between items-center pt-8">
+                                    <Skeleton className="h-8 w-24" />
+                                    <Skeleton className="h-10 w-28" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
         );
     }
 

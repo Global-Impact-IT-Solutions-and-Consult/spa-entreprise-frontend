@@ -7,26 +7,34 @@ import { useState } from "react";
 
 interface BusinessHeaderProps {
     business: {
-        name: string;
-        rating: number;
+        id?: string;
+        name?: string;
+        businessName?: string;
+        rating: number | string;
         reviews: number;
-        category: string;
-        distance: string;
-        bannerImage: string;
-        profileImage: string;
+        category?: string;
+        distance?: string;
+        bannerImage?: string;
+        profileImage?: string;
+        primaryImageUrl?: string | null;
+        coverImage?: string | null;
         startingPrice: string;
     };
 }
 
 export function BusinessHeader({ business }: BusinessHeaderProps) {
     const [isSaved, setIsSaved] = useState(false);
+    const name = business.businessName ?? business.name ?? "Wellness Business";
+    const bannerImage = business.coverImage || business.bannerImage || business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=80";
+    const profileImage = business.profileImage || business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&q=80";
+    const rating = typeof business.rating === 'string' ? parseFloat(business.rating) : (business.rating || 0);
 
     return (
         <div className="relative mb-8">
             {/* Banner */}
             <div className="h-64 md:h-80 max-w-7xl mx-auto mt-5 relative rounded-lg overflow-hidden">
                 <Image
-                    src={business.bannerImage}
+                    src={bannerImage}
                     alt="Business Banner"
                     fill
                     className="object-cover"
@@ -42,8 +50,8 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
                         {/* Profile Image */}
                         <div className="relative w-32 h-32 md:w-44 md:h-44 rounded-2xl overflow-hidden border-2 border-white shadow-xl bg-white">
                             <Image
-                                src={business.profileImage}
-                                alt={business.name}
+                                src={profileImage}
+                                alt={name}
                                 fill
                                 className="object-cover"
                             />
@@ -58,31 +66,30 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
                                 </div>
                                 <div className="flex items-center gap-2 bg-[#192131] text-white px-3 py-1.5 rounded text-xs font-medium">
                                     <MapPin className="w-3.5 h-3.5" />
-                                    {business.distance}
+                                    {business.distance || "Near you"}
                                 </div>
                             </div>
 
                             <div className="mt-10">
                                 <h1 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tight">
-                                    {business.name}
+                                    {name}
                                 </h1>
 
 
                                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1">
-                                            {[1, 2, 3, 4].map((s) => (
-                                                <Star key={s} className="w-4 h-4 fill-[#E89D24] text-[#E89D24]" />
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className={`w-4 h-4 ${i < Math.floor(rating) ? 'fill-[#E89D24] text-[#E89D24]' : 'text-gray-200'}`} />
                                             ))}
-                                            <Star className="w-4 h-4 text-gray-200" />
                                         </div>
-                                        <span className="text-sm font-bold text-gray-900">{business.rating}</span>
+                                        <span className="text-sm font-bold text-gray-900">{rating}</span>
                                         <span className="text-xs text-gray-400 font-medium">({business.reviews} reviews)</span>
                                     </div>
 
                                     <div className="flex items-center gap-2 text-gray-500 font-medium">
                                         <Scissors className="w-4 h-4" />
-                                        <span className="text-sm">{business.category}</span>
+                                        <span className="text-sm">{business.category || "Wellness"}</span>
                                     </div>
 
                                     <div className="text-lg font-bold text-gray-900">
