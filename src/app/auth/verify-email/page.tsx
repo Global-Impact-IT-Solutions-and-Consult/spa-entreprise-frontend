@@ -11,17 +11,23 @@ import { toaster } from "@/components/ui/toaster";
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 
+import { useOnboardingStore } from '@/store/onboarding.store';
+import { businessService } from '@/services/business.service';
+import { determineOnboardingStep } from '@/lib/onboarding-utils';
+
 import Image from 'next/image';
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { login: setAuthStore } = useAuthStore();
+    const { setBusinessId, tempCredentials } = useOnboardingStore();
     const email = searchParams.get('email') || '';
-    const redirectTo = searchParams.get('redirectTo') || '';
+    const role = searchParams.get('role') || 'customer';
     const [code, setCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isResending, setIsResending] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(25); // 00:25 as in screenshot
+    const [timeLeft, setTimeLeft] = useState(25);
 
     useEffect(() => {
         if (timeLeft <= 0) return;
@@ -49,47 +55,56 @@ function VerifyEmailContent() {
 
         setIsLoading(true);
         try {
-            const response = await authService.verifyEmail({ email, otp: code });
+            await authService.verifyEmail({ email, otp: code });
+            toaster.create({ title: "Email verified!", type: "success" });
 
-            // Handle logical login state
-            const user = response.user;
-            const accessToken = response.accessToken || response.access_token;
-            const refreshToken = response.refreshToken || response.refresh_token;
+            // Auto-login: use the stored temp credentials from registration
+            if (tempCredentials?.email && tempCredentials?.password) {
+                try {
+                    const loginData = await authService.login({
+                        email: tempCredentials.email,
+                        password: tempCredentials.password,
+                    });
 
-            if (user && accessToken && refreshToken) {
-                // Update global auth store
-                useAuthStore.getState().login(user, accessToken, refreshToken);
+                    if (loginData.accessToken && loginData.user) {
+                        setAuthStore(loginData.user, loginData.accessToken, loginData.refreshToken || '');
 
-                toaster.create({
-                    title: "Email verified successfully!",
-                    description: `Welcome ${user.firstName || ''}, you are now logged in.`,
-                    type: "success"
-                });
+                        // Small delay to ensure cookies are set
+                        await new Promise(resolve => setTimeout(resolve, 100));
 
-                // Conditional Redirect based on role and onboarding status
-                if (user.role === 'business') {
-                    // Check if onboarding is completed
-                    const hasCompletedOnboarding = user.businesses?.some(b => b.onboardingCompleted) || false;
-
-                    if (!hasCompletedOnboarding) {
-                        router.push('/onboarding/business-info');
-                    } else {
-                        router.push('/dashboard');
+                        // Route based on role
+                        if (loginData.user.role === 'customer') {
+                            router.push('/');
+                        } else if (loginData.user.role === 'admin') {
+                            router.push('/admin');
+                        } else {
+                            // Business role: check onboarding status
+                            try {
+                                const businesses = await businessService.getMyBusinesses();
+                                if (businesses && businesses.length > 0) {
+                                    const business = businesses[0];
+                                    setBusinessId(business.id);
+                                    const nextStep = await determineOnboardingStep(business);
+                                    router.push(nextStep);
+                                } else {
+                                    router.push('/onboarding/business-info');
+                                }
+                            } catch {
+                                router.push('/onboarding/business-info');
+                            }
+                        }
+                        return;
                     }
-                } else if (user.role === 'admin') {
-                    router.push('/admin');
-                } else {
-                    router.push('/');
+                } catch (loginError) {
+                    console.error('Auto-login failed after verification:', loginError);
+                    // Fall through to manual login redirect
                 }
-            } else {
-                // Fallback if tokens didn't come back for some reason
-                toaster.create({ title: "Email verified!", description: "Please log in with your credentials.", type: "success" });
-                router.push('/auth/login');
             }
+
+            // Fallback: if auto-login fails or no temp credentials, redirect to login
+            router.push(`/auth/login?email=${encodeURIComponent(email)}`);
+
         } catch (error) {
-            if (redirectTo === 'reset') {
-                router.push('/auth/reset-password')
-            }
             const err = error as { response?: { data?: { message?: string } } };
             const message = err.response?.data?.message || "Verification failed.";
             toaster.create({ title: "Error", description: message, type: "error" });
@@ -104,7 +119,7 @@ function VerifyEmailContent() {
         try {
             await authService.resendVerification(email);
             toaster.create({ title: "Code sent!", description: "Check your email inbox.", type: "success" });
-            setTimeLeft(60); // Reset timer after resend
+            setTimeLeft(60);
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
             const message = err.response?.data?.message || "Failed to resend code.";
@@ -119,13 +134,12 @@ function VerifyEmailContent() {
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                 <Image
-                    src="/auth-bg.jpg" // We'll save the generated image here
+                    src="/auth-bg.jpg"
                     alt="Auth Background"
                     fill
                     className="object-cover blur-xl"
                     priority
                 />
-                {/* Semi-transparent overlay to match the warm tone in the screenshot if needed */}
                 <div className="absolute inset-0 bg-black/5" />
             </div>
             <div className="relative z-10 w-full max-w-[1440px] px-4 md:px-32 flex flex-col md:flex-row items-center justify-center py-12">
@@ -167,7 +181,7 @@ function VerifyEmailContent() {
                                 onClick={handleVerify}
                                 disabled={isLoading}
                             >
-                                {isLoading ? "Verifying..." : "Sign In"}
+                                {isLoading ? "Verifying..." : "Verify & Sign In"}
                             </Button>
                             <Link href="/auth/login" className="text-sm text-gray-500 flex items-center justify-center">
                                 <FiChevronLeft className="inline-block mr-2" />

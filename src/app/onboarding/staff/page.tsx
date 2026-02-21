@@ -210,14 +210,14 @@ export default function StaffsPage() {
                     <div className="flex-1 flex items-center justify-center">
                         <div className="text-gray-500">Loading staff...</div>
                     </div>
-                ) : services.length === 0 ? (
+                ) : staffs.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center py-20">
-                        <div className="text-gray-500 mb-4">Please create services first before adding staff.</div>
+                        <div className="text-gray-500 mb-4">No staff found. Please add staff.</div>
                         <Button
-                            onClick={() => router.push('/onboarding/services')}
+                            onClick={() => setOpen(true)}
                             className="bg-[#E59622] hover:bg-[#d48a1f] text-white"
                         >
-                            Go to Services
+                            Add Staff
                         </Button>
                     </div>
                 ) : (

@@ -157,7 +157,7 @@ function ResetPasswordContent() {
                                         onClick={handleReset}
                                         disabled={isLoading}
                                     >
-                                        {isLoading ? "Resetting..." : "Reset password and sign in"}
+                                        {isLoading ? "Resetting..." : "Reset password"}
                                     </Button>
                                 </div>
                             </>

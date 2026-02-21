@@ -19,7 +19,9 @@ import {
     ZoomIn,
     Settings,
     Info,
-    ChevronRight
+    ChevronRight,
+    Copy,
+    Check
 } from "lucide-react";
 import { Country, State, City, ICountry, IState, ICity } from 'country-state-city';
 
@@ -27,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import CustomInput from '@/components/ui/InputGroup';
@@ -34,6 +37,9 @@ import { businessService, BusinessImage } from "@/services/business.service";
 import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { FaInfoCircle } from "react-icons/fa";
+import { GoNumber } from "react-icons/go";
+import { Tooltip } from "@/components/ui/tooltip";
 
 type TabType = "About" | "Gallery" | "Settings";
 
@@ -72,9 +78,12 @@ export default function BusinessProfilePage() {
     const [isLoadingImages, setIsLoadingImages] = useState(false);
     const [lightboxImage, setLightboxImage] = useState<BusinessImage | null>(null);
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+    const [businessUrl, setBusinessUrl] = useState('');
     const [captionInput, setCaptionInput] = useState("");
     const [showCaptionModal, setShowCaptionModal] = useState(false);
     const [imageToDelete, setImageToDelete] = useState<string | null>(null);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const galleryFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -106,6 +115,13 @@ export default function BusinessProfilePage() {
 
     const cities = (selectedCountryCode && selectedStateCode) ? City.getCitiesOfState(selectedCountryCode, selectedStateCode) : [];
     const cityOptions = cities.map(c => ({ label: c.name, value: c.name }));
+
+    // Set the business URL client-side only to avoid SSR window access
+    useEffect(() => {
+        if (businessId) {
+            setBusinessUrl(`${window.location.origin}/businesses/${businessId}`);
+        }
+    }, [businessId]);
 
     useEffect(() => {
         if (business) {
@@ -163,6 +179,19 @@ export default function BusinessProfilePage() {
         setSelectedCityName(cityName);
         const city = cities.find(c => c.name === cityName);
         setSelectedCity(city || null);
+    };
+
+    const handleCopyLink = () => {
+        const businessLink = `${window.location.origin}/businesses/${businessId}`;
+        navigator.clipboard.writeText(businessLink);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+        toaster.create({ title: "Link copied to clipboard", type: "success" });
+    };
+
+    const handleOpenLive = () => {
+        const businessLink = `${window.location.origin}/businesses/${businessId}`;
+        window.open(businessLink, '_blank');
     };
 
     // Single fetch for ALL images — used by both banner and gallery
@@ -354,11 +383,9 @@ export default function BusinessProfilePage() {
         }
     };
 
-    // Derived data — banner shows max 3 images (1 primary + 2 others)
+    // Derived data — cover image is any non-primary, primary is the small overlapping one
     const primaryImage = allImages.find(img => img.isPrimary) || allImages[0];
-    const bannerOtherImages = allImages.filter(img => img.id !== primaryImage?.id).slice(0, 2);
-    const totalImageCount = allImages.length;
-    const hasMoreImages = totalImageCount > 3;
+    const coverImage = allImages.find(img => img.id !== primaryImage?.id) || primaryImage;
 
     // Group gallery images by category
     const groupedGallery = allImages.reduce((acc, img) => {
@@ -383,143 +410,88 @@ export default function BusinessProfilePage() {
 
     return (
         <div className="animate-in fade-in duration-500">
-            {/* Header / Banner Section */}
-            <div className="space-y-4 mb-8">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Business</h1>
-                        <p className="text-gray-500 mt-1">Manage Business profile</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* Primary Image */}
-                    <div className="lg:col-span-2 relative h-[500px] rounded-md overflow-hidden group border border-gray-100 bg-gray-50">
-                        {primaryImage ? (
-                            <>
-                                <Image
-                                    src={primaryImage.url}
-                                    alt="Business Cover"
-                                    width={800}
-                                    height={400}
-                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => handleDeleteImage(primaryImage.id)}
-                                        className="p-2 bg-white/90 backdrop-blur rounded-lg text-red-500 hover:bg-red-50 shadow-sm"
-                                        title="Delete Image"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-2">
-                                <ImageIcon className="h-12 w-12" />
-                                <p className="text-sm font-medium">No cover image set</p>
-                            </div>
-                        )}
-                        <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-xl border border-white/20">
-                            <span className="font-bold text-sm">Main Photo</span>
+            {/* Banner Section — Cover image with overlapping primary image */}
+            <div className="relative mb-8">
+                {/* Cover Image */}
+                <div className="relative w-full h-[360px] rounded-2xl overflow-hidden bg-gray-100">
+                    {coverImage ? (
+                        <Image
+                            src={coverImage.url}
+                            alt="Business Cover"
+                            fill
+                            className="object-cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-2">
+                            <ImageIcon className="h-12 w-12" />
+                            <p className="text-sm font-medium">No cover image</p>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Gallery Thumbnails — max 2 + upload button */}
-                    <div className="grid grid-rows-2 gap-4">
-                        {bannerOtherImages.map((img) => (
-                            <div key={img.id} className="relative rounded-md overflow-hidden group border border-gray-100 bg-gray-50 h-[250px]">
-                                <Image
-                                    src={img.url}
-                                    alt="Gallery"
-                                    width={400}
-                                    height={200}
-                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
-                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => handleSetPrimary(img.id)}
-                                        className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-amber-500 hover:bg-amber-50 shadow-sm"
-                                        title="Set as Primary"
-                                    >
-                                        <Star className="h-3.5 w-3.5" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteImage(img.id)}
-                                        className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-red-500 hover:bg-red-50 shadow-sm"
-                                        title="Delete Image"
-                                    >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-
-                        {/* Upload / View More */}
-                        <div
-                            onClick={() => {
-                                if (hasMoreImages) {
-                                    setActiveTab("Gallery");
-                                } else {
-                                    fileInputRef.current?.click();
-                                }
-                            }}
-                            className={cn(
-                                "relative rounded-md overflow-hidden bg-white group cursor-pointer border-2 border-dashed border-gray-200 flex items-center justify-center transition-all hover:border-[#F59E0B] hover:bg-amber-50/30",
-                                isUploading && "pointer-events-none opacity-50"
-                            )}
-                        >
-                            <div className="text-center space-y-2">
-                                {isUploading ? (
-                                    <Loader2 className="h-8 w-8 text-amber-500 mx-auto animate-spin" />
-                                ) : hasMoreImages ? (
-                                    <>
-                                        <ImageIcon className="h-8 w-8 text-gray-300 mx-auto group-hover:text-amber-500 transition-colors" />
-                                        <p className="text-xs font-bold text-gray-400 group-hover:text-amber-600">
-                                            View all {totalImageCount} photos
-                                        </p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Plus className="h-8 w-8 text-gray-300 mx-auto group-hover:text-amber-500 transition-colors" />
-                                        <p className="text-xs font-bold text-gray-400 group-hover:text-amber-600">
-                                            {isUploading ? "Uploading..." : "Add More Photos"}
-                                        </p>
-                                    </>
-                                )}
-                            </div>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileSelect}
-                                accept="image/*"
-                                multiple
-                                className="hidden"
-                            />
+                    {/* Overlay badges at bottom of cover */}
+                    <div className="absolute bottom-4 left-[240px] md:left-[260px] flex items-center gap-3">
+                        {business?.status?.toLowerCase() == 'pending_approval' ? <div className="flex items-center gap-2 bg-[#F59E0B] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
+                            <FaInfoCircle className="h-4 w-4" />
+                            Pending Approval
+                        </div> : <div className="flex items-center gap-2 bg-[#3B82F6] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
+                            <CheckCircle2 className="h-4 w-4" />
+                            Verified Business
+                        </div>}
+                        <div className="flex items-center gap-2 bg-white/90 backdrop-blur text-gray-700 px-4 py-2 rounded-lg text-sm font-medium shadow-lg">
+                            <MapPin className="h-4 w-4 text-gray-500" />
+                            {business?.addressRelation?.city?.name}, {business?.addressRelation?.state?.name}
                         </div>
                     </div>
                 </div>
+
+                {/* Primary Image — absolutely positioned, overlapping bottom-left */}
+                <div className="absolute bottom-0 left-6 translate-y-1/2 w-[200px] h-[200px] rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-gray-100 z-10">
+                    {primaryImage ? (
+                        <Image
+                            src={primaryImage.url}
+                            alt="Business Profile"
+                            fill
+                            className="object-cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <ImageIcon className="h-10 w-10" />
+                        </div>
+                    )}
+                </div>
+
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                />
             </div>
 
-            {/* Business Info Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 mt-2">
-                <div className="space-y-4">
-                    <h2 className="text-4xl font-black text-gray-900 tracking-tight">
-                        {business?.businessName || "Precision Cut Barbershop"}
+            {/* Business Info — sits below cover, padded left to clear overlapping primary image */}
+            <div className="flex items-end justify-between gap-6 mb-8 pl-[240px] pt-4">
+                <div className="space-y-2">
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
+                        {business?.businessName}
                     </h2>
 
                     <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
                         <div className="flex items-center gap-1.5">
                             <div className="flex items-center gap-0.5">
-                                {[1, 2, 3, 4].map(i => (
-                                    <Star key={i} className="h-4 w-4 fill-[#F59E0B] text-[#F59E0B]" />
+                                {[1, 2, 3, 4, 5].map((i) => (
+                                    <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${i <= Math.floor(Number(business?.averageRating) || 0)
+                                            ? "fill-[#F59E0B] text-[#F59E0B]"
+                                            : "text-gray-200"
+                                            }`}
+                                    />
                                 ))}
-                                <Star className="h-4 w-4 fill-[#F59E0B] text-[#F59E0B] opacity-50" />
                             </div>
-                            <span className="text-gray-900 font-bold ml-1">4.6</span>
-                            <span className="text-gray-400 font-medium">(184 reviews)</span>
+                            <span className="text-gray-900 font-bold ml-1">{business?.averageRating || "0.0"}</span>
+                            <span className="text-gray-400 font-medium">({business?.totalReviews} reviews)</span>
                         </div>
 
                         <div className="h-1 w-1 rounded-full bg-gray-300" />
@@ -531,15 +503,35 @@ export default function BusinessProfilePage() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" className="h-11 px-6 rounded-xl font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        Live
-                    </Button>
-                    <Button variant="outline" className="h-11 px-6 rounded-xl font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700">
-                        <Share2 className="h-4 w-4" />
-                        Share
-                    </Button>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    <Tooltip content="Available after verification is complete">
+                        <Button
+                            variant="outline"
+                            onClick={handleOpenLive}
+                            disabled={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL'}
+                            className="h-11 px-6 rounded-md font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <div className={cn(
+                                "w-2 h-2 rounded-full",
+                                business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL'
+                                    ? "bg-gray-400"
+                                    : "bg-green-500 animate-pulse"
+                            )} />
+                            Live
+                        </Button>
+                    </Tooltip>
+
+                    <Tooltip content="Available after verification is complete">
+                        <Button
+                            variant="outline"
+                            disabled={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL'}
+                            onClick={() => setIsShareModalOpen(true)}
+                            className="h-11 px-6 rounded-md font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Share2 className="h-4 w-4" />
+                            Share
+                        </Button>
+                    </Tooltip>
                 </div>
             </div>
 
@@ -656,14 +648,17 @@ export default function BusinessProfilePage() {
                                     />
                                 </div>
 
-                                <CustomInput
-                                    label="City *"
-                                    name="cityName"
-                                    value={selectedCityName}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCityChange(e.target.value)}
-                                    placeholder="City"
-                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
-                                />
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">City *</Label>
+                                    <Select
+                                        className="h-[56px] bg-white border border-gray-200 focus:border-[#F59E0B] rounded-lg text-gray-900 font-medium"
+                                        options={cityOptions}
+                                        value={selectedCityName}
+                                        onChange={(e) => handleCityChange(e.target.value)}
+                                        disabled={!selectedStateCode}
+                                        placeholder={selectedStateCode ? "Select a city" : "Select state first"}
+                                    />
+                                </div>
 
                                 <CustomInput
                                     label="Address *"
@@ -759,6 +754,18 @@ export default function BusinessProfilePage() {
 
                                     {/* Action buttons */}
                                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {!img.isPrimary && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleSetPrimary(img.id);
+                                                }}
+                                                className="p-1.5 bg-white/90 backdrop-blur rounded-lg text-amber-500 hover:bg-amber-50 shadow-sm"
+                                                title="Set as Primary"
+                                            >
+                                                <Star className="h-3.5 w-3.5" />
+                                            </button>
+                                        )}
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -769,6 +776,14 @@ export default function BusinessProfilePage() {
                                             <Trash2 className="h-3.5 w-3.5" />
                                         </button>
                                     </div>
+
+                                    {/* Primary badge */}
+                                    {img.isPrimary && (
+                                        <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-amber-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-sm">
+                                            <Star className="h-3 w-3 fill-white" />
+                                            Primary
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -835,7 +850,7 @@ export default function BusinessProfilePage() {
                     <div className="relative max-w-4xl h-full w-full">
                         <button
                             onClick={() => setLightboxImage(null)}
-                            className="absolute top-0 right-0 p-2 text-white/80 hover:text-white transition-colors"
+                            className="absolute top-0 right-0 p-2 text-white/80 hover:text-white transition-colors z-10"
                         >
                             <X className="h-6 w-6" />
                         </button>
@@ -856,6 +871,58 @@ export default function BusinessProfilePage() {
                     </div>
                 </div>
             )}
+
+            {/* Share Modal */}
+            <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
+                <DialogContent className="sm:max-w-md bg-white rounded-2xl p-0 overflow-hidden border-none">
+                    <div className="p-8">
+                        <DialogHeader className="mb-6">
+                            <DialogTitle className="text-2xl font-bold text-gray-900">Share Business</DialogTitle>
+                            <DialogDescription className="text-gray-500 font-medium">
+                                Share your business profile with customers and partners.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-6">
+                            <div className="flex items-center space-x-2">
+                                <div className="grid flex-1 gap-2">
+                                    <Label htmlFor="link" className="sr-only">Link</Label>
+                                    <Input
+                                        id="link"
+                                        defaultValue={businessUrl}
+                                        readOnly
+                                        className="h-12 bg-gray-50 border-gray-100 rounded-xl focus-visible:ring-[#F59E0B]"
+                                    />
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={handleCopyLink}
+                                    className="h-12 px-6 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl flex items-center gap-2 min-w-[120px]"
+                                >
+                                    {isCopied ? (
+                                        <>
+                                            <Check className="h-4 w-4" />
+                                            Copied
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="h-4 w-4" />
+                                            Copy
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+
+                            <div className="flex justify-center gap-4 pt-4 border-t border-gray-50">
+                                {/* You could add social share icons here if needed */}
+                                <p className="text-xs text-gray-400 font-medium">
+                                    Publicly accessible at the link above
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

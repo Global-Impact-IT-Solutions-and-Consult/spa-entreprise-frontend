@@ -5,19 +5,45 @@ import { Button } from "@/components/ui/button";
 
 interface BusinessSidebarProps {
     business: {
-        address: string;
+        address?: string;
+        addressDetails?: {
+            address: string;
+        } | null;
         phone: string;
         email: string;
-        hours: {
+        hours?: {
             day: string;
             time: string;
             isToday?: boolean;
         }[];
+        operatingHours?: {
+            [key: string]: {
+                open: string;
+                close: string;
+                closed: boolean;
+            };
+        };
         status: string;
     };
 }
 
 export function BusinessInfoSidebar({ business }: BusinessSidebarProps) {
+    const address = business.addressDetails?.address || business.address || "Lagos, Nigeria";
+
+    // Map operatingHours object to the hours array format if available
+    const daysOrder = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+    const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+
+    const displayHours = business.hours || (business.operatingHours ? daysOrder.map(day => {
+        const info = business.operatingHours?.[day];
+        if (!info) return null;
+        return {
+            day: day.charAt(0).toUpperCase() + day.slice(1),
+            time: info.closed ? "Closed" : `${info.open} - ${info.close}`,
+            isToday: currentDay === day
+        };
+    }).filter(Boolean) as { day: string; time: string; isToday?: boolean }[] : []);
+
     return (
         <div className="space-y-8">
             {/* Contact & Info Card */}
@@ -29,7 +55,7 @@ export function BusinessInfoSidebar({ business }: BusinessSidebarProps) {
                         <MapPin className="w-5 h-5 text-[#E89D24]" />
                         <div>
                             <p className="text-sm font-bold text-gray-900 mb-1">Address</p>
-                            <p className="text-sm text-gray-500 leading-relaxed">{business.address}</p>
+                            <p className="text-sm text-gray-500 leading-relaxed">{address}</p>
                         </div>
                     </div>
 
@@ -67,7 +93,7 @@ export function BusinessInfoSidebar({ business }: BusinessSidebarProps) {
                 <h3 className="text-xl font-bold text-gray-900 mb-6">Business Hours</h3>
 
                 <div className="space-y-4">
-                    {business.hours.map((hour, idx) => (
+                    {displayHours.map((hour, idx) => (
                         <div key={idx} className="flex justify-between items-center text-sm">
                             <span className={`font-bold ${hour.isToday ? 'text-[#E89D24]' : 'text-gray-900'}`}>{hour.day}</span>
                             <span className={`font-medium ${hour.isToday ? 'text-[#E89D24]' : 'text-gray-500'}`}>{hour.time}</span>

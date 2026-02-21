@@ -15,10 +15,10 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 
     return (
         <div
-            className="fixed top-0 inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0 h-full"
+            className="fixed top-0 inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0 h-full p-4"
             onClick={() => onOpenChange(false)}
         >
-            <div onClick={(e) => e.stopPropagation()} className="w-full h-full flex items-center justify-center">
+            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg">
                 {children}
             </div>
         </div>
@@ -27,7 +27,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 
 export function DialogContent({ children, className }: { children: React.ReactNode, className?: string }) {
     return (
-        <div className={cn("relative z-[101] grid w-full max-w-lg gap-4 border bg-white p-6 shadow-lg duration-200 sm:rounded-lg md:w-full animate-in zoom-in-95 slide-in-from-bottom-5", className)}>
+        <div className={cn("relative z-[101] grid w-full gap-4 border bg-white p-6 shadow-lg duration-200 sm:rounded-lg animate-in zoom-in-95 slide-in-from-bottom-5", className)}>
             {children}
         </div>
     )
@@ -63,6 +63,17 @@ export function DialogTitle({ className, children, ...props }: React.HTMLAttribu
         >
             {children}
         </h3>
+    )
+}
+
+export function DialogDescription({ className, children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+    return (
+        <p
+            className={cn("text-sm text-gray-500", className)}
+            {...props}
+        >
+            {children}
+        </p>
     )
 }
 

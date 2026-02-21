@@ -11,7 +11,9 @@ import {
     Users,
     Home,
     Clock,
-    Settings
+    Settings,
+    Headset,
+    LogOut
 } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
@@ -103,20 +105,35 @@ export function Sidebar() {
                 })}
             </nav>
 
+            {/* Contact Support Button */}
+            <div className="px-3 pb-3">
+                <Link
+                    href="/dashboard/contact-support"
+                    className={cn(
+                        "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold transition-all duration-200 w-full",
+                        pathname === "/dashboard/contact-support"
+                            ? "bg-[#D97706] text-white"
+                            : "bg-[#F59E0B] text-white hover:bg-[#D97706]"
+                    )}
+                >
+                    <Headset className="h-5 w-5" />
+                    Contact Support
+                </Link>
+            </div>
+
             {/* Bottom Section: Business Card & Logout */}
-            <div className="p-4 space-y-4">
-                <div className="flex items-center gap-3 p-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2D3343] text-white">
-                        <Home className="h-5 w-5" />
-                    </div>
+            <div className="p-4 space-y-4 bg-[#00000080] m-4 rounded-lg">
+                <div className="flex items-center gap-3">
+                    <Home className="h-5 w-5" />
                     <div className="overflow-hidden flex-1">
                         <p className="truncate text-sm font-semibold text-white">{business?.businessName || "SerenitySpa"}</p>
                     </div>
                 </div>
                 <button
                     onClick={handleLogout}
-                    className="w-fit flex items-center gap-1.5 text-xs font-medium text-[#F59E0B] hover:text-[#fbbf24] transition-colors pl-2"
+                    className="w-fit flex items-center gap-3 text-sm font-medium text-[#F59E0B] hover:text-[#fbbf24] transition-colors"
                 >
+                    <LogOut className="h-5 w-5" />
                     Sign Out
                 </button>
             </div>

@@ -70,7 +70,7 @@ export interface CreateServiceDto {
     price: number;
     duration: number;
     bufferTime?: number;
-    deliveryType: 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH';
+    deliveryType: 'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH';
     homeServicePrice?: number;
     maxServiceRadius?: number;
 }
@@ -82,40 +82,62 @@ export interface CreateStaffDto {
     experience: string;
 }
 
-export interface AddressRelation {
-    id: string;
-    businessId: string;
+export interface AddressDetails {
     country: Country;
     state: State;
     city: City;
     address: string;
     note?: string | null;
+}
+
+export interface AddressRelation extends AddressDetails {
+    id: string;
+    businessId: string;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface BusinessOwner {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
 }
 
 export interface Business {
     id: string;
     businessName: string;
-    status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
-    userId: string;
+    status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+    userId?: string;
     businessTypeCode?: string;
+    businessType?: {
+        id: string;
+        code: string;
+        name: string;
+    };
     phone?: string;
+    email?: string;
     cacNumber?: string;
     description?: string;
-    // New addressRelation structure (preferred)
+    addressDetails?: AddressDetails | null;
     addressRelation?: AddressRelation | null;
     // Legacy fields (for backward compatibility)
     country?: Country;
     state?: State;
-    city?: City;
+    city?: string | City;
     address?: string;
     addressNote?: string;
     // Onboarding completion tracking (from backend)
     onboardingCompleted?: boolean;
     onboardingCompletedAt?: string | null;
-    averageRating?: string;
+    averageRating?: string | number;
     totalReviews?: number;
+    primaryImageUrl?: string | null;
+    coverImage?: string | null;
+    amenities?: string[] | null;
+    operatingHours?: OperatingHours;
+    owner?: BusinessOwner;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -123,19 +145,31 @@ export interface Business {
 export interface ServiceCategory {
     id: string;
     name: string;
+    businessTypeCodes: string[];
+}
+
+export interface BusinessType {
+    id: string;
+    code: string;
+    name: string;
 }
 
 export interface Service {
     id: string;
     name: string;
     description: string;
-    categoryId: string;
+    categoryId?: string; // Keep for backward compatibility in some components
+    category: {
+        id: string;
+        name: string;
+    };
     price: number;
     duration: number;
     bufferTime?: number;
-    deliveryType: 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH';
+    deliveryType: 'in_location_only' | 'home_service_only' | 'both' | string;
     homeServicePrice?: number;
     serviceRadius?: number;
+    imageUrl?: string;
 }
 
 export interface Staff {
@@ -144,6 +178,64 @@ export interface Staff {
     role: string;
     experience: string;
     serviceIds?: string[];
+}
+
+export interface SearchSpasParams {
+    city?: string;
+    page?: number;
+    limit?: number;
+    serviceTypes?: string[];
+    minPrice?: number;
+    maxPrice?: number;
+    minRating?: number;
+    sortBy?: 'rating' | 'price' | 'newest' | 'name';
+    sortOrder?: 'asc' | 'desc';
+}
+
+export interface SpaSearchResult {
+    id: string;
+    businessName: string;
+    description: string;
+    city: string;
+    address: string;
+    addressDetails?: AddressDetails;
+    averageRating: string | number | null;
+    totalReviews: number;
+    primaryImageUrl: string | null;
+    // Added for compatibility with existing UI
+    name?: string;
+    location?: string;
+    image?: string;
+    rating?: number;
+    reviews?: number;
+}
+
+export interface PaginationMeta {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+
+export interface SearchSpasResponse {
+    data: SpaSearchResult[];
+    meta: PaginationMeta;
+}
+
+export interface EnrichedService extends Omit<Service, 'id'> {
+    id: string;
+    businessName: string;
+    businessId: string;
+    rating: number | string;
+    reviews: number;
+    location: string;
+    distance?: string;
+    image: string;
+}
+
+export interface SearchServicesResponse {
+    data: EnrichedService[];
+    meta: PaginationMeta;
 }
 
 export interface BusinessImage {
@@ -195,6 +287,50 @@ export interface DashboardData {
     upcomingBookings: DashboardUpcomingBooking[];
 }
 
+export interface CityWithCount {
+    city: string;
+    businessCount: number;
+}
+
+export interface BusinessReview {
+    id: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
+    user: {
+        id: string;
+        firstName: string;
+        lastName: string;
+    };
+    service?: {
+        id: string;
+        name: string;
+    };
+    staff?: {
+        id: string;
+        name: string;
+    };
+}
+
+export interface ReviewsResponse {
+    data: BusinessReview[];
+    meta: PaginationMeta;
+    averageRating: number;
+    ratingDistribution: { stars: number; count: number }[];
+}
+
+// Utility: check if a business is currently open based on operating hours
+export function isBusinessOpen(operatingHours?: OperatingHours): boolean {
+    if (!operatingHours) return false;
+    const now = new Date();
+    const dayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const todayHours = operatingHours[dayName];
+    if (!todayHours || todayHours.closed) return false;
+
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    return currentTime >= todayHours.open && currentTime <= todayHours.close;
+}
+
 export const businessService = {
     // Get My Businesses
     getMyBusinesses: async () => {
@@ -228,8 +364,150 @@ export const businessService = {
 
     // Get Service Categories
     getServiceCategories: async () => {
-        const response = await apiClient.get<ServiceCategory[]>('/service-categories');
+        const response = await apiClient.get<ServiceCategory[]>('/spas/service-categories');
         return response.data;
+    },
+
+    // Get Business Types (e.g., Spa, Barbershop)
+    getBusinessTypes: async () => {
+        const response = await apiClient.get<BusinessType[]>('/spas/business-types');
+        return response.data;
+    },
+
+    // List all Spas (Public)
+    listSpas: async (params?: { page?: number; limit?: number; sortBy?: string; sortOrder?: string }) => {
+        const response = await apiClient.get<SearchSpasResponse>('/spas', { params });
+        return response.data;
+    },
+
+    // Search Spas by location and filters (Public)
+    searchSpas: async (params: SearchSpasParams) => {
+        const response = await apiClient.get<SearchSpasResponse>('/spas/search', { params });
+        return response.data;
+    },
+
+    // Search Spas with starting prices enriched in parallel
+    searchSpasWithEnrichment: async (params: SearchSpasParams) => {
+        // 1. Get search results
+        // Use /spas/search ONLY if city is provided, otherwise fallback to /spas
+        const endpoint = params.city || params.serviceTypes ? '/spas/search' : '/spas';
+        const searchResponse = await apiClient.get<SearchSpasResponse>(endpoint, { params });
+        const businesses = searchResponse.data.data;
+        const meta = searchResponse.data.meta;
+
+        // 2. Fetch full business details and services for each business in parallel
+        const enrichedData = await Promise.all(
+            businesses.map(async (business) => {
+                try {
+                    // Fetch full business and services in parallel for efficiency
+                    const [fullBusinessRes, servicesRes] = await Promise.all([
+                        apiClient.get<Business>(`/spas/${business.id}`),
+                        apiClient.get<Service[]>(`/spas/${business.id}/services`)
+                    ]);
+
+                    const fullBusiness = fullBusinessRes.data;
+                    const services = servicesRes.data;
+
+                    // Find lowest price
+                    let startingPrice = "---";
+                    if (services && services.length > 0) {
+                        const minPrice = Math.min(...services.map(s => s.price));
+                        startingPrice = minPrice.toLocaleString();
+                    }
+
+                    return {
+                        ...business,
+                        ...fullBusiness,
+                        startingPrice
+                    };
+                } catch (error) {
+                    console.error(`Failed to enrich business ${business.id}:`, error);
+                    return {
+                        ...business,
+                        startingPrice: "---"
+                    };
+                }
+            })
+        );
+
+        return {
+            data: enrichedData,
+            meta
+        };
+    },
+
+    // Get All Services (from GET /spas/services — no server-side filtering/pagination)
+    getAllServices: async (): Promise<EnrichedService[]> => {
+        const response = await apiClient.get('/spas/services');
+        const rawServices = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+
+        // Map to EnrichedService format
+        return rawServices.map((service: any) => ({
+            id: service.id,
+            name: service.name,
+            description: service.description || '',
+            category: service.category || { id: '', name: 'General' },
+            duration: service.duration || 0,
+            bufferTime: service.bufferTime || 0,
+            price: service.price || 0,
+            homeServicePrice: service.homeServicePrice || null,
+            deliveryType: service.deliveryType || 'IN_LOCATION_ONLY',
+            isActive: service.isActive ?? true,
+            businessName: service.businessName || service.spa?.businessName || 'Wellness Business',
+            businessId: service.businessId || service.spa?.id || service.spaId || '',
+            rating: service.spa?.averageRating || service.rating || 0,
+            reviews: service.spa?.totalReviews || service.reviews || 0,
+            location: service.business?.city,
+            image: service.imageUrl,
+        }));
+    },
+
+    // Get Featured Businesses with starting prices (Parallel enrichment)
+    getFeaturedBusinesses: async (limit: number = 4) => {
+        // 1. Get businesses
+        const businessesResponse = await apiClient.get<SearchSpasResponse>('/spas', {
+            params: { limit, sortBy: 'rating', sortOrder: 'desc' }
+        });
+        const businesses = businessesResponse.data.data;
+
+        // 2. Fetch services for each business in parallel to get starting prices
+        const enrichedBusinesses = await Promise.all(
+            businesses.map(async (business) => {
+                try {
+                    const servicesResponse = await apiClient.get<Service[]>(`/spas/${business.id}/services`);
+                    const services = servicesResponse.data;
+
+                    // Find lowest price
+                    let startingPrice = "---";
+                    if (services && services.length > 0) {
+                        const minPrice = Math.min(...services.map(s => s.price));
+                        startingPrice = minPrice.toLocaleString();
+                    }
+
+                    return {
+                        ...business,
+                        startingPrice,
+                        // Add compatibility fields
+                        image: business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
+                        location: business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : (business.city as any)?.name) || "Lagos",
+                        rating: typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0),
+                        reviews: business.totalReviews
+                    };
+                } catch (error) {
+                    console.error(`Failed to fetch services for business ${business.id}:`, error);
+                    return {
+                        ...business,
+                        startingPrice: "---",
+                        image: business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
+                        location: business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : (business.city as any)?.name) || "Lagos",
+                        rating: typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0),
+                        reviews: business.totalReviews
+                    };
+                }
+            })
+        );
+
+        return enrichedBusinesses;
     },
 
     // Get Services for a Business
@@ -274,6 +552,18 @@ export const businessService = {
         return [] as Staff[];
     },
 
+    // Get All Staff for a Business -- Public route
+    getAllStaffPublic: async (businessId: string) => {
+        const response = await apiClient.get<Staff[] | { data: Staff[] }>(`/spas/public/${businessId}/staff`);
+        // Handle cases where response might be wrapped in { data: [...] } or direct array
+        if (Array.isArray(response.data)) {
+            return response.data as Staff[];
+        } else if (response.data && Array.isArray(response.data.data)) {
+            return response.data.data as Staff[];
+        }
+        return [] as Staff[];
+    },
+
     // Create Staff Member (new endpoint - staff can be assigned to multiple services)
     createStaff: async (businessId: string, data: CreateStaffDto) => {
         const response = await apiClient.post(`/spas/${businessId}/staff`, data);
@@ -293,12 +583,21 @@ export const businessService = {
     },
 
     // Upload Image
-    uploadImage: async (businessId: string, file: File, isPrimary: boolean = false, caption?: string, category: string = 'gallery'): Promise<BusinessImage> => {
+    uploadImage: async (
+        businessId: string,
+        file: File,
+        isPrimary: boolean = false,
+        caption?: string,
+        category: string = 'gallery',
+        serviceId?: string
+    ): Promise<BusinessImage> => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('isPrimary', isPrimary.toString());
-        formData.append('caption', caption || 'Business Image');
-        formData.append('category', category);
+        if (caption) formData.append('caption', caption);
+        // If a serviceId is provided, automatically use 'services' category
+        formData.append('category', serviceId ? 'services' : category);
+        if (serviceId) formData.append('serviceId', serviceId);
 
         const response = await apiClient.post(`/spas/${businessId}/images`, formData, {
             headers: {
@@ -357,6 +656,18 @@ export const businessService = {
     // Get Dashboard Data
     getDashboard: async (businessId: string): Promise<DashboardData> => {
         const response = await apiClient.get(`/spas/${businessId}/dashboard`);
+        return response.data;
+    },
+
+    // Get Cities with Business Counts (Public)
+    getCitiesWithBusinessCounts: async (): Promise<CityWithCount[]> => {
+        const response = await apiClient.get<CityWithCount[]>('/spas/cities');
+        return response.data;
+    },
+
+    // Get Business Reviews (Public)
+    getBusinessReviews: async (businessId: string, params?: { page?: number; limit?: number }): Promise<ReviewsResponse> => {
+        const response = await apiClient.get<ReviewsResponse>(`/spas/${businessId}/reviews`, { params });
         return response.data;
     }
 };

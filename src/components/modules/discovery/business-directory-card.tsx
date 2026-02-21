@@ -8,12 +8,20 @@ import { Button } from "@/components/ui/button";
 interface BusinessDirectoryCardProps {
     business: {
         id: string | number;
-        name: string;
-        location: string;
+        name?: string;
+        businessName?: string;
+        location?: string;
+        city?: string | { name: string };
+        addressDetails?: {
+            city?: { name: string };
+            state?: { name: string };
+        };
         description: string;
-        rating: number;
+        rating: number | string;
         reviews: number;
-        image: string;
+        totalReviews?: number;
+        image?: string;
+        primaryImageUrl?: string | null;
         isOpen?: boolean;
         isVerified?: boolean;
         verified?: boolean;
@@ -25,9 +33,30 @@ interface BusinessDirectoryCardProps {
 export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) {
     const verified = business.verified ?? business.isVerified;
     const price = business.price ?? business.startingPrice;
+    const name = business.businessName ?? business.name ?? "Wellness Business";
+    const image = business.primaryImageUrl || business.image || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80";
+    const city = business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : business.city?.name) || business.location;
+
+    // Robust rating resolution
+    let ratingValue = 0;
+    let reviewsCount = business.totalReviews ?? business.reviews ?? 0;
+
+    if (typeof business.rating === 'string') {
+        ratingValue = parseFloat(business.rating);
+    } else if (typeof business.rating === 'number') {
+        ratingValue = business.rating;
+    } else if (business.rating && typeof business.rating === 'object') {
+        // Handle object format: { average: number, totalReviews: number }
+        const rObj = business.rating as any;
+        ratingValue = rObj.average || rObj.rating || 0;
+        if (rObj.totalReviews) reviewsCount = rObj.totalReviews;
+    }
+
+    const rating = ratingValue || 0;
+    const reviews = reviewsCount;
 
     // For the demo, we use precision-cut as the ID if it matches our mock business
-    const businessId = typeof business.id === 'string' && business.name.toLowerCase().includes("precision") ? "precision-cut" : business.id;
+    const businessId = typeof business.id === 'string' && name.toLowerCase().includes("precision") ? "precision-cut" : business.id;
 
     return (
         <div
@@ -36,8 +65,8 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
             {/* Image */}
             <Link href={`/businesses/${businessId}`} className="relative h-48 bg-gray-200 block overflow-hidden group">
                 <Image
-                    src={business.image}
-                    alt={business.name}
+                    src={image}
+                    alt={name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -66,7 +95,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                 <div className="flex items-center justify-between mb-2">
                     <Link href={`/businesses/${businessId}`} className="flex items-center gap-2 group/title">
                         <Building2 className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover/title:text-[#E89D24] transition-colors" />
-                        <h3 className="font-bold text-gray-900 text-xs md:text-sm line-clamp-1 group-hover/title:text-[#E89D24] transition-colors">{business.name}</h3>
+                        <h3 className="font-bold text-gray-900 text-xs md:text-sm line-clamp-1 group-hover/title:text-[#E89D24] transition-colors">{name}</h3>
                     </Link>
                     <div className={`rounded px-2 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wider ${business.isOpen ? "bg-[#63C68B1A] text-[#63C68B]" : "bg-red-50 text-red-500"}`}>
                         {business.isOpen ? "Open" : "Closed"}
@@ -76,7 +105,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                 {/* Location */}
                 <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
                     <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-gray-400" />
-                    <span className="line-clamp-1">{business.location}</span>
+                    <span className="line-clamp-1">{city}</span>
                 </div>
 
                 {/* Description */}
@@ -90,21 +119,21 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                 <div className="flex items-center gap-4 mb-4 flex-wrap">
                     <div className="flex items-center gap-1">
                         <Star className="w-3 h-3 fill-[#E89D24] text-[#E89D24]" />
-                        <span className="font-semibold text-xs text-gray-900">{business.rating}</span>
+                        <span className="font-semibold text-xs text-gray-900">{rating}</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <div className="flex items-center">
                             {[...Array(5)].map((_, i) => (
                                 <Star
                                     key={i}
-                                    className={`w-2 h-2 ${i < Math.floor(business.rating)
+                                    className={`w-2 h-2 ${i < Math.floor(rating)
                                         ? "fill-[#E89D24] text-[#E89D24]"
                                         : "fill-gray-200 text-gray-200"
                                         }`}
                                 />
                             ))}
                         </div>
-                        <span className="text-[10px] md:text-xs text-gray-400">({business.reviews} reviews)</span>
+                        <span className="text-[10px] md:text-xs text-gray-400">({reviews} reviews)</span>
                     </div>
                 </div>
 

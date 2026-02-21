@@ -51,7 +51,7 @@ export function BusinessReviewsTab({ rating, totalReviews, ratingDistribution, r
                 </div>
 
                 <div className="flex-1 w-full space-y-4">
-                    {ratingDistribution.slice().reverse().map((dist) => (
+                    {(ratingDistribution || []).slice().reverse().map((dist) => (
                         <div key={dist.stars} className="flex items-center gap-4">
                             <span className="text-sm font-bold text-gray-500 w-12">{dist.stars} stars</span>
                             <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">

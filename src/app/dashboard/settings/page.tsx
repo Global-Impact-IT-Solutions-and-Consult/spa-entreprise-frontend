@@ -91,11 +91,12 @@ function UserProfileTab({ user, onUpdate }: { user: any, onUpdate: (user: any) =
                 description: "Your profile information has been successfully updated.",
                 type: "success"
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to update profile", error);
+            const errorMessage = error.response?.data?.message || error.message || "There was an error updating your profile. Please try again.";
             toaster.create({
                 title: "Update Failed",
-                description: "There was an error updating your profile. Please try again.",
+                description: errorMessage,
                 type: "error"
             });
         } finally {

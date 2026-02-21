@@ -26,7 +26,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
     const [serviceDuration, setServiceDuration] = useState('');
     const [bufferTime, setBufferTime] = useState('10');
     const [selectedCategory, setSelectedCategory] = useState('');
-    const [deliveryType, setDeliveryType] = useState<'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH'>('IN_LOCATION_ONLY');
+    const [deliveryType, setDeliveryType] = useState<'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH'>('IN_LOCATION_ONLY');
     const [serviceRadius, setServiceRadius] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [serviceImage, setServiceImage] = useState<File | null>(null);
@@ -73,7 +73,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                 bufferTime: bufferTime ? parseInt(bufferTime) : 15,
             };
 
-            if (deliveryType === 'HOME_SERVICE_ONLY' || deliveryType === 'BOTH') {
+            if (deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') {
                 payload.homeServicePrice = parseFloat(homeServicePrice);
                 payload.maxServiceRadius = parseFloat(serviceRadius);
             }
@@ -82,7 +82,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
 
             if (serviceImage && newService.id) {
                 try {
-                    await businessService.uploadImage(businessId, serviceImage, false, `Service: ${serviceName}`);
+                    await businessService.uploadImage(businessId, serviceImage, false, `Service: ${serviceName}`, 'services', newService.id);
                 } catch (imageError) {
                     console.error('Failed to upload image', imageError);
                 }
@@ -192,11 +192,11 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                                 placeholder="On Site & Home Service"
                                 options={[
                                     { label: 'On Site Only', value: 'IN_LOCATION_ONLY' },
-                                    { label: 'Home Service Only', value: 'HOME_SERVICE_ONLY' },
+                                    // { label: 'Home Service Only', value: 'HOME_SERVICE' },
                                     { label: 'On Site & Home Service', value: 'BOTH' },
                                 ]}
                                 value={deliveryType}
-                                onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE_ONLY' | 'BOTH')}
+                                onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH')}
                                 className="h-[56px] rounded-lg border-gray-200"
                             />
                         </div>

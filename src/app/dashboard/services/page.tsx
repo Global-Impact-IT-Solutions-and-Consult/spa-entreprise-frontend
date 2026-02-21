@@ -20,6 +20,7 @@ export default function ManageServicesPage() {
     const [services, setServices] = useState<Service[]>([]);
     const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefetching, setIsRefetching] = useState(false);
     const [activeTab, setActiveTab] = useState("All");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
@@ -35,7 +36,14 @@ export default function ManageServicesPage() {
                     businessService.getServiceCategories(),
                     businessService.getServices(businessId)
                 ]);
-                setCategories(categoriesData);
+
+                // Filter categories based on the business type code
+                const businessTypeCode = user?.businesses?.[0]?.businessTypeCode?.toLowerCase();
+                const filteredCategories = categoriesData.filter(cat =>
+                    !businessTypeCode || cat.businessTypeCodes.includes(businessTypeCode)
+                );
+
+                setCategories(filteredCategories);
                 setServices(servicesData);
             } catch (error) {
                 const err = error as { response?: { data?: { message?: string } } };
@@ -52,6 +60,19 @@ export default function ManageServicesPage() {
 
         fetchData();
     }, [businessId]);
+
+    const refetchServices = async () => {
+        if (!businessId) return;
+        setIsRefetching(true);
+        try {
+            const servicesData = await businessService.getServices(businessId);
+            setServices(servicesData);
+        } catch {
+            // Silently fail — services already visible from before
+        } finally {
+            setIsRefetching(false);
+        }
+    };
 
     const handleDeleteService = (serviceId: string) => {
         if (!businessId) return;
@@ -82,7 +103,7 @@ export default function ManageServicesPage() {
 
     const filteredServices = activeTab === "All"
         ? services
-        : services.filter(s => categories.find(c => c.id === s.categoryId)?.name === activeTab);
+        : services.filter(s => (s.category?.name || s.category?.id) === activeTab);
 
     return (
         <div className="">
@@ -140,7 +161,7 @@ export default function ManageServicesPage() {
                             <div key={i} className="h-64 bg-gray-100 rounded-xl" />
                         ))}
                     </div>
-                ) : filteredServices.length === 0 ? (
+                ) : filteredServices.length === 0 && !isRefetching ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200 text-center">
                         <div className="p-4 bg-gray-50 rounded-full mb-4">
                             <Plus className="h-8 w-8 text-gray-400" />
@@ -150,15 +171,18 @@ export default function ManageServicesPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredServices.map((service) => (
+                        {filteredServices.map((service, index) => (
                             <ServiceCard
-                                key={service.id}
+                                key={service.id || `service-${index}`}
                                 service={service}
-                                categoryName={categories.find(c => c.id === service.categoryId)?.name || 'Service'}
+                                categoryName={service.category?.name || 'Service'}
                                 onDelete={() => handleDeleteService(service.id)}
                                 onEdit={() => setServiceToEdit(service)}
                             />
                         ))}
+                        {isRefetching && (
+                            <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
+                        )}
                     </div>
                 )}
 
@@ -194,7 +218,10 @@ export default function ManageServicesPage() {
                     businessId={businessId}
                     isOpen={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
-                    onSuccess={(newService) => setServices([...services, newService])}
+                    onSuccess={() => {
+                        setIsCreateModalOpen(false);
+                        refetchServices();
+                    }}
                     categoryOptions={categoryOptions}
                 />
             )}

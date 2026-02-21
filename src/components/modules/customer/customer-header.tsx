@@ -1,14 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X } from "lucide-react";
+import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut } from "lucide-react";
+import { useAuthStore } from "@/store/auth.store";
+import { authService } from "@/services/auth.service";
+import { toaster } from "@/components/ui/toaster";
 
 export function CustomerHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
+    const router = useRouter();
+    const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setProfileDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const isActive = (path: string) => {
         if (path === "/" && pathname !== "/") return false;
@@ -21,6 +39,24 @@ export function CustomerHeader() {
         { href: "/discover", label: "Discover", icon: Compass },
         { href: "/businesses", label: "Businesses", icon: Building2 },
     ];
+
+    const handleLogout = async () => {
+        try {
+            await authService.logout();
+            logoutStore();
+            toaster.create({ title: "Logged out successfully", type: "success" });
+            // router.push("/");
+        } catch {
+            logoutStore();
+            // router.push("/");
+        }
+        setProfileDropdownOpen(false);
+        setMobileMenuOpen(false);
+    };
+
+    const userInitials = user
+        ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U"
+        : "U";
 
     return (
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -63,14 +99,56 @@ export function CustomerHeader() {
                         ))}
                     </nav>
 
-                    {/* Desktop: Sign In Button */}
+                    {/* Desktop: Auth Area */}
                     <div className="hidden md:flex items-center space-x-4">
-                        <Link href="/auth/login">
-                            <Button variant="outline" className="flex items-center space-x-2 border-gray-300 hover:border-[#E89D24] hover:text-[#E89D24]">
-                                <User className="w-4 h-4" />
-                                <span>Sign in</span>
-                            </Button>
-                        </Link>
+                        {isAuthenticated && user ? (
+                            <div className="relative" ref={dropdownRef}>
+                                <button
+                                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                                    className="flex items-center space-x-2 hover:opacity-80 transition"
+                                >
+                                    <User className="w-5 h-5 text-gray-600" />
+                                    <span className="text-sm font-medium text-gray-700">Profile</span>
+                                </button>
+
+                                {/* Profile Dropdown */}
+                                {profileDropdownOpen && (
+                                    <div className="absolute right-0 mt-3 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                                        <Link
+                                            href="/dashboard/settings"
+                                            onClick={() => setProfileDropdownOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <Settings className="w-4 h-4 text-gray-500" />
+                                            Settings
+                                        </Link>
+                                        <Link
+                                            href="/notifications"
+                                            onClick={() => setProfileDropdownOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <Bell className="w-4 h-4 text-gray-500" />
+                                            Notification
+                                        </Link>
+                                        <div className="border-t border-gray-100 my-1" />
+                                        <button
+                                            onClick={handleLogout}
+                                            className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left"
+                                        >
+                                            <LogOut className="w-4 h-4 text-gray-500" />
+                                            Logout
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link href="/auth/login">
+                                <Button variant="outline" className="flex items-center space-x-2 border-gray-300 hover:border-[#E89D24] hover:text-[#E89D24]">
+                                    <User className="w-4 h-4" />
+                                    <span>Sign in</span>
+                                </Button>
+                            </Link>
+                        )}
                     </div>
 
                     {/* Mobile: Hamburger Menu Button */}
@@ -143,16 +221,50 @@ export function CustomerHeader() {
                             <span>{link.label}</span>
                         </Link>
                     ))}
+
+                    {/* Settings & Notification links for logged-in mobile users */}
+                    {isAuthenticated && user && (
+                        <>
+                            <div className="border-t border-gray-100 my-2" />
+                            <Link
+                                href="/dashboard/settings"
+                                className="flex items-center space-x-3 rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                <Settings className="w-5 h-5" />
+                                <span>Settings</span>
+                            </Link>
+                            <Link
+                                href="/notifications"
+                                className="flex items-center space-x-3 rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                <Bell className="w-5 h-5" />
+                                <span>Notifications</span>
+                            </Link>
+                        </>
+                    )}
                 </nav>
 
-                {/* Sign In Button at Bottom */}
+                {/* Bottom Action */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
-                    <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-                        <Button className="w-full bg-[#E89D24] hover:bg-[#E5A800] text-white flex items-center justify-center space-x-2 py-3">
-                            <User className="w-4 h-4" />
-                            <span>Sign in</span>
+                    {isAuthenticated && user ? (
+                        <Button
+                            onClick={handleLogout}
+                            variant="outline"
+                            className="w-full flex items-center justify-center space-x-2 py-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span>Logout</span>
                         </Button>
-                    </Link>
+                    ) : (
+                        <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                            <Button className="w-full bg-[#E89D24] hover:bg-[#E5A800] text-white flex items-center justify-center space-x-2 py-3">
+                                <User className="w-4 h-4" />
+                                <span>Sign in</span>
+                            </Button>
+                        </Link>
+                    )}
                 </div>
             </div>
         </header>
