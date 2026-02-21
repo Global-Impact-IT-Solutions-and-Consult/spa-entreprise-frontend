@@ -78,6 +78,7 @@ export default function BusinessProfilePage() {
     const [isLoadingImages, setIsLoadingImages] = useState(false);
     const [lightboxImage, setLightboxImage] = useState<BusinessImage | null>(null);
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+    const [businessUrl, setBusinessUrl] = useState('');
     const [captionInput, setCaptionInput] = useState("");
     const [showCaptionModal, setShowCaptionModal] = useState(false);
     const [imageToDelete, setImageToDelete] = useState<string | null>(null);
@@ -114,6 +115,13 @@ export default function BusinessProfilePage() {
 
     const cities = (selectedCountryCode && selectedStateCode) ? City.getCitiesOfState(selectedCountryCode, selectedStateCode) : [];
     const cityOptions = cities.map(c => ({ label: c.name, value: c.name }));
+
+    // Set the business URL client-side only to avoid SSR window access
+    useEffect(() => {
+        if (businessId) {
+            setBusinessUrl(`${window.location.origin}/businesses/${businessId}`);
+        }
+    }, [businessId]);
 
     useEffect(() => {
         if (business) {
@@ -881,7 +889,7 @@ export default function BusinessProfilePage() {
                                     <Label htmlFor="link" className="sr-only">Link</Label>
                                     <Input
                                         id="link"
-                                        defaultValue={`${window.location.origin}/businesses/${businessId}`}
+                                        defaultValue={businessUrl}
                                         readOnly
                                         className="h-12 bg-gray-50 border-gray-100 rounded-xl focus-visible:ring-[#F59E0B]"
                                     />
