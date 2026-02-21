@@ -30,12 +30,19 @@ export const ServiceCard = ({ service, categoryName, onDelete, onEdit }: Service
 
             <div className="flex flex-col gap-1">
                 <div className="h-32 bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                    {/* Placeholder for image if not available */}
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
-                        <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-                        </svg>
-                    </div>
+                    {service.imageUrl ? (
+                        <img
+                            src={service.imageUrl}
+                            alt={service.name}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
+                            <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                            </svg>
+                        </div>
+                    )}
                 </div>
                 <h3 className="text-lg font-bold text-gray-900">{service.name}</h3>
                 <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">

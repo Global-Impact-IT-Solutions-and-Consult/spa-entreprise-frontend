@@ -14,23 +14,21 @@ import { Label } from "@/components/ui/label";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, UpdateProfileDto } from '@/services/business.service';
 
-const businessTypes = [
-    { label: "Select business type", value: "" },
-    { label: "SPA", value: "spa" },
-    { label: "Barbershop", value: "barbershop" },
-    { label: "Hair Salon", value: "hair_salon" },
-    { label: "Nail Salon", value: "nail_salon" },
-    { label: "Beauty Salon", value: "beauty_salon" },
-    { label: "Wellness Center", value: "wellness_center" },
-    { label: "Fitness Center", value: "fitness_center" },
-    { label: "Other", value: "other" }
-];
+// Define the option type for the Select component
+interface SelectOption {
+    label: string;
+    value: string;
+}
 
 export default function BusinessInfoPage() {
     const router = useRouter();
     const { businessId, setBusinessId, setBusinessInfo } = useOnboardingStore();
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingBusiness, setIsLoadingBusiness] = useState(true);
+    const [businessTypes, setBusinessTypes] = useState<SelectOption[]>([
+        { label: "Select business type", value: "" }
+    ]);
+    const [isLoadingTypes, setIsLoadingTypes] = useState(true);
 
     // Get all countries
     const allCountries = Country.getAllCountries();
@@ -168,6 +166,35 @@ export default function BusinessInfoPage() {
 
         loadBusinessData();
     }, [businessId, setBusinessId]);
+
+    // Load business types from API
+    useEffect(() => {
+        const fetchBusinessTypes = async () => {
+            try {
+                setIsLoadingTypes(true);
+                const types = await businessService.getBusinessTypes();
+                const mappedTypes = types.map(t => ({
+                    label: t.name,
+                    value: t.code
+                }));
+                setBusinessTypes([
+                    { label: "Select business type", value: "" },
+                    ...mappedTypes
+                ]);
+            } catch (error) {
+                console.error('Failed to fetch business types:', error);
+                toaster.create({
+                    title: "Error",
+                    description: "Failed to load business categories. Please refresh the page.",
+                    type: "error"
+                });
+            } finally {
+                setIsLoadingTypes(false);
+            }
+        };
+
+        fetchBusinessTypes();
+    }, []);
 
     // Handle country selection
     const handleCountryChange = (isoCode: string) => {
@@ -341,6 +368,8 @@ export default function BusinessInfoPage() {
                             options={businessTypes}
                             value={formData.businessTypeCode}
                             onChange={(e) => setFormData({ ...formData, businessTypeCode: e.target.value })}
+                            disabled={isLoadingTypes}
+                            placeholder={isLoadingTypes ? "Loading types..." : "Select business type"}
                         />
                     </div>
 

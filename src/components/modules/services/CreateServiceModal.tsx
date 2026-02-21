@@ -82,7 +82,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
 
             if (serviceImage && newService.id) {
                 try {
-                    await businessService.uploadImage(businessId, serviceImage, false, `Service: ${serviceName}`);
+                    await businessService.uploadImage(businessId, serviceImage, false, `Service: ${serviceName}`, 'services', newService.id);
                 } catch (imageError) {
                     console.error('Failed to upload image', imageError);
                 }
@@ -192,7 +192,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                                 placeholder="On Site & Home Service"
                                 options={[
                                     { label: 'On Site Only', value: 'IN_LOCATION_ONLY' },
-                                    { label: 'Home Service Only', value: 'HOME_SERVICE' },
+                                    // { label: 'Home Service Only', value: 'HOME_SERVICE' },
                                     { label: 'On Site & Home Service', value: 'BOTH' },
                                 ]}
                                 value={deliveryType}

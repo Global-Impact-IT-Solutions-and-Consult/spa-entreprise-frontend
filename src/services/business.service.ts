@@ -111,6 +111,11 @@ export interface Business {
     status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
     userId?: string;
     businessTypeCode?: string;
+    businessType?: {
+        id: string;
+        code: string;
+        name: string;
+    };
     phone?: string;
     email?: string;
     cacNumber?: string;
@@ -140,6 +145,7 @@ export interface Business {
 export interface ServiceCategory {
     id: string;
     name: string;
+    businessTypeCodes: string[];
 }
 
 export interface BusinessType {
@@ -163,6 +169,7 @@ export interface Service {
     deliveryType: 'in_location_only' | 'home_service_only' | 'both' | string;
     homeServicePrice?: number;
     serviceRadius?: number;
+    imageUrl?: string;
 }
 
 export interface Staff {
@@ -451,7 +458,7 @@ export const businessService = {
             rating: service.spa?.averageRating || service.rating || 0,
             reviews: service.spa?.totalReviews || service.reviews || 0,
             location: service.business?.city,
-            image: service.spa?.primaryImageUrl || service.image || 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80',
+            image: service.imageUrl,
         }));
     },
 
@@ -545,6 +552,18 @@ export const businessService = {
         return [] as Staff[];
     },
 
+    // Get All Staff for a Business -- Public route
+    getAllStaffPublic: async (businessId: string) => {
+        const response = await apiClient.get<Staff[] | { data: Staff[] }>(`/spas/public/${businessId}/staff`);
+        // Handle cases where response might be wrapped in { data: [...] } or direct array
+        if (Array.isArray(response.data)) {
+            return response.data as Staff[];
+        } else if (response.data && Array.isArray(response.data.data)) {
+            return response.data.data as Staff[];
+        }
+        return [] as Staff[];
+    },
+
     // Create Staff Member (new endpoint - staff can be assigned to multiple services)
     createStaff: async (businessId: string, data: CreateStaffDto) => {
         const response = await apiClient.post(`/spas/${businessId}/staff`, data);
@@ -564,12 +583,21 @@ export const businessService = {
     },
 
     // Upload Image
-    uploadImage: async (businessId: string, file: File, isPrimary: boolean = false, caption?: string, category: string = 'gallery'): Promise<BusinessImage> => {
+    uploadImage: async (
+        businessId: string,
+        file: File,
+        isPrimary: boolean = false,
+        caption?: string,
+        category: string = 'gallery',
+        serviceId?: string
+    ): Promise<BusinessImage> => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('isPrimary', isPrimary.toString());
-        formData.append('caption', caption || 'Business Image');
-        formData.append('category', category);
+        if (caption) formData.append('caption', caption);
+        // If a serviceId is provided, automatically use 'services' category
+        formData.append('category', serviceId ? 'services' : category);
+        if (serviceId) formData.append('serviceId', serviceId);
 
         const response = await apiClient.post(`/spas/${businessId}/images`, formData, {
             headers: {

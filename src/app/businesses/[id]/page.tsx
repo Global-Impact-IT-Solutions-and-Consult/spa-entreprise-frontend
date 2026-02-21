@@ -33,7 +33,7 @@ export default function BusinessDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const tabs = ["Services", "About", "Reviews", "Gallery", "Staff's"];
+    const tabs = ["Services", "About", "Reviews", "Gallery", "Staff"];
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -44,7 +44,7 @@ export default function BusinessDetailsPage() {
                 const [businessData, servicesData, staffData, galleryData, reviewsData] = await Promise.all([
                     businessService.getBusinessProfile(id),
                     businessService.getServices(id),
-                    businessService.getAllStaff(id),
+                    businessService.getAllStaffPublic(id),
                     businessService.getGalleryImages(id),
                     businessService.getBusinessReviews(id).catch(() => ({
                         data: [],
@@ -129,11 +129,11 @@ export default function BusinessDetailsPage() {
         name: business.businessName,
         rating: typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0),
         reviews: business.totalReviews || 0,
-        category: business.businessTypeCode || "Wellness",
+        category: business?.businessType?.name || "Wellness",
         distance: "", // No placeholder — only show if API provides it
         startingPrice: services.length > 0 ? Math.min(...services.map(s => s.price)).toLocaleString() : "---",
-        bannerImage: business.coverImage || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1600&q=80",
-        profileImage: business.primaryImageUrl || "https://images.unsplash.com/photo-1512690196246-86e580db7940?w=800&q=80",
+        bannerImage: gallery.find(img => !img.isPrimary)?.url || business.coverImage || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1600&q=80",
+        profileImage: gallery.find(img => img.isPrimary)?.url || business.primaryImageUrl || "https://images.unsplash.com/photo-1512690196246-86e580db7940?w=800&q=80",
         address: business.address || business.addressDetails?.address || "Lagos, Nigeria",
         phone: business.phone || "---",
         email: business.email || "---",
@@ -145,13 +145,20 @@ export default function BusinessDetailsPage() {
             rating: 4.5, // Backend doesn't provide staff ratings yet
             reviews: 0,
             description: "Experienced wellness professional.",
-            specialties: []
+            specialties: (s.serviceIds || [])
+                .map(id => services.find(svc => svc.id === id)?.name)
+                .filter(Boolean) as string[],
         })),
-        hours: business.operatingHours ? Object.entries(business.operatingHours).map(([day, hrs]) => ({
-            day: day.charAt(0).toUpperCase() + day.slice(1),
-            time: hrs.closed ? "Closed" : `${hrs.open} - ${hrs.close}`,
-            isToday: new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() === day.toLowerCase()
-        })) : []
+        hours: business.operatingHours ? ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+            .filter(day => business.operatingHours?.[day])
+            .map(day => {
+                const hrs = business.operatingHours![day];
+                return {
+                    day: day.charAt(0).toUpperCase() + day.slice(1),
+                    time: hrs.closed ? "Closed" : `${hrs.open} - ${hrs.close}`,
+                    isToday: new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() === day
+                };
+            }) : []
     };
 
     // Map API reviews to the component's expected format
@@ -178,12 +185,12 @@ export default function BusinessDetailsPage() {
                     {/* Main Content Area */}
                     <div className="flex-1 min-w-0">
                         {/* Tabs */}
-                        <div className="bg-gray-100/50 p-1.5 rounded-2xl flex gap-1 mb-10 w-fit w-full overflow-auto">
+                        <div className="bg-gray-100/50 p-1.5 rounded-md flex gap-1 mb-10 w-fit w-full overflow-auto">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`px-8 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab
+                                    className={`px-8 py-3 rounded-md text-sm font-bold transition-all ${activeTab === tab
                                         ? "bg-[#E89D24] text-white shadow-lg shadow-yellow-500/20"
                                         : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
                                         }`}
@@ -242,7 +249,7 @@ export default function BusinessDetailsPage() {
                             <BusinessGalleryTab images={transformedBusiness.gallery} />
                         )}
 
-                        {activeTab === "Staff's" && (
+                        {activeTab === "Staff" && (
                             <BusinessStaffTab staffs={transformedBusiness.staffs} />
                         )}
                     </div>

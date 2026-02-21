@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { authService } from "@/services/auth.service";
 import { businessService } from "@/services/business.service";
+import Link from "next/link";
 
 export default function DashboardLayout({
     children,
@@ -102,14 +103,7 @@ export default function DashboardLayout({
                 <header className="flex h-20 min-h-[5rem] items-center justify-between border-b bg-white px-8 shrink-0">
                     <div>
                         <h1 className="text-xl font-bold text-gray-900 leading-tight">Dashboard</h1>
-                        {isPending ? (
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#F59E0B]">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>Pending Verification</span>
-                            </div>
-                        ) : (
-                            <p className="text-xs text-gray-500">Welcome Back {user?.firstName}!</p>
-                        )}
+                        <p className="text-xs text-gray-500">Welcome Back {user?.firstName}!</p>
                     </div>
 
                     {/* Right side header content: Notification & Profile (Only when approved?) */}
@@ -197,6 +191,22 @@ export default function DashboardLayout({
                         </>
                     )}
                 </header>
+
+                {isPending && (
+                    <div className="bg-amber-50 border-b border-amber-100 flex items-center justify-between px-8 py-2 animate-in slide-in-from-top duration-300">
+                        <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-[#F59E0B]" />
+                            <span className="text-sm font-bold text-amber-700">Account Pending Verification</span>
+                            <span className="text-xs text-amber-600/80 font-medium ml-2">Some features will be available once your business is verified.</span>
+                        </div>
+                        <Link
+                            href="/dashboard/contact-support"
+                            className="h-8 rounded-lg border border-amber-200 bg-white text-amber-700 hover:bg-amber-50 hover:text-amber-800 font-bold text-xs px-3 flex items-center"
+                        >
+                            Contact Support
+                        </Link>
+                    </div>
+                )}
 
                 <main className="flex-1 overflow-y-auto p-8">
                     {children}

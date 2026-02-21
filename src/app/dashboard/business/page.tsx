@@ -19,7 +19,9 @@ import {
     ZoomIn,
     Settings,
     Info,
-    ChevronRight
+    ChevronRight,
+    Copy,
+    Check
 } from "lucide-react";
 import { Country, State, City, ICountry, IState, ICity } from 'country-state-city';
 
@@ -27,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import CustomInput from '@/components/ui/InputGroup';
@@ -34,6 +37,9 @@ import { businessService, BusinessImage } from "@/services/business.service";
 import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { FaInfoCircle } from "react-icons/fa";
+import { GoNumber } from "react-icons/go";
+import { Tooltip } from "@/components/ui/tooltip";
 
 type TabType = "About" | "Gallery" | "Settings";
 
@@ -75,6 +81,8 @@ export default function BusinessProfilePage() {
     const [captionInput, setCaptionInput] = useState("");
     const [showCaptionModal, setShowCaptionModal] = useState(false);
     const [imageToDelete, setImageToDelete] = useState<string | null>(null);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const galleryFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -163,6 +171,19 @@ export default function BusinessProfilePage() {
         setSelectedCityName(cityName);
         const city = cities.find(c => c.name === cityName);
         setSelectedCity(city || null);
+    };
+
+    const handleCopyLink = () => {
+        const businessLink = `${window.location.origin}/businesses/${businessId}`;
+        navigator.clipboard.writeText(businessLink);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+        toaster.create({ title: "Link copied to clipboard", type: "success" });
+    };
+
+    const handleOpenLive = () => {
+        const businessLink = `${window.location.origin}/businesses/${businessId}`;
+        window.open(businessLink, '_blank');
     };
 
     // Single fetch for ALL images — used by both banner and gallery
@@ -401,13 +422,16 @@ export default function BusinessProfilePage() {
 
                     {/* Overlay badges at bottom of cover */}
                     <div className="absolute bottom-4 left-[240px] md:left-[260px] flex items-center gap-3">
-                        <div className="flex items-center gap-2 bg-[#3B82F6] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
+                        {business?.status?.toLowerCase() == 'pending_approval' ? <div className="flex items-center gap-2 bg-[#F59E0B] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
+                            <FaInfoCircle className="h-4 w-4" />
+                            Pending Approval
+                        </div> : <div className="flex items-center gap-2 bg-[#3B82F6] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
                             <CheckCircle2 className="h-4 w-4" />
                             Verified Business
-                        </div>
+                        </div>}
                         <div className="flex items-center gap-2 bg-white/90 backdrop-blur text-gray-700 px-4 py-2 rounded-lg text-sm font-medium shadow-lg">
                             <MapPin className="h-4 w-4 text-gray-500" />
-                            {business?.addressRelation?.city?.name || "Lagos"}, {business?.addressRelation?.state?.name || "Nigeria"}
+                            {business?.addressRelation?.city?.name}, {business?.addressRelation?.state?.name}
                         </div>
                     </div>
                 </div>
@@ -442,19 +466,24 @@ export default function BusinessProfilePage() {
             <div className="flex items-end justify-between gap-6 mb-8 pl-[240px] pt-4">
                 <div className="space-y-2">
                     <h2 className="text-3xl font-black text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
-                        {business?.businessName || "Precision Cut Barbershop"}
+                        {business?.businessName}
                     </h2>
 
                     <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
                         <div className="flex items-center gap-1.5">
                             <div className="flex items-center gap-0.5">
-                                {[1, 2, 3, 4].map(i => (
-                                    <Star key={i} className="h-4 w-4 fill-[#F59E0B] text-[#F59E0B]" />
+                                {[1, 2, 3, 4, 5].map((i) => (
+                                    <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${i <= Math.floor(Number(business?.averageRating) || 0)
+                                            ? "fill-[#F59E0B] text-[#F59E0B]"
+                                            : "text-gray-200"
+                                            }`}
+                                    />
                                 ))}
-                                <Star className="h-4 w-4 fill-[#F59E0B] text-[#F59E0B] opacity-50" />
                             </div>
-                            <span className="text-gray-900 font-bold ml-1">4.6</span>
-                            <span className="text-gray-400 font-medium">(184 reviews)</span>
+                            <span className="text-gray-900 font-bold ml-1">{business?.averageRating || "0.0"}</span>
+                            <span className="text-gray-400 font-medium">({business?.totalReviews} reviews)</span>
                         </div>
 
                         <div className="h-1 w-1 rounded-full bg-gray-300" />
@@ -467,14 +496,34 @@ export default function BusinessProfilePage() {
                 </div>
 
                 <div className="flex items-center gap-3 flex-shrink-0">
-                    <Button variant="outline" className="h-11 px-6 rounded-md font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        Live
-                    </Button>
-                    <Button variant="outline" className="h-11 px-6 rounded-md font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700">
-                        <Share2 className="h-4 w-4" />
-                        Share
-                    </Button>
+                    <Tooltip content="Available after verification is complete">
+                        <Button
+                            variant="outline"
+                            onClick={handleOpenLive}
+                            disabled={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL'}
+                            className="h-11 px-6 rounded-md font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <div className={cn(
+                                "w-2 h-2 rounded-full",
+                                business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL'
+                                    ? "bg-gray-400"
+                                    : "bg-green-500 animate-pulse"
+                            )} />
+                            Live
+                        </Button>
+                    </Tooltip>
+
+                    <Tooltip content="Available after verification is complete">
+                        <Button
+                            variant="outline"
+                            disabled={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL'}
+                            onClick={() => setIsShareModalOpen(true)}
+                            className="h-11 px-6 rounded-md font-bold flex items-center gap-2 border-gray-200 hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Share2 className="h-4 w-4" />
+                            Share
+                        </Button>
+                    </Tooltip>
                 </div>
             </div>
 
@@ -591,14 +640,17 @@ export default function BusinessProfilePage() {
                                     />
                                 </div>
 
-                                <CustomInput
-                                    label="City *"
-                                    name="cityName"
-                                    value={selectedCityName}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCityChange(e.target.value)}
-                                    placeholder="City"
-                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
-                                />
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">City *</Label>
+                                    <Select
+                                        className="h-[56px] bg-white border border-gray-200 focus:border-[#F59E0B] rounded-lg text-gray-900 font-medium"
+                                        options={cityOptions}
+                                        value={selectedCityName}
+                                        onChange={(e) => handleCityChange(e.target.value)}
+                                        disabled={!selectedStateCode}
+                                        placeholder={selectedStateCode ? "Select a city" : "Select state first"}
+                                    />
+                                </div>
 
                                 <CustomInput
                                     label="Address *"
@@ -811,6 +863,58 @@ export default function BusinessProfilePage() {
                     </div>
                 </div>
             )}
+
+            {/* Share Modal */}
+            <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
+                <DialogContent className="sm:max-w-md bg-white rounded-2xl p-0 overflow-hidden border-none">
+                    <div className="p-8">
+                        <DialogHeader className="mb-6">
+                            <DialogTitle className="text-2xl font-bold text-gray-900">Share Business</DialogTitle>
+                            <DialogDescription className="text-gray-500 font-medium">
+                                Share your business profile with customers and partners.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-6">
+                            <div className="flex items-center space-x-2">
+                                <div className="grid flex-1 gap-2">
+                                    <Label htmlFor="link" className="sr-only">Link</Label>
+                                    <Input
+                                        id="link"
+                                        defaultValue={`${window.location.origin}/businesses/${businessId}`}
+                                        readOnly
+                                        className="h-12 bg-gray-50 border-gray-100 rounded-xl focus-visible:ring-[#F59E0B]"
+                                    />
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={handleCopyLink}
+                                    className="h-12 px-6 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl flex items-center gap-2 min-w-[120px]"
+                                >
+                                    {isCopied ? (
+                                        <>
+                                            <Check className="h-4 w-4" />
+                                            Copied
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="h-4 w-4" />
+                                            Copy
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+
+                            <div className="flex justify-center gap-4 pt-4 border-t border-gray-50">
+                                {/* You could add social share icons here if needed */}
+                                <p className="text-xs text-gray-400 font-medium">
+                                    Publicly accessible at the link above
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -228,7 +228,7 @@ export default function RegisterPage() {
                     size="lg"
                     className="w-full h-[56px] rounded-lg bg-[#E59622] text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white mt-2"
                     onClick={handleRegister}
-                    disabled={isLoading}
+                    disabled={isLoading || !acceptedTerms}
                 >
                     {isLoading ? "Creating..." : "Create Account"}
                 </Button>

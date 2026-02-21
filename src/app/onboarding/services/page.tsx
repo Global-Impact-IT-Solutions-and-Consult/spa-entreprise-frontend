@@ -42,7 +42,17 @@ const ServiceCard = ({ service, categoryName, onDelete, onEdit }: ServiceCardPro
             </div>
 
             <div className="flex flex-col gap-1">
-                <div className="h-32 bg-gray-100 rounded-lg mb-3" />
+                <div className="h-32 bg-gray-100 rounded-lg mb-3 overflow-hidden flex items-center justify-center">
+                    {service.imageUrl ? (
+                        <img
+                            src={service.imageUrl}
+                            alt={service.name}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gray-100" />
+                    )}
+                </div>
                 <h3 className="text-lg font-bold text-gray-900">{service.name}</h3>
                 <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">
                     {service.description || "Fully body therapeutic massage with essential oils for relaxation and pain relief."}
@@ -85,12 +95,13 @@ const ServiceCard = ({ service, categoryName, onDelete, onEdit }: ServiceCardPro
 
 export default function ServicesPage() {
     const router = useRouter();
-    const { businessId } = useOnboardingStore();
+    const { businessId, businessInfo } = useOnboardingStore();
     const [open, setOpen] = useState(false);
     const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefetching, setIsRefetching] = useState(false);
     const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
     const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
 
@@ -122,7 +133,17 @@ export default function ServicesPage() {
                     businessService.getServiceCategories(),
                     businessService.getServices(businessId)
                 ]);
-                setCategories(categoriesData);
+
+                // Filter categories based on the business type code from store
+                const businessTypeCode = businessInfo.businessTypeCode?.toLowerCase();
+                const filteredCategories = businessTypeCode
+                    ? categoriesData.filter(cat =>
+                        Array.isArray(cat.businessTypeCodes) && cat.businessTypeCodes.includes(businessTypeCode)
+                    )
+                    : categoriesData;
+
+                // Fall back to all categories if filter produced nothing (e.g. mismatched codes)
+                setCategories(filteredCategories.length > 0 ? filteredCategories : categoriesData);
                 setServices(servicesData);
             } catch (error) {
                 const err = error as { response?: { data?: { message?: string } } };
@@ -139,6 +160,19 @@ export default function ServicesPage() {
 
         fetchData();
     }, [businessId]);
+
+    const refetchServices = async () => {
+        if (!businessId) return;
+        setIsRefetching(true);
+        try {
+            const servicesData = await businessService.getServices(businessId);
+            setServices(servicesData);
+        } catch {
+            // Silently fail — services already visible
+        } finally {
+            setIsRefetching(false);
+        }
+    };
 
     const handleAddService = async () => {
         if (!businessId) {
@@ -225,7 +259,9 @@ export default function ServicesPage() {
                         businessId,
                         serviceImage,
                         false, // isPrimary = false for service images
-                        `Service: ${serviceName} - ${newService.id}` // caption with service reference
+                        `Service: ${serviceName}`,
+                        'services',
+                        newService.id // Associate image with this specific service
                     );
                     console.log('Service image uploaded successfully');
                 } catch (imageError) {
@@ -244,6 +280,7 @@ export default function ServicesPage() {
 
             toaster.create({ title: "Service Added", type: "success" });
             setOpen(false);
+            refetchServices();
 
             // Reset Form
             setServiceName('');
@@ -373,7 +410,7 @@ export default function ServicesPage() {
                     <div className="flex-1 flex items-center justify-center">
                         <div className="text-gray-500">Loading services...</div>
                     </div>
-                ) : services.length === 0 ? (
+                ) : services.length === 0 && !isRefetching ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center py-20 grayscale opacity-40">
                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                             <FiPlus className="h-10 w-10 text-gray-400" />
@@ -388,11 +425,14 @@ export default function ServicesPage() {
                                 <ServiceCard
                                     key={service.id}
                                     service={service}
-                                    categoryName={categories.find(c => c.id === service.categoryId)?.name || 'Service'}
+                                    categoryName={categories.find(c => c.id === service.categoryId)?.name || service.category?.name || 'Service'}
                                     onDelete={() => handleDeleteService(service.id)}
                                     onEdit={() => setServiceToEdit(service)}
                                 />
                             ))}
+                            {isRefetching && (
+                                <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
+                            )}
                         </div>
 
                         {/* Pagination */}
