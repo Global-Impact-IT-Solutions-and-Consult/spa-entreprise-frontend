@@ -10,6 +10,7 @@ import CustomInput from '@/components/ui/InputGroup';
 import { toaster } from "@/components/ui/toaster";
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
+
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService } from '@/services/business.service';
 import { determineOnboardingStep } from '@/lib/onboarding-utils';
