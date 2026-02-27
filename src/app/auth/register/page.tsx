@@ -121,7 +121,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col text-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an account</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2 font-inter">Create an account</h1>
                 <p className="text-sm text-gray-500">
                     Already have an account?{' '}
                     <Link href="/auth/login" className="text-[#E59622] hover:underline">

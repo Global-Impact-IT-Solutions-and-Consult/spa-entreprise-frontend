@@ -80,6 +80,9 @@ export interface CreateStaffDto {
     serviceIds: string[];
     role: string;
     experience: string;
+    phone?: string;
+    about?: string;
+    profilePicture?: string;
 }
 
 export interface AddressDetails {
@@ -174,10 +177,16 @@ export interface Service {
 
 export interface Staff {
     id: string;
+    businessId?: string;
     name: string;
     role: string;
     experience: string;
+    phone?: string | null;
+    about?: string | null;
     serviceIds?: string[];
+    profilePicture?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface SearchSpasParams {
@@ -542,43 +551,43 @@ export const businessService = {
 
     // Get All Staff for a Business
     getAllStaff: async (businessId: string) => {
-        const response = await apiClient.get<Staff[] | { data: Staff[] }>(`/spas/${businessId}/staff`);
-        // Handle cases where response might be wrapped in { data: [...] } or direct array
-        if (Array.isArray(response.data)) {
-            return response.data as Staff[];
-        } else if (response.data && Array.isArray(response.data.data)) {
-            return response.data.data as Staff[];
-        }
-        return [] as Staff[];
+        const response = await apiClient.get<Staff[]>(`/spas/${businessId}/staff`);
+        return Array.isArray(response.data) ? response.data : [];
     },
 
     // Get All Staff for a Business -- Public route
     getAllStaffPublic: async (businessId: string) => {
-        const response = await apiClient.get<Staff[] | { data: Staff[] }>(`/spas/public/${businessId}/staff`);
-        // Handle cases where response might be wrapped in { data: [...] } or direct array
-        if (Array.isArray(response.data)) {
-            return response.data as Staff[];
-        } else if (response.data && Array.isArray(response.data.data)) {
-            return response.data.data as Staff[];
-        }
-        return [] as Staff[];
+        const response = await apiClient.get<Staff[]>(`/spas/public/${businessId}/staff`);
+        return Array.isArray(response.data) ? response.data : [];
     },
 
-    // Create Staff Member (new endpoint - staff can be assigned to multiple services)
+    // Create Staff Member
     createStaff: async (businessId: string, data: CreateStaffDto) => {
-        const response = await apiClient.post(`/spas/${businessId}/staff`, data);
+        const response = await apiClient.post<Staff>(`/spas/${businessId}/staff`, data);
         return response.data;
     },
 
     // Update Staff Member
     updateStaff: async (businessId: string, staffId: string, data: Partial<CreateStaffDto>) => {
-        const response = await apiClient.put(`/spas/${businessId}/staff/${staffId}`, data);
+        const response = await apiClient.put<Staff>(`/spas/${businessId}/staff/${staffId}`, data);
         return response.data;
     },
 
     // Delete Staff Member
     deleteStaff: async (businessId: string, staffId: string) => {
         const response = await apiClient.delete(`/spas/${businessId}/staff/${staffId}`);
+        return response.data;
+    },
+
+    // Upload Staff Profile Picture
+    uploadStaffProfilePicture: async (businessId: string, staffId: string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post<{ profilePicture: string }>(
+            `/spas/${businessId}/staff/${staffId}/profile-picture`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
         return response.data;
     },
 

@@ -125,7 +125,7 @@ function LoginContent() {
     return (
         <AuthLayout>
             <div className="flex flex-col text-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2 font-inter">Welcome Back</h1>
                 <p className="text-sm text-gray-500">
                     Don&apos;t have an account?{' '}
                     <Link href="/auth/register" className="text-[#E59622] hover:underline">

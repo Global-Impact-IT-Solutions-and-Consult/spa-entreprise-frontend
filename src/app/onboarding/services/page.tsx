@@ -497,10 +497,10 @@ export default function ServicesPage() {
                 }
             }}>
                 <DialogContent className='bg-white sm:max-w-2xl rounded-2xl p-0 overflow-hidden border-none h-[calc(100vh-4rem)]'>
-                    <div className="p-8">
+                    <div className="p-6">
                         <DialogHeader className="mb-8">
-                            <DialogTitle className="text-3xl font-bold text-gray-900">Add New Service</DialogTitle>
-                            <p className="text-sm font-normal text-gray-500">Add new services being offered by your business</p>
+                            <DialogTitle className="text-xl font-bold text-gray-900">Add New Service</DialogTitle>
+                            <p className="text-xs font-normal text-gray-500">Add new services being offered by your business</p>
                         </DialogHeader>
 
                         <div className="space-y-6 h-[calc(100vh-20rem)] overflow-y-auto">

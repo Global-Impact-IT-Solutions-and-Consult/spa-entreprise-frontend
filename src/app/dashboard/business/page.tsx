@@ -473,7 +473,7 @@ export default function BusinessProfilePage() {
             {/* Business Info — sits below cover, padded left to clear overlapping primary image */}
             <div className="flex items-end justify-between gap-6 mb-8 pl-[240px] pt-4">
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">
                         {business?.businessName}
                     </h2>
 
