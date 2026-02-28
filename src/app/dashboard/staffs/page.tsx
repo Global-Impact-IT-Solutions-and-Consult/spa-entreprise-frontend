@@ -1,37 +1,82 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-    Plus,
-    User,
-    Edit2,
-    Trash2,
-    Loader2,
-    Scissors
-} from "lucide-react";
+import { Plus, User, Edit2, Trash2, Loader2, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle
-} from "@/components/ui/dialog";
-import { Select as CustomSelect } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { StaffModal } from "@/components/modules/staff/StaffModal";
 import { useAuthStore } from "@/store/auth.store";
 import { businessService, Staff, Service } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
-import { cn } from "@/lib/utils";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
-const experienceLevels = [
-    { label: "Junior", value: "Junior" },
-    { label: "Intermediate", value: "Intermediate" },
-    { label: "Expert", value: "Expert" },
-];
+// Staff Card Component for Dashboard
+interface StaffDashboardCardProps {
+    staff: Staff;
+    serviceNames: string[];
+    onEdit: () => void;
+    onDelete: () => void;
+}
+
+const StaffDashboardCard = ({ staff, serviceNames, onEdit, onDelete }: StaffDashboardCardProps) => {
+    const [expanded, setExpanded] = useState(false);
+    return (
+        <div className={`bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex flex-col gap-4 ${expanded ? 'min-h-[300px]' : 'h-[300px]'}`}>
+            {/* Top section: avatar + name */}
+            <div className="shadow-md p-2 rounded">
+                <div className="flex justify-between items-start">
+                    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                        {staff.profilePicture
+                            ? <img src={staff.profilePicture} alt={staff.name} className="h-full w-full object-cover" />
+                            : <User className="h-7 w-7 text-gray-400" />
+                        }
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={onEdit} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                            <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button onClick={onDelete} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    </div>
+                </div>
+                <div className="mt-3">
+                    <h3 className="text-base font-bold text-gray-900">{staff.name}</h3>
+                    <p className="text-sm text-gray-400 mt-0.5">
+                        {staff.experience ? `${staff.experience} ${staff.role}` : staff.role}
+                    </p>
+                </div>
+            </div>
+
+            {/* About text — 2-line clamp with See more */}
+            {staff.about && (
+                <div className="border-t border-gray-100 pt-3">
+                    <p className={`text-sm text-gray-500 leading-relaxed ${expanded ? '' : 'line-clamp-2'}`}>
+                        {staff.about}
+                    </p>
+                    {staff.about.length > 110 && (
+                        <button
+                            onClick={() => setExpanded(prev => !prev)}
+                            className="text-xs text-amber-600 font-medium mt-1 hover:underline"
+                        >
+                            {expanded ? 'See less' : 'See more'}
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* Service name tags */}
+            {serviceNames.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                    {serviceNames.map((name, i) => (
+                        <span key={i} className="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded-full border border-amber-100">
+                            {name}
+                        </span>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default function StaffsPage() {
     const { user } = useAuthStore();
@@ -40,7 +85,6 @@ export default function StaffsPage() {
     const [staffs, setStaffs] = useState<Staff[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isActionLoading, setIsActionLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery] = useState("");
     const [staffToDelete, setStaffToDelete] = useState<string | null>(null);
@@ -133,63 +177,18 @@ export default function StaffsPage() {
             ) : (
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredStaff.map((staff) => {
-                        const staffServices = services.filter(s => staff.serviceIds?.includes(s.id));
-                        const mainService = staffServices[0]?.name || "No services";
-                        const extraCount = staffServices.length > 1 ? staffServices.length - 1 : 0;
+                        const staffServiceNames = services
+                            .filter(s => staff.serviceIds?.includes(s.id))
+                            .map(s => s.name);
 
                         return (
-                            <div key={staff.id} className="bg-white rounded-md p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative group">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm ring-1 ring-gray-100">
-                                        <User className="h-8 w-8 text-gray-400" />
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => setStaffToEdit(staff)}
-                                            className="p-2 bg-blue-50 text-blue-500 rounded-xl hover:bg-blue-100 transition-colors"
-                                        >
-                                            <Edit2 className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteStaff(staff.id)}
-                                            className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <div className="space-y-1">
-                                        <h3 className="text-xl font-bold text-gray-900">{staff.name}</h3>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <span className="py-1 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
-                                                {staff.role}
-                                            </span>
-                                            {extraCount > 0 && (
-                                                <span className="px-3 py-1 bg-gray-50 text-[10px] font-bold text-gray-400 rounded-full uppercase tracking-wider">
-                                                    +{extraCount}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <hr className="border-gray-100" />
-
-                                    <div className="pt-1 space-y-3">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xs font-semibold text-gray-400 w-16">Service</span>
-                                            <div className="h-1.5 w-1.5 rounded-full bg-gray-300" />
-                                            <span className="text-xs font-bold text-gray-700 truncate flex-1">{mainService}</span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xs font-semibold text-gray-400 w-16">Experience</span>
-                                            <div className="h-1.5 w-1.5 rounded-full bg-gray-300" />
-                                            <span className="text-xs font-bold text-gray-700">{staff.experience}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <StaffDashboardCard
+                                key={staff.id}
+                                staff={staff}
+                                serviceNames={staffServiceNames}
+                                onEdit={() => setStaffToEdit(staff)}
+                                onDelete={() => handleDeleteStaff(staff.id)}
+                            />
                         );
                     })}
                 </div>

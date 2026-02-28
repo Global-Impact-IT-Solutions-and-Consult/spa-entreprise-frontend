@@ -74,6 +74,8 @@ export default function BusinessProfilePage() {
     const [activeTab, setActiveTab] = useState<TabType>("About");
     const [allImages, setAllImages] = useState<BusinessImage[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [isUploadingProfile, setIsUploadingProfile] = useState(false);
+    const [isUploadingCover, setIsUploadingCover] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingImages, setIsLoadingImages] = useState(false);
     const [lightboxImage, setLightboxImage] = useState<BusinessImage | null>(null);
@@ -84,8 +86,15 @@ export default function BusinessProfilePage() {
     const [imageToDelete, setImageToDelete] = useState<string | null>(null);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    // Dedicated profile & cover image state
+    const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+    const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+    const [isLoadingProfileImage, setIsLoadingProfileImage] = useState(true);
+    const [isLoadingCoverImage, setIsLoadingCoverImage] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const galleryFileInputRef = useRef<HTMLInputElement>(null);
+    const profileImageInputRef = useRef<HTMLInputElement>(null);
+    const coverImageInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState({
         businessName: "",
@@ -194,7 +203,20 @@ export default function BusinessProfilePage() {
         window.open(businessLink, '_blank');
     };
 
-    // Single fetch for ALL images — used by both banner and gallery
+    // Fetch profile & cover images from dedicated endpoints
+    useEffect(() => {
+        if (!businessId) return;
+        businessService.getProfileImage(businessId)
+            .then(res => setProfileImageUrl(res.profileImage))
+            .catch(() => { })
+            .finally(() => setIsLoadingProfileImage(false));
+        businessService.getCoverImage(businessId)
+            .then(res => setCoverImageUrl(res.coverImage))
+            .catch(() => { })
+            .finally(() => setIsLoadingCoverImage(false));
+    }, [businessId]);
+
+    // Single fetch for ALL gallery images
     const fetchAllImages = useCallback(async (showLoading = true) => {
         if (!businessId) return;
         if (showLoading) setIsLoadingImages(true);
@@ -217,7 +239,42 @@ export default function BusinessProfilePage() {
         window.dispatchEvent(new CustomEvent("primary-image-changed", { detail: { url } }));
     }, []);
 
-    // Stage files and show caption modal
+    // Upload profile image (small overlapping avatar)
+    const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !businessId) return;
+        setIsUploadingProfile(true);
+        try {
+            const res = await businessService.uploadProfileImage(businessId, file);
+            setProfileImageUrl(res.profileImage);
+            toaster.create({ title: 'Profile image updated', type: 'success' });
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toaster.create({ title: 'Upload failed', description: err.response?.data?.message || 'Could not upload profile image', type: 'error' });
+        } finally {
+            setIsUploadingProfile(false);
+            if (profileImageInputRef.current) profileImageInputRef.current.value = '';
+        }
+    };
+
+    // Upload cover image (big banner) — uses the dedicated POST /spas/{id}/cover-image endpoint
+    const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !businessId) return;
+        setIsUploadingCover(true);
+        try {
+            const res = await businessService.uploadCoverImage(businessId, file);
+            setCoverImageUrl(res.coverImage);
+            toaster.create({ title: 'Cover image updated', type: 'success' });
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toaster.create({ title: 'Upload failed', description: err.response?.data?.message || 'Could not upload cover image', type: 'error' });
+        } finally {
+            setIsUploadingCover(false);
+            if (coverImageInputRef.current) coverImageInputRef.current.value = '';
+        }
+    };
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
@@ -383,9 +440,8 @@ export default function BusinessProfilePage() {
         }
     };
 
-    // Derived data — cover image is any non-primary, primary is the small overlapping one
-    const primaryImage = allImages.find(img => img.isPrimary) || allImages[0];
-    const coverImage = allImages.find(img => img.id !== primaryImage?.id) || primaryImage;
+    // Derived data — gallery images only (profile & cover are managed separately)
+    const galleryImages = allImages;
 
     // Group gallery images by category
     const groupedGallery = allImages.reduce((acc, img) => {
@@ -410,13 +466,19 @@ export default function BusinessProfilePage() {
 
     return (
         <div className="animate-in fade-in duration-500">
-            {/* Banner Section — Cover image with overlapping primary image */}
+            {/* Banner Section — Cover image with overlapping profile image */}
             <div className="relative mb-8">
-                {/* Cover Image */}
-                <div className="relative w-full h-[360px] rounded-2xl overflow-hidden bg-gray-100">
-                    {coverImage ? (
+                {/* Cover Image — clickable to upload */}
+                <div
+                    className="relative w-full h-[360px] rounded-2xl overflow-hidden bg-gray-100 cursor-pointer group"
+                    onClick={() => coverImageInputRef.current?.click()}
+                >
+                    {isLoadingCoverImage ? (
+                        /* Skeleton shimmer while fetching cover URL */
+                        <div className="w-full h-full animate-pulse bg-gray-200" />
+                    ) : coverImageUrl ? (
                         <Image
-                            src={coverImage.url}
+                            src={coverImageUrl}
                             alt="Business Cover"
                             fill
                             className="object-cover"
@@ -424,12 +486,26 @@ export default function BusinessProfilePage() {
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-2">
                             <ImageIcon className="h-12 w-12" />
-                            <p className="text-sm font-medium">No cover image</p>
+                            <p className="text-sm font-medium">Click to upload cover image</p>
+                        </div>
+                    )}
+
+                    {/* Upload overlay — always visible while uploading, hover-only when idle */}
+                    {!isLoadingCoverImage && (
+                        <div className={`absolute inset-0 bg-black/30 transition-opacity flex items-center justify-center ${isUploadingCover ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            {isUploadingCover ? (
+                                <Loader2 className="h-8 w-8 text-white animate-spin" />
+                            ) : (
+                                <div className="flex flex-col items-center gap-1 text-white">
+                                    <Upload className="h-7 w-7" />
+                                    <span className="text-sm font-semibold">Change cover</span>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* Overlay badges at bottom of cover */}
-                    <div className="absolute bottom-4 left-[240px] md:left-[260px] flex items-center gap-3">
+                    <div className="absolute bottom-4 left-[240px] md:left-[260px] flex items-center gap-3" onClick={e => e.stopPropagation()}>
                         {business?.status?.toLowerCase() == 'pending_approval' ? <div className="flex items-center gap-2 bg-[#F59E0B] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
                             <FaInfoCircle className="h-4 w-4" />
                             Pending Approval
@@ -444,11 +520,17 @@ export default function BusinessProfilePage() {
                     </div>
                 </div>
 
-                {/* Primary Image — absolutely positioned, overlapping bottom-left */}
-                <div className="absolute bottom-0 left-6 translate-y-1/2 w-[200px] h-[200px] rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-gray-100 z-10">
-                    {primaryImage ? (
+                {/* Profile Image — absolutely positioned, overlapping bottom-left, clickable to upload */}
+                <div
+                    className="absolute bottom-0 left-6 translate-y-1/2 w-[200px] h-[200px] rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-gray-100 z-10 cursor-pointer group"
+                    onClick={() => profileImageInputRef.current?.click()}
+                >
+                    {isLoadingProfileImage ? (
+                        /* Skeleton shimmer while fetching profile URL */
+                        <div className="w-full h-full animate-pulse bg-gray-200" />
+                    ) : profileImageUrl ? (
                         <Image
-                            src={primaryImage.url}
+                            src={profileImageUrl}
                             alt="Business Profile"
                             fill
                             className="object-cover"
@@ -458,8 +540,21 @@ export default function BusinessProfilePage() {
                             <ImageIcon className="h-10 w-10" />
                         </div>
                     )}
+                    {/* Upload overlay — always visible while uploading, hover-only when idle */}
+                    {!isLoadingProfileImage && (
+                        <div className={`absolute inset-0 bg-black/30 transition-opacity flex items-center justify-center ${isUploadingProfile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            {isUploadingProfile ? (
+                                <Loader2 className="h-6 w-6 text-white animate-spin" />
+                            ) : (
+                                <Upload className="h-6 w-6 text-white" />
+                            )}
+                        </div>
+                    )}
                 </div>
 
+                {/* Hidden file inputs */}
+                <input type="file" ref={profileImageInputRef} onChange={handleProfileImageUpload} accept="image/*" className="hidden" />
+                <input type="file" ref={coverImageInputRef} onChange={handleCoverImageUpload} accept="image/*" className="hidden" />
                 <input
                     type="file"
                     ref={fileInputRef}

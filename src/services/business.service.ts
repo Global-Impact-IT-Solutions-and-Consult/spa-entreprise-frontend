@@ -54,6 +54,7 @@ export interface UpdateProfileDto {
     addressNote?: string;
     amenities?: string[];
     operatingHours?: OperatingHours;
+    coverImage?: string;
 }
 
 export interface RegisterBusinessDto {
@@ -172,6 +173,7 @@ export interface Service {
     deliveryType: 'in_location_only' | 'home_service_only' | 'both' | string;
     homeServicePrice?: number;
     serviceRadius?: number;
+    maxServiceRadius?: number;
     imageUrl?: string;
 }
 
@@ -642,6 +644,42 @@ export const businessService = {
         return response.data;
     },
 
+    // Upload Business Profile Image (small avatar/logo)
+    uploadProfileImage: async (businessId: string, file: File): Promise<{ profileImage: string }> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post<{ profileImage: string }>(
+            `/spas/${businessId}/profile-image`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        return response.data;
+    },
+
+    // Upload Business Cover Image — dedicated endpoint (POST /spas/{id}/cover-image)
+    uploadCoverImage: async (businessId: string, file: File): Promise<{ coverImage: string }> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post<{ coverImage: string }>(
+            `/spas/${businessId}/cover-image`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        return response.data;
+    },
+
+    // Get Business Profile Image (Public)
+    getProfileImage: async (businessId: string): Promise<{ profileImage: string | null }> => {
+        const response = await apiClient.get<{ profileImage: string | null }>(`/spas/${businessId}/profile-image`);
+        return response.data;
+    },
+
+    // Get Business Cover Image (Public)
+    getCoverImage: async (businessId: string): Promise<{ coverImage: string | null }> => {
+        const response = await apiClient.get<{ coverImage: string | null }>(`/spas/${businessId}/cover-image`);
+        return response.data;
+    },
+
     // Upload Document
     uploadDocument: async (businessId: string, file: File, documentType: string) => {
         const formData = new FormData();
@@ -678,5 +716,26 @@ export const businessService = {
     getBusinessReviews: async (businessId: string, params?: { page?: number; limit?: number }): Promise<ReviewsResponse> => {
         const response = await apiClient.get<ReviewsResponse>(`/spas/${businessId}/reviews`, { params });
         return response.data;
-    }
+    },
+
+    // Get Notification Preferences — GET /spas/{id}/notifications
+    getNotificationPreferences: async (businessId: string) => {
+        const response = await apiClient.get(`/spas/${businessId}/notifications`);
+        return response.data;
+    },
+
+    // Update Notification Preferences — PUT /spas/{id}/notifications
+    updateNotificationPreferences: async (businessId: string, prefs: {
+        emailNewBookingAlerts?: boolean;
+        emailPaymentNotifications?: boolean;
+        emailReviewNotifications?: boolean;
+        emailSystemAlerts?: boolean;
+        smsBookingReminders?: boolean;
+        smsPaymentConfirmations?: boolean;
+        pushRealTimeBookings?: boolean;
+        pushUrgentAlerts?: boolean;
+    }) => {
+        const response = await apiClient.put(`/spas/${businessId}/notifications`, prefs);
+        return response.data;
+    },
 };

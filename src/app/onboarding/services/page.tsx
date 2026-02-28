@@ -711,8 +711,9 @@ export default function ServicesPage() {
                     service={serviceToEdit}
                     isOpen={!!serviceToEdit}
                     onClose={() => setServiceToEdit(null)}
-                    onSuccess={(updatedService) => {
-                        setServices(services.map(s => s.id === updatedService.id ? updatedService : s));
+                    onSuccess={() => {
+                        setServiceToEdit(null);
+                        refetchServices();
                     }}
                     categoryOptions={categoryOptions}
                 />
