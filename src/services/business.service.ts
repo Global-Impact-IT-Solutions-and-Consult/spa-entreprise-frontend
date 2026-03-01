@@ -55,6 +55,7 @@ export interface UpdateProfileDto {
     amenities?: string[];
     operatingHours?: OperatingHours;
     coverImage?: string;
+    timezone?: string;
 }
 
 export interface RegisterBusinessDto {
@@ -738,4 +739,35 @@ export const businessService = {
         const response = await apiClient.put(`/spas/${businessId}/notifications`, prefs);
         return response.data;
     },
+
+    // Get Payout Info — GET /spas/{id}/payout-info
+    getPayoutInfo: async (businessId: string): Promise<{
+        payoutInfo: {
+            id: string;
+            businessId: string;
+            accountName: string;
+            bankName: string;
+            accountNumber: string;
+            sortCode?: string | null;
+            routingCode?: string | null;
+            createdAt: string;
+            updatedAt: string;
+        } | null;
+    }> => {
+        const response = await apiClient.get(`/spas/${businessId}/payout-info`);
+        return response.data;
+    },
+
+    // Create or Update Payout Info — POST /spas/{id}/payout-info
+    createOrUpdatePayoutInfo: async (businessId: string, data: {
+        accountName: string;
+        bankName: string;
+        accountNumber: string;
+        sortCode?: string;
+        routingCode?: string;
+    }) => {
+        const response = await apiClient.post(`/spas/${businessId}/payout-info`, data);
+        return response.data;
+    },
 };
+

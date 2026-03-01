@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Bell, CreditCard, User, Loader2, Camera, X } from 'lucide-react';
+import { Bell, CreditCard, User, Loader2, Camera, X, Calendar, CheckCircle, CheckCircle2, Clock, Star } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/auth.store";
@@ -10,6 +10,7 @@ import { userService, UpdateProfileDto } from '@/services/user.service';
 import { businessService } from '@/services/business.service';
 import { toaster } from '@/components/ui/toaster';
 import Image from 'next/image';
+import { BiInfoCircle } from 'react-icons/bi';
 
 type TabType = 'profile' | 'company' | 'notifications';
 
@@ -42,32 +43,34 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-500 font-medium">Change settings</p>
             </div>
 
-            {/* Tabs Navigation */}
-            <div className="flex items-center justify-between">
-                <div className="bg-gray-100/70 p-1 rounded-xl inline-flex gap-1">
-                    {tabs.map((tab) => {
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id as TabType)}
-                                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${isActive
-                                    ? 'bg-[#F59E0B] text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-800'
-                                    }`}
-                            >
-                                {tab.label}
-                            </button>
-                        );
-                    })}
-                </div>
+            {/* Tabs Navigation & Save Button — Sticky Container */}
+            <div className="sticky top-[-2rem] z-30 bg-gray-50/95 backdrop-blur-md py-4 transition-all -mx-8 px-8 border-b border-gray-200/50">
+                <div className="max-w-5xl mx-auto flex items-center justify-between">
+                    <div className="bg-gray-100/70 p-1.5 rounded-xl inline-flex gap-1 shadow-sm border border-gray-200/20">
+                        {tabs.map((tab) => {
+                            const isActive = activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as TabType)}
+                                    className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${isActive
+                                        ? 'bg-[#F59E0B] text-white shadow-md'
+                                        : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'
+                                        }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            );
+                        })}
+                    </div>
 
-                {/* Save Changes pinned to top-right of tab bar — only for profile */}
-                {activeTab === 'profile' && <SaveProfileButton user={user} onUpdate={updateUser} />}
+                    {/* Save Changes pinned to top-right of tab bar — only for profile */}
+                    {activeTab === 'profile' && <SaveProfileButton user={user} onUpdate={updateUser} />}
+                </div>
             </div>
 
             {/* Tab Content */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 min-h-[500px]">
+            <div className="bg-white rounded-[2rem] p-10 shadow-xl shadow-black/5 border border-gray-100 min-h-[600px] animate-in slide-in-from-bottom-4 duration-500">
                 {activeTab === 'profile' && <UserProfileTab user={user} onUpdate={updateUser} />}
                 {activeTab === 'company' && <CompanySettingTab />}
                 {activeTab === 'notifications' && <NotificationsTab />}
@@ -79,24 +82,58 @@ export default function SettingsPage() {
 // ─── Shared save button hoisted to tab bar ─────────────────────────────────────
 function SaveProfileButton({ user, onUpdate }: { user: any; onUpdate: (u: any) => void }) {
     const [isSaving, setIsSaving] = useState(false);
-    // Expose save trigger via a global event so UserProfileTab can trigger it
+    const businessId = user?.businesses?.[0]?.id;
+
     useEffect(() => {
         const handler = async (e: any) => {
-            const data = e.detail as UpdateProfileDto;
+            const { profileData, timezone, businessProfile } = e.detail as { profileData: UpdateProfileDto; timezone: string; businessProfile: any };
             setIsSaving(true);
             try {
-                const updated = await userService.updateProfile(data);
+                // 1. Save user profile (name, phone)
+                const updated = await userService.updateProfile(profileData);
                 onUpdate(updated);
+
+                // 2. Save business profile (merge with existing to satisfy validation)
+                if (businessId && businessProfile) {
+                    const updateData = {
+                        ...businessProfile,
+                        timezone: timezone || businessProfile.timezone,
+                    };
+
+                    // Extract address fields from addressDetails or addressRelation if top-level fields are missing
+                    const ad = updateData.addressDetails || updateData.addressRelation;
+
+                    // Ensure we only send fields UpdateProfileDto expects (omit id, timestamps etc)
+                    const cleanData: any = {
+                        businessTypeCode: updateData.businessTypeCode,
+                        businessName: updateData.businessName,
+                        phone: updateData.phone,
+                        description: updateData.description,
+                        country: updateData.country || ad?.country,
+                        state: updateData.state || ad?.state,
+                        city: updateData.city || ad?.city,
+                        address: updateData.address || ad?.address,
+                        timezone: updateData.timezone,
+                        cacNumber: updateData.cacNumber,
+                        addressNote: updateData.addressNote || ad?.note,
+                        amenities: updateData.amenities,
+                        operatingHours: updateData.operatingHours,
+                        coverImage: updateData.coverImage
+                    };
+                    await businessService.updateProfile(businessId, cleanData);
+                }
                 toaster.create({ title: 'Profile Updated', type: 'success' });
             } catch (err: any) {
-                toaster.create({ title: 'Update Failed', description: err.response?.data?.message || 'Please try again.', type: 'error' });
+                const message = err.response?.data?.message || 'Please try again.';
+                toaster.create({ title: 'Update Failed', description: message, type: 'error' });
+                console.error('Update Profile Error:', err.response?.data);
             } finally {
                 setIsSaving(false);
             }
         };
         window.addEventListener('settings:save-profile', handler);
         return () => window.removeEventListener('settings:save-profile', handler);
-    }, [onUpdate]);
+    }, [onUpdate, businessId]);
 
     return (
         <button
@@ -112,32 +149,46 @@ function SaveProfileButton({ user, onUpdate }: { user: any; onUpdate: (u: any) =
 
 // ─── User Profile Tab ──────────────────────────────────────────────────────────
 function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) => void }) {
+    const businessId = user?.businesses?.[0]?.id;
     const [formData, setFormData] = useState<UpdateProfileDto>({
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',
         phone: user?.phone || '',
     });
     const [timezone, setTimezone] = useState('Africa/Lagos');
+    const [businessProfile, setBusinessProfile] = useState<any>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.profilePicture || null);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [showPasswordForm, setShowPasswordForm] = useState(false);
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
+    // Load user data and business timezone
     useEffect(() => {
         if (user) {
             setFormData({ firstName: user.firstName || '', lastName: user.lastName || '', phone: user.phone || '' });
             setAvatarPreview(user.profilePicture || null);
         }
-    }, [user]);
+        if (businessId) {
+            businessService.getBusinessProfile(businessId)
+                .then((profile: any) => {
+                    setBusinessProfile(profile);
+                    if (profile?.timezone) setTimezone(profile.timezone);
+                })
+                .catch(() => { /* use default timezone */ });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, businessId]);
 
-    // Listen for save trigger from the tab bar button
+    // Listen for save trigger — pass profileData + timezone + full businessProfile
     useEffect(() => {
         const handler = () => {
-            window.dispatchEvent(new CustomEvent('settings:save-profile', { detail: formData }));
+            window.dispatchEvent(new CustomEvent('settings:save-profile', {
+                detail: { profileData: formData, timezone, businessProfile },
+            }));
         };
         window.addEventListener('settings:trigger-save', handler);
         return () => window.removeEventListener('settings:trigger-save', handler);
-    }, [formData]);
+    }, [formData, timezone]);
 
     const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -163,11 +214,6 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
             setIsUploadingAvatar(false);
             if (avatarInputRef.current) avatarInputRef.current.value = '';
         }
-    };
-
-    const handleRemoveAvatar = () => {
-        setAvatarPreview(null);
-        if (avatarInputRef.current) avatarInputRef.current.value = '';
     };
 
     const initials = `${formData.firstName?.[0] || ''}${formData.lastName?.[0] || ''}`.toUpperCase() || 'U';
@@ -211,22 +257,12 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
                 <div>
                     <p className="text-sm font-semibold text-gray-900">Profile Photo</p>
                     <p className="text-xs text-gray-400 mb-3">JPG, PNG or GIF, max 5MB</p>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => avatarInputRef.current?.click()}
-                            className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                            Upload Image
-                        </button>
-                        {avatarPreview && (
-                            <button
-                                onClick={handleRemoveAvatar}
-                                className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
-                            >
-                                Remove
-                            </button>
-                        )}
-                    </div>
+                    <button
+                        onClick={() => avatarInputRef.current?.click()}
+                        className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                        Upload Image
+                    </button>
                 </div>
                 <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={handleAvatarChange} />
             </div>
@@ -389,26 +425,95 @@ function PasswordForm({ onClose }: { onClose: () => void }) {
 
 // ─── Company Setting Tab ───────────────────────────────────────────────────────
 function CompanySettingTab() {
+    const { user } = useAuthStore();
+    const businessId = user?.businesses?.[0]?.id;
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [paymentData, setPaymentData] = useState({ accountName: '', accountNumber: '', bankName: '' });
+    const [paymentData, setPaymentData] = useState({
+        accountName: '', accountNumber: '', bankName: '', sortCode: '',
+    });
+    const [originalData, setOriginalData] = useState(paymentData);
 
-    const hasData = paymentData.accountName || paymentData.accountNumber || paymentData.bankName;
+    const hasData = !!(paymentData.accountName || paymentData.accountNumber || paymentData.bankName);
 
+    useEffect(() => {
+        if (!businessId) { setIsLoading(false); return; }
+        businessService.getPayoutInfo(businessId)
+            .then(({ payoutInfo }) => {
+                if (payoutInfo) {
+                    const filled = {
+                        accountName: payoutInfo.accountName || '',
+                        accountNumber: payoutInfo.accountNumber || '',
+                        bankName: payoutInfo.bankName || '',
+                        sortCode: payoutInfo.sortCode || '',
+                    };
+                    setPaymentData(filled);
+                    setOriginalData(filled);
+                }
+            })
+            .catch(() => { /* use empty state */ })
+            .finally(() => setIsLoading(false));
+    }, [businessId]);
+
+    const handleSave = async () => {
+        if (!businessId) return;
+        if (!paymentData.accountName || !paymentData.accountNumber || !paymentData.bankName) {
+            toaster.create({ title: 'Missing fields', description: 'Account Name, Number and Bank Name are required.', type: 'error' });
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await businessService.createOrUpdatePayoutInfo(businessId, {
+                accountName: paymentData.accountName,
+                accountNumber: paymentData.accountNumber,
+                bankName: paymentData.bankName,
+                ...(paymentData.sortCode ? { sortCode: paymentData.sortCode } : {}),
+            });
+            setOriginalData(paymentData);
+            setIsEditing(false);
+            setShowForm(false);
+            toaster.create({ title: 'Payout info saved', type: 'success' });
+        } catch (err: any) {
+            toaster.create({ title: 'Save failed', description: err.response?.data?.message || 'Please try again.', type: 'error' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCancel = () => {
+        setPaymentData(originalData);
+        setIsEditing(false);
+        if (!hasData) setShowForm(false);
+    };
+
+    // ── Loading ──────────────────────────────────────────────────────────────────
+    if (isLoading) return (
+        <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-8 w-8 text-amber-400 animate-spin" />
+        </div>
+    );
+
+    // ── Section header ────────────────────────────────────────────────────────────
+    const header = (
+        <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-xl bg-amber-50 flex items-center justify-center">
+                <CreditCard className="h-5 w-5 text-[#F59E0B]" />
+            </div>
+            <div>
+                <h3 className="text-lg font-bold text-gray-900">Payment</h3>
+                <p className="text-sm text-gray-500">Manage your payout details</p>
+            </div>
+        </div>
+    );
+
+    // ── Empty state ───────────────────────────────────────────────────────────────
     if (!showForm && !hasData) {
-        // Empty state
         return (
             <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl bg-amber-50 flex items-center justify-center">
-                        <CreditCard className="h-5 w-5 text-[#F59E0B]" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-900">Payment</h3>
-                        <p className="text-sm text-gray-500">Manage your Payment</p>
-                    </div>
-                </div>
-
+                {header}
                 <div className="p-12 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center text-center space-y-4 bg-gray-50/30">
                     <div className="h-16 w-16 rounded-full bg-white shadow-sm flex items-center justify-center border border-gray-100 text-gray-300">
                         <CreditCard className="h-8 w-8" />
@@ -418,7 +523,7 @@ function CompanySettingTab() {
                         <p className="text-sm text-gray-400 max-w-xs">Add a payout method to receive your business earnings directly in your bank account.</p>
                     </div>
                     <Button
-                        onClick={() => setShowForm(true)}
+                        onClick={() => { setIsEditing(true); setShowForm(true); }}
                         variant="outline"
                         className="h-10 px-8 rounded-xl font-semibold text-sm hover:border-amber-400 hover:text-amber-600 transition-all"
                     >
@@ -429,18 +534,12 @@ function CompanySettingTab() {
         );
     }
 
-    // Payment form
+    // ── Form ──────────────────────────────────────────────────────────────────────
+    const disabled = !isEditing && hasData;
+
     return (
         <div className="space-y-6 max-w-3xl">
-            <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <CreditCard className="h-5 w-5 text-[#F59E0B]" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-bold text-gray-900">Payment</h3>
-                    <p className="text-sm text-gray-500">Manage your Payment</p>
-                </div>
-            </div>
+            {header}
 
             <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-5">
@@ -448,49 +547,63 @@ function CompanySettingTab() {
                         label="Account Name"
                         value={paymentData.accountName}
                         onChange={(e) => setPaymentData({ ...paymentData, accountName: e.target.value })}
-                        placeholder="Enter your account name"
-                        className="h-[50px] rounded-xl"
-                        disabled={!isEditing && !!hasData}
+                        placeholder="Enter account holder name"
+                        className="h-[50px] rounded"
+                        disabled={disabled}
                     />
                     <CustomInput
                         label="Account Number"
                         value={paymentData.accountNumber}
                         onChange={(e) => setPaymentData({ ...paymentData, accountNumber: e.target.value })}
-                        placeholder="000 000 000 00"
-                        className="h-[50px] rounded-xl"
-                        disabled={!isEditing && !!hasData}
+                        placeholder="0123456789"
+                        className="h-[50px] rounded"
+                        disabled={disabled}
                     />
                 </div>
-                <div className="w-1/2 pr-2.5">
+                <div className="grid grid-cols-2 gap-5">
                     <CustomInput
                         label="Bank Name"
                         value={paymentData.bankName}
                         onChange={(e) => setPaymentData({ ...paymentData, bankName: e.target.value })}
-                        placeholder="Enter bank name"
-                        className="h-[50px] rounded-xl"
-                        disabled={!isEditing && !!hasData}
+                        placeholder="e.g. GTBank"
+                        className="h-[50px] rounded"
+                        disabled={disabled}
+                    />
+                    <CustomInput
+                        label="Sort Code (optional)"
+                        value={paymentData.sortCode}
+                        onChange={(e) => setPaymentData({ ...paymentData, sortCode: e.target.value })}
+                        placeholder="e.g. 058"
+                        className="h-[50px] rounded"
+                        disabled={disabled}
                     />
                 </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
                 {hasData && !isEditing ? (
-                    <Button onClick={() => setIsEditing(true)} className="h-10 px-6 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl">
+                    <Button
+                        onClick={() => setIsEditing(true)}
+                        className="h-10 px-6 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl"
+                    >
                         Edit Details
                     </Button>
                 ) : (
                     <>
-                        {hasData && (
-                            <button onClick={() => setIsEditing(false)} className="h-10 px-5 text-sm font-semibold text-gray-500 rounded-xl border border-gray-200 hover:bg-gray-50">
-                                Cancel
-                            </button>
-                        )}
                         <button
-                            onClick={() => { setIsEditing(false); if (!hasData) setShowForm(false); }}
-                            className="h-10 px-6 text-sm font-semibold text-gray-700 rounded-xl border border-gray-200 hover:bg-gray-50"
+                            onClick={handleCancel}
+                            className="h-10 px-5 text-sm font-semibold text-gray-500 rounded-xl border border-gray-200 hover:bg-gray-50"
                         >
-                            Save Details
+                            Cancel
                         </button>
+                        <Button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="h-10 px-6 bg-[#F59E0B] hover:bg-[#D97706] text-white text-sm font-semibold rounded-xl"
+                        >
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Save Details
+                        </Button>
                     </>
                 )}
             </div>
@@ -610,10 +723,10 @@ function NotificationsTab() {
                         className="data-[state=checked]:bg-emerald-500"
                     />
                 </div>
-                <NotifRow icon="📅" title="New Booking Alerts" description="When a customer books your service" checked={prefs.emailNewBookingAlerts} onToggle={() => toggle('emailNewBookingAlerts')} />
-                <NotifRow icon="💳" title="Payment Notifications" description="When payments are received or released" checked={prefs.emailPaymentNotifications} onToggle={() => toggle('emailPaymentNotifications')} />
-                <NotifRow icon="⭐" title="Review Notifications" description="When customers leave reviews" checked={prefs.emailReviewNotifications} onToggle={() => toggle('emailReviewNotifications')} />
-                <NotifRow icon="ℹ️" title="System Alerts" description="Important platform updates and maintenance" checked={prefs.emailSystemAlerts} onToggle={() => toggle('emailSystemAlerts')} />
+                <NotifRow icon={<Calendar />} title="New Booking Alerts" description="When a customer books your service" checked={prefs.emailNewBookingAlerts} onToggle={() => toggle('emailNewBookingAlerts')} />
+                <NotifRow icon={<CreditCard />} title="Payment Notifications" description="When payments are received or released" checked={prefs.emailPaymentNotifications} onToggle={() => toggle('emailPaymentNotifications')} />
+                <NotifRow icon={<Star />} title="Review Notifications" description="When customers leave reviews" checked={prefs.emailReviewNotifications} onToggle={() => toggle('emailReviewNotifications')} />
+                <NotifRow icon={<BiInfoCircle />} title="System Alerts" description="Important platform updates and maintenance" checked={prefs.emailSystemAlerts} onToggle={() => toggle('emailSystemAlerts')} />
             </div>
 
             {/* SMS Notifications */}
@@ -629,8 +742,8 @@ function NotificationsTab() {
                         className="data-[state=checked]:bg-emerald-500"
                     />
                 </div>
-                <NotifRow icon="🕐" title="Booking Reminders" description="Reminders before appointments" checked={prefs.smsBookingReminders} onToggle={() => toggle('smsBookingReminders')} />
-                <NotifRow icon="✅" title="Payment Confirmations" description="When payments are successfully processed" checked={prefs.smsPaymentConfirmations} onToggle={() => toggle('smsPaymentConfirmations')} />
+                <NotifRow icon={<Clock />} title="Booking Reminders" description="Reminders before appointments" checked={prefs.smsBookingReminders} onToggle={() => toggle('smsBookingReminders')} />
+                <NotifRow icon={<CheckCircle2 />} title="Payment Confirmations" description="When payments are successfully processed" checked={prefs.smsPaymentConfirmations} onToggle={() => toggle('smsPaymentConfirmations')} />
             </div>
 
             {/* Push Notifications */}
@@ -646,8 +759,8 @@ function NotificationsTab() {
                         className="data-[state=checked]:bg-emerald-500"
                     />
                 </div>
-                <NotifRow icon="📅" title="Real-time Bookings" description="Instant alerts for new bookings" checked={prefs.pushRealTimeBookings} onToggle={() => toggle('pushRealTimeBookings')} />
-                <NotifRow icon="🔔" title="Urgent Alerts" description="Booking cancellations and changes" checked={prefs.pushUrgentAlerts} onToggle={() => toggle('pushUrgentAlerts')} />
+                <NotifRow icon={<Calendar />} title="Real-time Bookings" description="Instant alerts for new bookings" checked={prefs.pushRealTimeBookings} onToggle={() => toggle('pushRealTimeBookings')} />
+                <NotifRow icon={<Bell />} title="Urgent Alerts" description="Booking cancellations and changes" checked={prefs.pushUrgentAlerts} onToggle={() => toggle('pushUrgentAlerts')} />
             </div>
 
             <div className="flex justify-end pt-2">
@@ -666,11 +779,12 @@ function NotificationsTab() {
 
 // ─── Notification Row ──────────────────────────────────────────────────────────
 function NotifRow({ icon, title, description, checked, onToggle }: {
-    icon: string; title: string; description: string; checked: boolean; onToggle: () => void;
+    icon: React.ReactNode; title: string; description: string; checked: boolean; onToggle: () => void;
 }) {
+
     return (
         <div className="flex items-center gap-4 py-3.5 border-b border-gray-50 last:border-0">
-            <div className="h-9 w-9 shrink-0 rounded-xl bg-gray-50 flex items-center justify-center text-base">{icon}</div>
+            <div className="h-4 w-4 shrink-0 rounded-xl bg-gray-50 flex items-center justify-center text-base text-gray-500">{icon}</div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900">{title}</p>
                 <p className="text-xs text-gray-400">{description}</p>

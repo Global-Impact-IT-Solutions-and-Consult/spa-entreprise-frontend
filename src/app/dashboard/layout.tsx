@@ -61,36 +61,69 @@ export default function DashboardLayout({
         return () => window.removeEventListener("primary-image-changed", handlePrimaryChange);
     }, []);
 
+    const [activeTab, setActiveTab] = useState("All");
+
     const notifications = [
         {
             id: 1,
-            title: "Appointment with John Smith",
-            description: "New appointment reqested for tomorrow at 10:00 AM",
-            time: "2 mins ago",
-            type: "appointment"
+            title: "Spa Appointment Booked,",
+            description: "Home Service Session for 12:30PM Today",
+            dayTime: "Thursday 4:20pm",
+            timeAgo: "20 min ago",
+            type: "Bookings",
+            isUnread: true
         },
         {
             id: 2,
-            title: "New Service Added",
-            description: "Swedish Massage has been successfully added to your list",
-            time: "1 hour ago",
-            type: "system"
+            title: "HairCut Appointment Booked,",
+            description: "In-Store Service Session for 12:30PM Today",
+            dayTime: "Thursday 4:20pm",
+            timeAgo: "1hours ago",
+            type: "Bookings",
+            isUnread: true
         },
         {
             id: 3,
-            title: "Booking Cancelled",
-            description: "An Appointment with Sarah Johnson has been cancelled",
-            time: "3 hours ago",
-            type: "alert"
+            title: "HairCut Appointment Booked,",
+            description: "Home Service Session for 12:30PM Tuesday",
+            dayTime: "Thursday 4:20pm",
+            timeAgo: "1 hours ago",
+            type: "Bookings",
+            isUnread: false
         },
         {
             id: 4,
-            title: "Staff Verified",
-            description: "Jane Doe has been successfully verified as a staff member",
-            time: "5 hours ago",
-            type: "system"
+            title: "Spa Service Appointment Booked,",
+            description: "Home Service Session for 12:30PM Today",
+            dayTime: "Thursday 4:20pm",
+            timeAgo: "2 hours ago",
+            type: "Bookings",
+            isUnread: false
         },
+        {
+            id: 5,
+            title: "Spa Service Appointment Booked,",
+            description: "Home Service Session for 12:30PM Today",
+            dayTime: "Thursday 4:20pm",
+            timeAgo: "4 hours ago",
+            type: "Bookings",
+            isUnread: false
+        },
+        {
+            id: 6,
+            title: "System Update,",
+            description: "New platform features are now available",
+            dayTime: "Wednesday 10:00am",
+            timeAgo: "1 day ago",
+            type: "System",
+            isUnread: false
+        }
     ];
+
+    const filteredNotifications = notifications.filter(n => {
+        if (activeTab === "All") return true;
+        return n.type === activeTab;
+    });
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -106,22 +139,20 @@ export default function DashboardLayout({
                         <p className="text-xs text-gray-500">Welcome Back {user?.firstName}!</p>
                     </div>
 
-                    {/* Right side header content: Notification & Profile (Only when approved?) */}
-                    {/* Based on screenshot, approved state shows these. Pending also might, but screenshot 1 doesn't show them clearly. 
-                        Actually, let's show them based on the approved screenshot. */}
+                    {/* Right side header content: Notification & Profile */}
                     {!isPending && (
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                                 className={cn(
-                                    "relative p-2.5 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-200",
-                                    isNotificationsOpen && "bg-amber-50 text-amber-600"
+                                    "relative p-2.5 text-[#192131] hover:text-gray-900 rounded-xl transition-all duration-200 cursor-pointer",
+                                    isNotificationsOpen && "text-amber-600"
                                 )}
                             >
                                 <Bell className="h-5 w-5" />
                                 <span className="absolute top-2 right-2 h-2 w-2 bg-[#F59E0B] rounded-full ring-2 ring-white" />
                             </button>
-                            <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#F59E0B]">
+                            <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#192131]">
                                 <AvatarImage src={avatarUrl || undefined} />
                                 <AvatarFallback className="bg-[#F59E0B] text-white font-bold">
                                     {user?.firstName?.charAt(0) || "D"}
@@ -137,55 +168,76 @@ export default function DashboardLayout({
                                 className="fixed inset-0 z-40 bg-transparent"
                                 onClick={() => setIsNotificationsOpen(false)}
                             />
-                            <div className="absolute top-20 right-8 w-[400px] bg-white rounded-[2rem] shadow-2xl shadow-black/10 border border-gray-100 z-50 animate-in fade-in slide-in-from-top-2 flex flex-col overflow-hidden">
-                                <div className="p-6 flex items-center justify-between border-b border-gray-50">
-                                    <div className="flex items-center gap-3">
-                                        <h3 className="text-xl font-bold text-gray-900">Notifications</h3>
-                                        <span className="px-2 py-0.5 bg-amber-100 text-[#F59E0B] text-[10px] font-bold rounded-full">4 NEW</span>
+                            <div className="absolute top-20 right-8 w-[440px] bg-white rounded-md shadow-2xl shadow-black/10 border border-gray-100 z-50 animate-in fade-in slide-in-from-top-2 flex flex-col overflow-hidden">
+                                <div className="p-8 py-4">
+                                    <div className="flex items-center justify-between mb-5">
+                                        <h3 className="text-2xl font-semibold text-gray-900">Notifications</h3>
+                                        <button
+                                            onClick={() => setIsNotificationsOpen(false)}
+                                            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                                        >
+                                            <X className="h-4 w-4" strokeWidth={2.5} />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => setIsNotificationsOpen(false)}
-                                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </button>
-                                </div>
-                                <div className="max-h-[480px] overflow-y-auto px-2 py-4 custom-scrollbar">
-                                    <div className="space-y-1">
-                                        {notifications.map((notif) => (
-                                            <div
-                                                key={notif.id}
-                                                className="p-4 rounded-2xl hover:bg-gray-50 transition-colors flex gap-4 group cursor-pointer"
+
+                                    {/* Tabs */}
+                                    <div className="flex items-center gap-2">
+                                        {["All", "Bookings", "System"].map((tab) => (
+                                            <button
+                                                key={tab}
+                                                onClick={() => setActiveTab(tab)}
+                                                className={cn(
+                                                    "px-4 py-1 text-sm font-medium transition-all rounded-2xl",
+                                                    activeTab === tab
+                                                        ? "bg-[#FFF7ED] text-[#F59E0B]"
+                                                        : "text-gray-500 hover:bg-gray-50"
+                                                )}
                                             >
-                                                <div className={cn(
-                                                    "h-10 w-10 shrink-0 rounded-full flex items-center justify-center",
-                                                    notif.type === 'alert' ? "bg-red-50 text-red-500" : "bg-blue-50 text-blue-500"
-                                                )}>
-                                                    <Info className="h-5 w-5" />
-                                                </div>
-                                                <div className="space-y-1 flex-1">
-                                                    <div className="flex justify-between items-start gap-3">
-                                                        <h4 className="text-sm font-bold text-gray-900 leading-tight pr-4">
-                                                            {notif.title}
-                                                        </h4>
-                                                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap pt-0.5 uppercase tracking-wider">
-                                                            {notif.time}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-xs text-gray-500 font-medium leading-relaxed">
-                                                        {notif.description}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                                {tab}
+                                            </button>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="p-4 border-t border-gray-50">
-                                    <Button
-                                        className="w-full bg-white hover:bg-gray-50 text-gray-500 font-bold h-12 rounded-xl text-sm transition-colors border-none shadow-none"
-                                    >
-                                        View All Notifications
-                                    </Button>
+
+                                <div className="h-[1px] w-full bg-gray-50 mb-4" />
+
+                                <div className="max-h-[520px] overflow-y-auto px-6 py-2 custom-scrollbar">
+                                    <div className="space-y-4 pb-6">
+                                        {filteredNotifications.length > 0 ? (
+                                            filteredNotifications.map((notif) => (
+                                                <div
+                                                    key={notif.id}
+                                                    className="bg-white p-5 rounded-md shadow-[0px_4px_5px_0px_#E89D24/10] hover:shadow-[#E89D24]/20 shadow-[#E89D24]/10 transition-all group flex flex-col relative"
+                                                >
+                                                    {/* Unread Indicator */}
+                                                    <div className={cn(
+                                                        "absolute top-6 right-6 h-2 w-2 rounded-full",
+                                                        notif.isUnread ? "bg-[#F59E0B]" : "bg-gray-200"
+                                                    )} />
+
+                                                    <div className="pr-6">
+                                                        <h4 className="text-sm font-bold text-gray-900 leading-tight">
+                                                            {notif.title} <span className="text-gray-400 font-medium">{notif.description}</span>
+                                                        </h4>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between mt-6">
+                                                        <span className="text-[11px] font-medium text-gray-400">
+                                                            {notif.dayTime}
+                                                        </span>
+                                                        <span className="text-[11px] font-medium text-gray-400">
+                                                            {notif.timeAgo}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center py-20 text-center">
+                                                <Bell className="h-12 w-12 text-gray-100 mb-4" />
+                                                <p className="text-sm text-gray-400 font-medium">No notifications yet</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </>
