@@ -34,6 +34,22 @@ export interface User {
     mfaEnabled?: boolean;
 }
 
+export interface UserNotification {
+    id: string;
+    type: string;
+    title: string;
+    body: any;
+    read: boolean;
+    metadata: any;
+    createdAt: string;
+}
+
+export interface NotificationListResponse {
+    notifications: UserNotification[];
+    total: number;
+    unreadCount: number;
+}
+
 export interface AuthResponse {
     accessToken?: string;
     refreshToken?: string;
@@ -45,6 +61,11 @@ export interface AuthResponse {
 }
 
 export const authService = {
+    // Get user notifications
+    getNotifications: async (params?: { limit?: number; offset?: number; unreadOnly?: boolean }) => {
+        const response = await apiClient.get<NotificationListResponse>('/users/me/notifications/list', { params });
+        return response.data;
+    },
     // Login
     login: async (data: LoginDto) => {
         // If MFA code is present, use verify-mfa endpoint, else standard login
