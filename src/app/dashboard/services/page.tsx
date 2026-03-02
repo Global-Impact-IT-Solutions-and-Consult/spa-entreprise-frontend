@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { businessService, Service } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
@@ -21,7 +19,6 @@ export default function ManageServicesPage() {
     const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefetching, setIsRefetching] = useState(false);
-    const [activeTab, setActiveTab] = useState("All");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -99,11 +96,8 @@ export default function ManageServicesPage() {
     };
 
     const categoryOptions = categories.map(c => ({ label: c.name, value: c.id }));
-    const tabs = ["All", ...categories.map(c => c.name)];
 
-    const filteredServices = activeTab === "All"
-        ? services
-        : services.filter(s => (s.category?.name || s.category?.id) === activeTab);
+    const displayedServices = services;
 
     return (
         <div className="">
@@ -121,47 +115,15 @@ export default function ManageServicesPage() {
                 </Button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex items-center gap-8 border-b border-gray-200 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-8">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={cn(
-                            "pb-4 text-sm font-semibold transition-colors relative whitespace-nowrap",
-                            activeTab === tab
-                                ? "text-[#F59E0B]"
-                                : "text-gray-400 hover:text-gray-600"
-                        )}
-                    >
-                        {tab}
-                        {activeTab === tab && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B]" />
-                        )}
-                    </button>
-                ))}
-            </div>
-
-            {/* Content Buffer Section */}
+            {/* Content */}
             <div className="space-y-6 mt-8">
-                {/* Search & Filter */}
-                <div className="flex gap-4">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <Input
-                            placeholder="Search services..."
-                            className="pl-12 h-12 bg-white border-gray-100 shadow-sm rounded-xl focus-visible:ring-[#F59E0B]"
-                        />
-                    </div>
-                </div>
-
                 {isLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
                         {[1, 2, 3].map(i => (
                             <div key={i} className="h-64 bg-gray-100 rounded-xl" />
                         ))}
                     </div>
-                ) : filteredServices.length === 0 && !isRefetching ? (
+                ) : displayedServices.length === 0 && !isRefetching ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200 text-center">
                         <div className="p-4 bg-gray-50 rounded-full mb-4">
                             <Plus className="h-8 w-8 text-gray-400" />
@@ -171,7 +133,7 @@ export default function ManageServicesPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredServices.map((service, index) => (
+                        {displayedServices.map((service, index) => (
                             <ServiceCard
                                 key={service.id || `service-${index}`}
                                 service={service}
@@ -187,7 +149,7 @@ export default function ManageServicesPage() {
                 )}
 
                 {/* Pagination */}
-                {!isLoading && filteredServices.length > 0 && (
+                {!isLoading && displayedServices.length > 0 && (
                     <div className="flex items-center justify-center gap-2 py-8">
                         <button className="p-2 rounded-lg border border-gray-100 text-gray-400 hover:bg-gray-50">
                             <ChevronLeft className="h-5 w-5" />
@@ -196,12 +158,10 @@ export default function ManageServicesPage() {
                             <button
                                 key={page}
                                 onClick={() => setCurrentPage(page)}
-                                className={cn(
-                                    "h-10 w-10 rounded-lg border text-sm font-semibold transition-colors",
-                                    page === currentPage
-                                        ? "bg-amber-50 border-amber-200 text-amber-600"
-                                        : "border-gray-100 text-gray-400 hover:bg-gray-50"
-                                )}
+                                className={`h-10 w-10 rounded-lg border text-sm font-semibold transition-colors ${page === currentPage
+                                    ? "bg-amber-50 border-amber-200 text-amber-600"
+                                    : "border-gray-100 text-gray-400 hover:bg-gray-50"
+                                    }`}
                             >
                                 {page}
                             </button>
@@ -232,8 +192,9 @@ export default function ManageServicesPage() {
                     service={serviceToEdit}
                     isOpen={!!serviceToEdit}
                     onClose={() => setServiceToEdit(null)}
-                    onSuccess={(updatedService) => {
-                        setServices(services.map(s => s.id === updatedService.id ? updatedService : s));
+                    onSuccess={() => {
+                        setServiceToEdit(null);
+                        refetchServices();
                     }}
                     categoryOptions={categoryOptions}
                 />

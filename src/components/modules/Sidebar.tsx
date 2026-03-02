@@ -112,14 +112,15 @@ export function Sidebar() {
                     className={cn(
                         "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold transition-all duration-200 w-full",
                         pathname === "/dashboard/contact-support"
-                            ? "bg-[#D97706] text-white"
-                            : "bg-[#F59E0B] text-white hover:bg-[#D97706]"
+                            ? "bg-[#F59E0B] text-white"
+                            : "text-gray-400 hover:bg-white/10 hover:text-white"
                     )}
                 >
                     <Headset className="h-5 w-5" />
                     Contact Support
                 </Link>
             </div>
+
 
             {/* Bottom Section: Business Card & Logout */}
             <div className="p-4 space-y-4 bg-[#00000080] m-4 rounded-lg">

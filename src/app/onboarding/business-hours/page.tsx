@@ -5,21 +5,21 @@ import { useRouter } from 'next/navigation';
 import { FiArrowRight, FiArrowLeft, FiClock } from 'react-icons/fi';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService } from '@/services/business.service';
+import type { OperatingHours } from '@/services/business.service';
 
 import { Button } from "@/components/ui/button";
 import { Select } from '@/components/ui/select';
 import { Switch } from "@/components/ui/switch";
 import { toaster } from "@/components/ui/toaster";
-import { Label } from "@/components/ui/label";
 
 const DAYS = [
-    { id: 'sunday', label: 'Sunday' },
     { id: 'monday', label: 'Monday' },
     { id: 'tuesday', label: 'Tuesday' },
     { id: 'wednesday', label: 'Wednesday' },
     { id: 'thursday', label: 'Thursday' },
     { id: 'friday', label: 'Friday' },
     { id: 'saturday', label: 'Saturday' },
+    { id: 'sunday', label: 'Sunday' },
 ];
 
 const TIME_SLOTS = Array.from({ length: 24 * 2 }).map((_, i) => {
@@ -29,34 +29,72 @@ const TIME_SLOTS = Array.from({ length: 24 * 2 }).map((_, i) => {
     const hour12 = hourNum % 12 || 12;
     const time = `${hour12.toString().padStart(2, '0')}:${minute}${ampm}`;
     const value = `${hourNum.toString().padStart(2, '0')}:${minute}`;
-    return { value: value, label: time };
+    return { value, label: time };
 });
+
+interface DaySchedule {
+    open: string;
+    close: string;
+    closed: boolean;
+    allDay: boolean;
+}
+
+type Schedule = Record<string, DaySchedule>;
 
 export default function BusinessHoursPage() {
     const router = useRouter();
     const { businessId, setOperatingHours, operatingHours } = useOnboardingStore();
     const [isLoading, setIsLoading] = useState(false);
 
-    // Initial State
-    const [schedule, setSchedule] = useState<import('@/services/business.service').OperatingHours>(
-        Object.keys(operatingHours).length > 0 ? operatingHours :
-            DAYS.reduce((acc: import('@/services/business.service').OperatingHours, day) => {
+    const [schedule, setSchedule] = useState<Schedule>(() => {
+        if (Object.keys(operatingHours).length > 0) {
+            // Hydrate from store — detect allDay by checking if times match 00:00/23:59
+            return DAYS.reduce((acc: Schedule, day) => {
+                const stored = operatingHours[day.id];
+                const allDay = stored?.open === '00:00' && stored?.close === '23:59';
                 acc[day.id] = {
-                    open: '09:00',
-                    close: '21:00',
-                    closed: day.id === 'sunday'
+                    open: stored?.open ?? '09:00',
+                    close: stored?.close ?? '21:00',
+                    closed: stored?.closed ?? (day.id === 'sunday'),
+                    allDay,
                 };
                 return acc;
-            }, {})
-    );
+            }, {});
+        }
+        return DAYS.reduce((acc: Schedule, day) => {
+            acc[day.id] = {
+                open: '09:00',
+                close: '21:00',
+                closed: day.id === 'sunday',
+                allDay: false,
+            };
+            return acc;
+        }, {});
+    });
 
-    const handleDayChange = (dayId: string, field: string, value: string | boolean) => {
-        setSchedule((prev) => ({
+    const handleDayToggle = (dayId: string, isOpen: boolean) => {
+        setSchedule(prev => ({
+            ...prev,
+            [dayId]: { ...prev[dayId], closed: !isOpen },
+        }));
+    };
+
+    const handle24hrToggle = (dayId: string, enabled: boolean) => {
+        setSchedule(prev => ({
             ...prev,
             [dayId]: {
                 ...prev[dayId],
-                [field]: value
-            }
+                allDay: enabled,
+                open: enabled ? '00:00' : '09:00',
+                close: enabled ? '23:59' : '21:00',
+            },
+        }));
+    };
+
+    const handleTimeChange = (dayId: string, field: 'open' | 'close', value: string) => {
+        setSchedule(prev => ({
+            ...prev,
+            [dayId]: { ...prev[dayId], [field]: value },
         }));
     };
 
@@ -66,13 +104,17 @@ export default function BusinessHoursPage() {
             return;
         }
 
+        // Strip allDay before sending — API only expects open/close/closed
+        const payload: OperatingHours = DAYS.reduce((acc: OperatingHours, day) => {
+            const { open, close, closed } = schedule[day.id];
+            acc[day.id] = { open, close, closed };
+            return acc;
+        }, {});
+
         setIsLoading(true);
         try {
-            // new endpoint is /api/v1/spas/{id}/operating-hours
-            // body is the schedule object directly according to the requirement
-            await businessService.setAvailability(businessId, schedule);
-            setOperatingHours(schedule);
-
+            await businessService.setAvailability(businessId, payload);
+            setOperatingHours(payload);
             toaster.create({ title: "Success", description: "Operating hours set successfully", type: "success" });
             router.push('/onboarding/services');
         } catch (error) {
@@ -96,51 +138,60 @@ export default function BusinessHoursPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {DAYS.map((day) => (
-                        <div key={day.id} className="border border-gray-200 rounded-xl p-5 flex flex-col gap-4 bg-white">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-gray-400">
-                                    <FiClock className="h-4 w-4" />
-                                    <span className="text-xs font-semibold uppercase tracking-wider">Day and Time</span>
-                                </div>
-                                <Switch
-                                    checked={!schedule[day.id].closed}
-                                    onCheckedChange={(checked) => handleDayChange(day.id, 'closed', !checked)}
-                                />
-                            </div>
+                    {DAYS.map((day) => {
+                        const dayData = schedule[day.id];
+                        const isDisabled = dayData.closed || dayData.allDay;
 
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center justify-between gap-4">
-                                    <Label className="text-sm font-medium text-gray-400 min-w-[40px]">Day</Label>
-                                    <div className="flex-1 h-11 px-4 border border-gray-100 bg-gray-50/50 rounded-lg flex items-center text-sm font-medium text-gray-700">
-                                        {day.label}
+                        return (
+                            <div key={day.id} className="border border-gray-200 rounded-xl flex flex-col gap-4 bg-white">
+                                {/* Day name + open/closed toggle */}
+                                <div className="flex items-center justify-between border-b border-gray-200 p-5">
+                                    <span className="text-base font-bold text-gray-900">{day.label}</span>
+                                    <Switch
+                                        checked={!dayData.closed}
+                                        onCheckedChange={(checked) => handleDayToggle(day.id, checked)}
+                                    />
+                                </div>
+
+                                {/* From */}
+                                <div className="flex items-center gap-3 px-5">
+                                    <span className="text-sm text-gray-400 w-10">From</span>
+                                    <Select
+                                        disabled={isDisabled}
+                                        value={dayData.open}
+                                        onChange={(e) => handleTimeChange(day.id, 'open', e.target.value)}
+                                        options={TIME_SLOTS}
+                                        className="h-10 rounded-lg border-gray-200 flex-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+
+                                {/* To */}
+                                <div className="flex items-center gap-3 px-5">
+                                    <span className="text-sm text-gray-400 w-10">To</span>
+                                    <Select
+                                        disabled={isDisabled}
+                                        value={dayData.close}
+                                        onChange={(e) => handleTimeChange(day.id, 'close', e.target.value)}
+                                        options={TIME_SLOTS}
+                                        className="h-10 rounded-lg border-gray-200 flex-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+
+                                {/* Available 24/hours */}
+                                <div className="flex items-center justify-between px-5 pb-5">
+                                    <div className="flex items-center gap-2 text-gray-400">
+                                        <FiClock className="h-4 w-4" />
+                                        <span className="text-xs font-medium">Available 24/hours</span>
                                     </div>
-                                </div>
-
-                                <div className="flex items-center justify-between gap-4">
-                                    <Label className="text-sm font-medium text-gray-400 min-w-[40px]">From</Label>
-                                    <Select
-                                        disabled={schedule[day.id].closed}
-                                        value={schedule[day.id].open}
-                                        onChange={(e) => handleDayChange(day.id, 'open', e.target.value)}
-                                        options={TIME_SLOTS}
-                                        className="h-11 rounded-lg border-gray-100 flex-1 hover:border-[#E59622] transition-colors"
-                                    />
-                                </div>
-
-                                <div className="flex items-center justify-between gap-4">
-                                    <Label className="text-sm font-medium text-gray-400 min-w-[40px]">To</Label>
-                                    <Select
-                                        disabled={schedule[day.id].closed}
-                                        value={schedule[day.id].close}
-                                        onChange={(e) => handleDayChange(day.id, 'close', e.target.value)}
-                                        options={TIME_SLOTS}
-                                        className="h-11 rounded-lg border-gray-100 flex-1 hover:border-[#E59622] transition-colors"
+                                    <Switch
+                                        checked={dayData.allDay}
+                                        disabled={dayData.closed}
+                                        onCheckedChange={(checked) => handle24hrToggle(day.id, checked)}
                                     />
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

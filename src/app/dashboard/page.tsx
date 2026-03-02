@@ -16,7 +16,9 @@ import {
     Loader2,
     TrendingUp,
     Home,
-    MapPin
+    MapPin,
+    PlusIcon,
+    ChevronDown
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -68,9 +70,9 @@ export default function DashboardPage() {
             change: dashboardData.todaysRevenue.changeFromYesterday >= 0
                 ? `+${dashboardData.todaysRevenue.changeFromYesterday}% from yesterday`
                 : `${dashboardData.todaysRevenue.changeFromYesterday}% from yesterday`,
-            icon: Banknote,
-            iconBg: "bg-teal-50",
-            iconColor: "text-teal-600",
+            icon: PlusIcon,
+            iconBg: "bg-[#23545B40]",
+            iconColor: "text-[#23545B]",
             changeColor: dashboardData.todaysRevenue.changeFromYesterday >= 0 ? "text-teal-600" : "text-red-500",
             changeIcon: TrendingUp
         },
@@ -78,9 +80,9 @@ export default function DashboardPage() {
             label: "Today\u2019s Bookings",
             value: dashboardData.todaysBookings.total.toString(),
             change: `${dashboardData.todaysBookings.completed} Bookings Completed`,
-            icon: Calendar,
-            iconBg: "bg-blue-50",
-            iconColor: "text-blue-500",
+            icon: CalendarClock,
+            iconBg: "bg-[#0088FF40]",
+            iconColor: "text-[#0088FF]",
             changeColor: "text-gray-400",
             changeIcon: null
         },
@@ -89,18 +91,18 @@ export default function DashboardPage() {
             value: Number(dashboardData.averageRating.rating).toFixed(1),
             change: dashboardData.averageRating.label,
             icon: Star,
-            iconBg: "bg-amber-50",
-            iconColor: "text-amber-500",
+            iconBg: "bg-[#E89D2440]",
+            iconColor: "text-[#E89D24]",
             changeColor: "text-amber-600",
             changeIcon: null
         },
         {
             label: "Staff Online",
             value: `${dashboardData.staffOnline.online}/${dashboardData.staffOnline.total}`,
-            change: `${dashboardData.staffOnline.onHomeService} on home service`,
+            change: `${dashboardData.staffOnline.onHomeService} staff on home service`,
             icon: Users,
-            iconBg: "bg-purple-50",
-            iconColor: "text-purple-400",
+            iconBg: "bg-[#8916B240]",
+            iconColor: "text-[#8916B2]",
             changeColor: "text-gray-400",
             changeIcon: Home
         }
@@ -133,30 +135,29 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[
-                            { title: "Add Service", sub: "Create new service offering", icon: Plus, bgColor: "bg-orange-50", iconColor: "text-orange-400", href: "/dashboard/services" },
-                            { title: "Add Staff", sub: "New team member", icon: UserPlus, bgColor: "bg-blue-50", iconColor: "text-blue-400", href: "/dashboard/staffs" },
-                            { title: "Set Hours", sub: "Business schedule", icon: CalendarClock, bgColor: "bg-green-50", iconColor: "text-green-400", href: "/dashboard/working-hours" },
-                            { title: "View Profile", sub: "View your public profile", icon: Eye, bgColor: "bg-gray-50", iconColor: "text-gray-400", href: `/dashboard/business` },
-                        ].map((action, i) => (
-                            <Link href={action.href} key={i}>
-                                <Card className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer h-full">
-                                    <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                                        <div className={cn("mb-6 flex h-12 w-12 items-center justify-center rounded-lg", action.bgColor)}>
-                                            <action.icon className={cn("h-6 w-6", action.iconColor)} />
+                {/* Quick Action's */}
+                <Card className="border-none shadow-sm bg-white overflow-hidden rounded-[2rem]">
+                    <CardContent className="p-8">
+                        <h2 className="text-xl font-bold text-gray-900 mb-8">Quick Action&apos;s</h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            {[
+                                { title: "Add Service", icon: Plus, bgColor: "bg-[#FFF7ED]", iconColor: "text-[#F59E0B]", href: "/dashboard/services" },
+                                { title: "Add Staff", icon: Users, bgColor: "bg-[#EEF2FF]", iconColor: "text-[#4F46E5]", href: "/dashboard/staffs" },
+                                { title: "Set Hours", icon: CalendarClock, bgColor: "bg-[#F0FDF4]", iconColor: "text-[#22C55E]", href: "/dashboard/working-hours" },
+                                { title: "View Profile", icon: Eye, bgColor: "bg-[#F9FAFB]", iconColor: "text-[#6B7280]", href: `/dashboard/business` },
+                            ].map((action, i) => (
+                                <Link href={action.href} key={i}>
+                                    <div className="flex flex-col items-center justify-center p-8 rounded-2xl hover:bg-gray-50 transition-all group border border-transparent hover:border-gray-100">
+                                        <div className={cn("mb-4 flex h-14 w-14 items-center justify-center rounded-xl", action.bgColor)}>
+                                            <action.icon className={cn("h-6 w-6", action.iconColor)} strokeWidth={2.5} />
                                         </div>
-                                        <h3 className="text-lg font-bold text-gray-900">{action.title}</h3>
-                                        <p className="mt-1 text-xs text-gray-400">{action.sub}</p>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
+                                        <h3 className="text-sm font-bold text-gray-900">{action.title}</h3>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
@@ -174,7 +175,7 @@ export default function DashboardPage() {
                                     <h3 className="mt-2 text-3xl font-bold text-gray-900 tracking-tight">{stat.value}</h3>
                                 </div>
                                 <div className={cn("rounded-lg p-2.5", stat.iconBg)}>
-                                    <stat.icon className={cn("h-5 w-5", stat.iconColor)} />
+                                    <stat.icon className={cn("h-4 w-4", stat.iconColor)} strokeWidth={2.5} />
                                 </div>
                             </div>
                             <p className={cn("mt-4 text-[10px] font-medium flex items-center gap-1", stat.changeColor)}>
@@ -187,16 +188,19 @@ export default function DashboardPage() {
             </div>
 
             {/* Middle Section: Chart & Bookings */}
-            <div className="grid gap-8 lg:grid-cols-3">
+            <div className="grid gap-8 lg:grid-cols-4">
                 {/* Weekly Revenue Chart */}
-                <div className="lg:col-span-2">
-                    <Card className="border-none shadow-sm overflow-hidden h-full bg-white hover:shadow-md transition-all">
+                <div className="lg:col-span-2 space-y-6">
+                    <Card className="border-none shadow-sm overflow-hidden bg-white hover:shadow-md transition-all">
                         <CardContent className="p-8">
                             <div className="flex items-center justify-between mb-8">
                                 <h2 className="text-xl font-bold text-gray-900">Weekly Revenue</h2>
-                                <select className="text-xs font-medium bg-gray-50 border-none rounded-lg px-2 py-1 text-gray-500 outline-none">
-                                    <option>This Week</option>
-                                </select>
+                                <div className="relative w-fit">
+                                    <select className="text-xs font-medium bg-[#0000001A] border-none rounded-lg px-2 py-1.5 text-gray-500 outline-none appearance-none pr-6">
+                                        <option>This Week</option>
+                                    </select>
+                                    <ChevronDown className="h-3 w-3 text-gray-500 absolute right-2 top-1/2 -translate-y-1/2 -z-1" />
+                                </div>
                             </div>
 
                             <div className="relative h-64 flex items-end justify-between gap-4 mt-8">
@@ -242,10 +246,34 @@ export default function DashboardPage() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Bottom Quick Action's */}
+                    <div className="border-none shadow-sm bg-white overflow-hidden rounded-xl">
+                        <div className="p-8">
+                            <h2 className="text-xl font-bold text-gray-900 mb-8">Quick Action&apos;s</h2>
+                            <div className="grid grid-cols-2 gap-4">
+                                {[
+                                    { title: "Add Service", icon: Plus, bgColor: "bg-[#FFF7ED]", iconColor: "text-[#F59E0B]", href: "/dashboard/services" },
+                                    { title: "Add Staff", icon: Users, bgColor: "bg-[#EEF2FF]", iconColor: "text-[#4F46E5]", href: "/dashboard/staffs" },
+                                    { title: "Set Hours", icon: CalendarClock, bgColor: "bg-[#F0FDF4]", iconColor: "text-[#22C55E]", href: "/dashboard/working-hours" },
+                                    { title: "View Profile", icon: Eye, bgColor: "bg-[#F9FAFB]", iconColor: "text-[#6B7280]", href: `/dashboard/business` },
+                                ].map((action, i) => (
+                                    <Link href={action.href} key={i}>
+                                        <div className="flex flex-col items-center justify-center p-8 rounded-2xl hover:bg-gray-50 transition-all group border border-transparent hover:border-gray-100 shadow-md">
+                                            <div className={cn("mb-4 flex h-14 w-14 items-center justify-center rounded-xl", action.bgColor)}>
+                                                <action.icon className={cn("h-6 w-6", action.iconColor)} strokeWidth={2} />
+                                            </div>
+                                            <h3 className="text-sm font-bold text-gray-900">{action.title}</h3>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Upcoming Bookings */}
-                <div className="space-y-4">
+                <div className="space-y-4 lg:col-span-2">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold text-gray-900">Upcoming Bookings</h2>
                         <Link href="/dashboard/bookings" className="text-xs font-medium text-[#F59E0B] hover:underline">View All</Link>
@@ -293,33 +321,6 @@ export default function DashboardPage() {
                             ))
                         )}
                     </div>
-                </div>
-            </div>
-
-            {/* Bottom Quick Actions */}
-            <div className="space-y-6">
-                <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 opacity-80">
-                    <Link href="/dashboard/services">
-                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white">
-                            <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-orange-50">
-                                    <Plus className="h-6 w-6 text-orange-400" />
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900">Add Service</h3>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                    <Link href="/dashboard/staffs">
-                        <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white">
-                            <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
-                                    <UserPlus className="h-6 w-6 text-blue-400" />
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900">Add Staff</h3>
-                            </CardContent>
-                        </Card>
-                    </Link>
                 </div>
             </div>
         </div >

@@ -17,56 +17,70 @@ import { cn } from '@/lib/utils';
 import { Scissors } from 'lucide-react';
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
-// Refined Staff Card Component
+// Staff Card Component
 interface StaffCardProps {
-    staff: Staff & { serviceName?: string; tags?: string[] };
+    staff: Staff & { serviceNames?: string[] };
     onEdit: () => void;
     onDelete: () => void;
 }
 
 const StaffCard = ({ staff, onEdit, onDelete }: StaffCardProps) => {
+    const [expanded, setExpanded] = useState(false);
     return (
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col gap-6 relative">
-            <div className="flex justify-between items-start">
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                    <FiUser className="h-8 w-8 text-gray-400" />
+        <div className={`bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex flex-col gap-4 ${expanded ? 'min-h-[300px]' : 'h-[300px]'}`}>
+            {/* Top row: avatar + action buttons */}
+            <div className='shadow-md p-2 rounded'>
+                <div className="flex justify-between items-start">
+                    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                        {staff.profilePicture
+                            ? <img src={staff.profilePicture} alt={staff.name} className="h-full w-full object-cover" />
+                            : <FiUser className="h-7 w-7 text-gray-400" />
+                        }
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={onEdit} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                            <FiEdit2 size={14} />
+                        </button>
+                        <button onClick={onDelete} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <FiTrash2 size={14} />
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={onEdit} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
-                        <FiEdit2 size={14} />
-                    </button>
-                    <button onClick={onDelete} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                        <FiTrash2 size={14} />
-                    </button>
+
+                {/* Name + role */}
+                <div className='mt-3'>
+                    <h3 className="text-base font-bold text-gray-900">{staff.name}</h3>
+                    <p className="text-sm text-gray-400 mt-0.5">{staff.experience ? `${staff.experience} ${staff.role}` : staff.role}</p>
                 </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-                <h3 className="text-lg font-bold text-gray-900">{staff.name}</h3>
+            {/* About text — 2-line clamp with See more */}
+            {staff.about && (
+                <div className="border-t border-gray-100 pt-3">
+                    <p className={`text-sm text-gray-500 leading-relaxed ${expanded ? '' : 'line-clamp-2'}`}>
+                        {staff.about}
+                    </p>
+                    {staff.about.length > 110 && (
+                        <button
+                            onClick={() => setExpanded(prev => !prev)}
+                            className="text-xs text-amber-600 font-medium mt-1 hover:underline"
+                        >
+                            {expanded ? 'See less' : 'See more'}
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* Service name tags */}
+            {staff.serviceNames && staff.serviceNames.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-green-50 text-[10px] font-bold text-green-700 rounded-full uppercase tracking-wider">
-                        {staff.role}
-                    </span>
-                    {staff.tags && staff.tags.map((tag: string, i: number) => (
-                        <span key={i} className="px-3 py-1 bg-gray-50 text-[10px] font-bold text-gray-500 rounded-full uppercase tracking-wider">
-                            {tag}
+                    {staff.serviceNames.map((name, i) => (
+                        <span key={i} className="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded-full border border-amber-100">
+                            {name}
                         </span>
                     ))}
                 </div>
-            </div>
-
-            <div className="space-y-3 pt-6 border-t border-gray-50 mt-auto">
-                <div className="flex items-start gap-3">
-                    <span className="text-xs font-medium text-gray-400 w-20">Services</span>
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5" />
-                    <span className="text-xs font-bold text-gray-800 flex-1">{staff.serviceName || "No services"}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <span className="text-xs font-medium text-gray-400 w-20">Experience</span>
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                    <span className="text-xs font-bold text-gray-600">{staff.experience || "Expert"}</span>
-                </div>
-            </div>
+            )}
         </div>
     );
 };
@@ -223,18 +237,15 @@ export default function StaffsPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
                         {staffs.map(staff => {
-                            // Get service names for this staff member
                             const staffServiceIds = staff.serviceIds || [];
-                            const staffServices = services.filter(s => staffServiceIds.includes(s.id));
-                            const serviceNames = staffServices.map(s => s.name).join(', ') || 'No services assigned';
+                            const staffServiceNames = services
+                                .filter(s => staffServiceIds.includes(s.id))
+                                .map(s => s.name);
 
                             return (
                                 <StaffCard
                                     key={staff.id}
-                                    staff={{
-                                        ...staff,
-                                        serviceName: serviceNames
-                                    }}
+                                    staff={{ ...staff, serviceNames: staffServiceNames }}
                                     onEdit={() => setStaffToEdit(staff)}
                                     onDelete={() => handleDeleteStaff(staff.id)}
                                 />

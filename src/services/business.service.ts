@@ -54,6 +54,8 @@ export interface UpdateProfileDto {
     addressNote?: string;
     amenities?: string[];
     operatingHours?: OperatingHours;
+    coverImage?: string;
+    timezone?: string;
 }
 
 export interface RegisterBusinessDto {
@@ -80,6 +82,9 @@ export interface CreateStaffDto {
     serviceIds: string[];
     role: string;
     experience: string;
+    phone?: string;
+    about?: string;
+    profilePicture?: string;
 }
 
 export interface AddressDetails {
@@ -169,15 +174,22 @@ export interface Service {
     deliveryType: 'in_location_only' | 'home_service_only' | 'both' | string;
     homeServicePrice?: number;
     serviceRadius?: number;
+    maxServiceRadius?: number;
     imageUrl?: string;
 }
 
 export interface Staff {
     id: string;
+    businessId?: string;
     name: string;
     role: string;
     experience: string;
+    phone?: string | null;
+    about?: string | null;
     serviceIds?: string[];
+    profilePicture?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface SearchSpasParams {
@@ -542,43 +554,43 @@ export const businessService = {
 
     // Get All Staff for a Business
     getAllStaff: async (businessId: string) => {
-        const response = await apiClient.get<Staff[] | { data: Staff[] }>(`/spas/${businessId}/staff`);
-        // Handle cases where response might be wrapped in { data: [...] } or direct array
-        if (Array.isArray(response.data)) {
-            return response.data as Staff[];
-        } else if (response.data && Array.isArray(response.data.data)) {
-            return response.data.data as Staff[];
-        }
-        return [] as Staff[];
+        const response = await apiClient.get<Staff[]>(`/spas/${businessId}/staff`);
+        return Array.isArray(response.data) ? response.data : [];
     },
 
     // Get All Staff for a Business -- Public route
     getAllStaffPublic: async (businessId: string) => {
-        const response = await apiClient.get<Staff[] | { data: Staff[] }>(`/spas/public/${businessId}/staff`);
-        // Handle cases where response might be wrapped in { data: [...] } or direct array
-        if (Array.isArray(response.data)) {
-            return response.data as Staff[];
-        } else if (response.data && Array.isArray(response.data.data)) {
-            return response.data.data as Staff[];
-        }
-        return [] as Staff[];
+        const response = await apiClient.get<Staff[]>(`/spas/public/${businessId}/staff`);
+        return Array.isArray(response.data) ? response.data : [];
     },
 
-    // Create Staff Member (new endpoint - staff can be assigned to multiple services)
+    // Create Staff Member
     createStaff: async (businessId: string, data: CreateStaffDto) => {
-        const response = await apiClient.post(`/spas/${businessId}/staff`, data);
+        const response = await apiClient.post<Staff>(`/spas/${businessId}/staff`, data);
         return response.data;
     },
 
     // Update Staff Member
     updateStaff: async (businessId: string, staffId: string, data: Partial<CreateStaffDto>) => {
-        const response = await apiClient.put(`/spas/${businessId}/staff/${staffId}`, data);
+        const response = await apiClient.put<Staff>(`/spas/${businessId}/staff/${staffId}`, data);
         return response.data;
     },
 
     // Delete Staff Member
     deleteStaff: async (businessId: string, staffId: string) => {
         const response = await apiClient.delete(`/spas/${businessId}/staff/${staffId}`);
+        return response.data;
+    },
+
+    // Upload Staff Profile Picture
+    uploadStaffProfilePicture: async (businessId: string, staffId: string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post<{ profilePicture: string }>(
+            `/spas/${businessId}/staff/${staffId}/profile-picture`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
         return response.data;
     },
 
@@ -633,6 +645,42 @@ export const businessService = {
         return response.data;
     },
 
+    // Upload Business Profile Image (small avatar/logo)
+    uploadProfileImage: async (businessId: string, file: File): Promise<{ profileImage: string }> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post<{ profileImage: string }>(
+            `/spas/${businessId}/profile-image`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        return response.data;
+    },
+
+    // Upload Business Cover Image — dedicated endpoint (POST /spas/{id}/cover-image)
+    uploadCoverImage: async (businessId: string, file: File): Promise<{ coverImage: string }> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post<{ coverImage: string }>(
+            `/spas/${businessId}/cover-image`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        return response.data;
+    },
+
+    // Get Business Profile Image (Public)
+    getProfileImage: async (businessId: string): Promise<{ profileImage: string | null }> => {
+        const response = await apiClient.get<{ profileImage: string | null }>(`/spas/${businessId}/profile-image`);
+        return response.data;
+    },
+
+    // Get Business Cover Image (Public)
+    getCoverImage: async (businessId: string): Promise<{ coverImage: string | null }> => {
+        const response = await apiClient.get<{ coverImage: string | null }>(`/spas/${businessId}/cover-image`);
+        return response.data;
+    },
+
     // Upload Document
     uploadDocument: async (businessId: string, file: File, documentType: string) => {
         const formData = new FormData();
@@ -669,5 +717,57 @@ export const businessService = {
     getBusinessReviews: async (businessId: string, params?: { page?: number; limit?: number }): Promise<ReviewsResponse> => {
         const response = await apiClient.get<ReviewsResponse>(`/spas/${businessId}/reviews`, { params });
         return response.data;
-    }
+    },
+
+    // Get Notification Preferences — GET /spas/{id}/notifications
+    getNotificationPreferences: async (businessId: string) => {
+        const response = await apiClient.get(`/spas/${businessId}/notifications`);
+        return response.data;
+    },
+
+    // Update Notification Preferences — PUT /spas/{id}/notifications
+    updateNotificationPreferences: async (businessId: string, prefs: {
+        emailNewBookingAlerts?: boolean;
+        emailPaymentNotifications?: boolean;
+        emailReviewNotifications?: boolean;
+        emailSystemAlerts?: boolean;
+        smsBookingReminders?: boolean;
+        smsPaymentConfirmations?: boolean;
+        pushRealTimeBookings?: boolean;
+        pushUrgentAlerts?: boolean;
+    }) => {
+        const response = await apiClient.put(`/spas/${businessId}/notifications`, prefs);
+        return response.data;
+    },
+
+    // Get Payout Info — GET /spas/{id}/payout-info
+    getPayoutInfo: async (businessId: string): Promise<{
+        payoutInfo: {
+            id: string;
+            businessId: string;
+            accountName: string;
+            bankName: string;
+            accountNumber: string;
+            sortCode?: string | null;
+            routingCode?: string | null;
+            createdAt: string;
+            updatedAt: string;
+        } | null;
+    }> => {
+        const response = await apiClient.get(`/spas/${businessId}/payout-info`);
+        return response.data;
+    },
+
+    // Create or Update Payout Info — POST /spas/{id}/payout-info
+    createOrUpdatePayoutInfo: async (businessId: string, data: {
+        accountName: string;
+        bankName: string;
+        accountNumber: string;
+        sortCode?: string;
+        routingCode?: string;
+    }) => {
+        const response = await apiClient.post(`/spas/${businessId}/payout-info`, data);
+        return response.data;
+    },
 };
+

@@ -46,7 +46,7 @@ const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
                     <Input
                         type={inputType}
                         className={cn(
-                            "h-[56px] w-full rounded-lg border border-gray-200 bg-white px-4 py-1 text-base text-gray-900 placeholder:text-gray-300 focus:border-[#E59622] focus:ring-1 focus:ring-[#E59622] transition-all outline-none",
+                            "h-[56px] w-full rounded-lg border border-gray-400 bg-white px-4 py-1 text-base text-gray-900 placeholder:text-gray-300 focus:ring-0 focus:ring-[#E59622] transition-all outline-none",
                             (LeftIcon || isPassword) && "pl-12",
                             isPassword && "pr-12",
                             error && "border-red-500 focus:border-red-500 focus:ring-red-500",
