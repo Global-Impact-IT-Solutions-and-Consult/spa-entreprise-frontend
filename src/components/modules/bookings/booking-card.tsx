@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { Phone, MessageSquare, Send, Calendar, CheckCircle2, Clock, MapPin, User, Building2, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AddToCalendarModal } from "./add-to-calendar-modal";
+import { CancelBookingModal } from "./cancel-booking-modal";
+import { toaster } from "@/components/ui/toaster";
 
 interface BookingCardProps {
     booking: {
@@ -21,7 +25,24 @@ interface BookingCardProps {
 }
 
 export function BookingCard({ booking }: BookingCardProps) {
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+    const [isCancelOpen, setIsCancelOpen] = useState(false);
+    const [isCanceling, setIsCanceling] = useState(false);
+
     const isCanceled = booking.status === "Canceled";
+
+    const handleCancel = async () => {
+        setIsCanceling(true);
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        setIsCanceling(false);
+        setIsCancelOpen(false);
+        toaster.create({
+            title: "Booking Canceled",
+            description: "Your booking has been successfully canceled.",
+            type: "success"
+        });
+    };
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
@@ -85,7 +106,10 @@ export function BookingCard({ booking }: BookingCardProps) {
                 <div className="mt-6 flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                         <span className="text-xl font-bold text-gray-900">₦{booking.price}</span>
-                        <button className="flex items-center gap-1.5 text-gray-600 hover:text-[#E89D24] transition text-sm font-medium">
+                        <button
+                            onClick={() => setIsCalendarOpen(true)}
+                            className="flex items-center gap-1.5 text-gray-600 hover:text-[#E89D24] transition text-sm font-medium"
+                        >
                             <CalendarPlus className="w-4 h-4" />
                             Add to calender
                         </button>
@@ -100,13 +124,37 @@ export function BookingCard({ booking }: BookingCardProps) {
                             <Send className="w-4 h-4" />
                             <span className="hidden sm:inline">Contact</span>
                         </Button>
-                        <Button className="bg-[#E74C3C] hover:bg-[#C0392B] text-white flex items-center gap-2 h-11">
+                        <Button
+                            onClick={() => setIsCancelOpen(true)}
+                            className="bg-[#E74C3C] hover:bg-[#C0392B] text-white flex items-center gap-2 h-11"
+                        >
                             <XCircle className="w-4 h-4" />
-                            <span className="hidden sm:inline">Contact</span>
+                            <span className="hidden sm:inline">Cancel</span>
                         </Button>
                     </div>
                 </div>
             </div>
+
+            {/* Modals */}
+            <AddToCalendarModal
+                isOpen={isCalendarOpen}
+                onClose={() => setIsCalendarOpen(false)}
+                booking={{
+                    id: booking.id,
+                    serviceName: booking.serviceName,
+                    businessName: booking.businessName,
+                    date: booking.date,
+                    time: booking.time,
+                    location: booking.location,
+                }}
+            />
+
+            <CancelBookingModal
+                isOpen={isCancelOpen}
+                onClose={() => setIsCancelOpen(false)}
+                onConfirm={handleCancel}
+                isLoading={isCanceling}
+            />
         </div>
     );
 }

@@ -62,93 +62,97 @@ export function CustomerHeader() {
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
-                    {/* Logo and Brand */}
-                    <Link href="/" className="flex items-center space-x-2">
-                        <div className="bg-[#E89D24] px-2 py-1 rounded">
-                            <span className="text-white font-bold text-sm">WP</span>
-                        </div>
-                        <div className="hidden sm:block">
-                            <h1 className="font-bold text-lg text-gray-900">WellnessPro</h1>
-                        </div>
-                    </Link>
+                    <div className="flex gap-5">
+                        {/* Logo and Brand */}
+                        <Link href="/" className="flex items-center space-x-2">
+                            <div className="bg-[#E89D24] px-2 py-1 rounded">
+                                <span className="text-white font-bold text-sm">WP</span>
+                            </div>
+                            <div className="hidden sm:block">
+                                <h1 className="font-bold text-lg text-gray-900">WellnessPro</h1>
+                            </div>
+                        </Link>
 
-                    {/* Desktop: City Selector */}
-                    <div className="hidden md:flex items-center space-x-2">
-                        <select className="px-3 py-2 text-sm">
-                            <option>Lagos</option>
-                            <option>Abuja</option>
-                            <option>Port Harcourt</option>
-                            <option>Ibadan</option>
-                        </select>
+                        {/* Desktop: City Selector */}
+                        <div className="hidden md:flex items-center space-x-2">
+                            <select className="px-2 py-2 text-sm">
+                                <option>Lagos</option>
+                                <option>Abuja</option>
+                                <option>Port Harcourt</option>
+                                <option>Ibadan</option>
+                            </select>
+                        </div>
                     </div>
 
-                    {/* Desktop: Navigation */}
-                    <nav className="hidden md:flex items-center space-x-6">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={`flex items-center space-x-1 transition font-medium ${isActive(link.href)
-                                    ? "text-[#E89D24]"
-                                    : "text-gray-700 hover:text-[#E89D24]"
-                                    }`}
-                            >
-                                <link.icon className="w-4 h-4" />
-                                <span className="text-sm">{link.label}</span>
-                            </Link>
-                        ))}
-                    </nav>
-
-                    {/* Desktop: Auth Area */}
-                    <div className="hidden md:flex items-center space-x-4">
-                        {isAuthenticated && user ? (
-                            <div className="relative" ref={dropdownRef}>
-                                <button
-                                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                                    className="flex items-center space-x-2 hover:opacity-80 transition"
+                    <div className="flex gap-5">
+                        {/* Desktop: Navigation */}
+                        <nav className="hidden md:flex items-center space-x-6">
+                            {navLinks.map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`flex items-center space-x-1 transition font-medium ${isActive(link.href)
+                                        ? "text-[#E89D24]"
+                                        : "text-gray-700 hover:text-[#E89D24]"
+                                        }`}
                                 >
-                                    <User className="w-5 h-5 text-gray-600" />
-                                    <span className="text-sm font-medium text-gray-700">Profile</span>
-                                </button>
+                                    <link.icon className="w-4 h-4" />
+                                    <span className="text-sm">{link.label}</span>
+                                </Link>
+                            ))}
+                        </nav>
 
-                                {/* Profile Dropdown */}
-                                {profileDropdownOpen && (
-                                    <div className="absolute right-0 mt-3 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                                        <Link
-                                            href="/dashboard/settings"
-                                            onClick={() => setProfileDropdownOpen(false)}
-                                            className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                        >
-                                            <Settings className="w-4 h-4 text-gray-500" />
-                                            Settings
-                                        </Link>
-                                        <Link
-                                            href="/notifications"
-                                            onClick={() => setProfileDropdownOpen(false)}
-                                            className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                        >
-                                            <Bell className="w-4 h-4 text-gray-500" />
-                                            Notification
-                                        </Link>
-                                        <div className="border-t border-gray-100 my-1" />
-                                        <button
-                                            onClick={handleLogout}
-                                            className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left"
-                                        >
-                                            <LogOut className="w-4 h-4 text-gray-500" />
-                                            Logout
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <Link href="/auth/login">
-                                <Button variant="outline" className="flex items-center space-x-2 border-gray-300 hover:border-[#E89D24] hover:text-[#E89D24]">
-                                    <User className="w-4 h-4" />
-                                    <span>Sign in</span>
-                                </Button>
-                            </Link>
-                        )}
+                        {/* Desktop: Auth Area */}
+                        <div className="hidden md:flex items-center space-x-4">
+                            {isAuthenticated && user ? (
+                                <div className="relative" ref={dropdownRef}>
+                                    <button
+                                        onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                                        className="flex items-center space-x-2 hover:opacity-80 transition"
+                                    >
+                                        <User className="w-5 h-5 text-gray-600" />
+                                        <span className="text-sm font-medium text-gray-700">Profile</span>
+                                    </button>
+
+                                    {/* Profile Dropdown */}
+                                    {profileDropdownOpen && (
+                                        <div className="absolute right-0 mt-3 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                                            <Link
+                                                href="/dashboard/settings"
+                                                onClick={() => setProfileDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <Settings className="w-4 h-4 text-gray-500" />
+                                                Settings
+                                            </Link>
+                                            <Link
+                                                href="/notifications"
+                                                onClick={() => setProfileDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <Bell className="w-4 h-4 text-gray-500" />
+                                                Notification
+                                            </Link>
+                                            <div className="border-t border-gray-100 my-1" />
+                                            <button
+                                                onClick={handleLogout}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left"
+                                            >
+                                                <LogOut className="w-4 h-4 text-gray-500" />
+                                                Logout
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <Link href="/auth/login">
+                                    <Button variant="outline" className="flex items-center space-x-1 border-none text-gray-700 hover:text-[#E89D24] shadow-none">
+                                        <User className="w-4 h-4" />
+                                        <span className="font-medium">Sign in</span>
+                                    </Button>
+                                </Link>
+                            )}
+                        </div>
                     </div>
 
                     {/* Mobile: Hamburger Menu Button */}
