@@ -142,7 +142,7 @@ function BusinessDirectoryContent() {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
                 {/* Header Section */}
                 <div className="mb-10">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>Business Directory</h1>
+                    <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight font-playfair">Business Directory</h1>
                     <p className="text-gray-600 max-w-2xl leading-relaxed">
                         Find trusted barbershops, nail salons, spas, and wellness centers in your area. Verified businesses with quality services.
                     </p>

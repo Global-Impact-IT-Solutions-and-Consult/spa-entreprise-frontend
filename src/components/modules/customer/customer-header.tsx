@@ -118,7 +118,7 @@ export function CustomerHeader() {
                                     {profileDropdownOpen && (
                                         <div className="absolute right-0 mt-3 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                                             <Link
-                                                href="/dashboard/settings"
+                                                href="/settings"
                                                 onClick={() => setProfileDropdownOpen(false)}
                                                 className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                             >
@@ -131,7 +131,7 @@ export function CustomerHeader() {
                                                 className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                             >
                                                 <Bell className="w-4 h-4 text-gray-500" />
-                                                Notification
+                                                Notifications
                                             </Link>
                                             <div className="border-t border-gray-100 my-1" />
                                             <button
@@ -231,7 +231,7 @@ export function CustomerHeader() {
                         <>
                             <div className="border-t border-gray-100 my-2" />
                             <Link
-                                href="/dashboard/settings"
+                                href="/settings"
                                 className="flex items-center space-x-3 rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
                                 onClick={() => setMobileMenuOpen(false)}
                             >

@@ -8,20 +8,10 @@ import { AddToCalendarModal } from "./add-to-calendar-modal";
 import { CancelBookingModal } from "./cancel-booking-modal";
 import { toaster } from "@/components/ui/toaster";
 
+import { Booking } from "@/services/booking.service";
+
 interface BookingCardProps {
-    booking: {
-        id: string;
-        serviceName: string;
-        businessName: string;
-        location: string;
-        staffName: string;
-        date: string;
-        time: string;
-        duration: string;
-        price: string;
-        status: "Confirmed" | "History" | "Canceled";
-        image: string;
-    };
+    booking: Booking;
 }
 
 export function BookingCard({ booking }: BookingCardProps) {
@@ -29,7 +19,7 @@ export function BookingCard({ booking }: BookingCardProps) {
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isCanceling, setIsCanceling] = useState(false);
 
-    const isCanceled = booking.status === "Canceled";
+    const isCanceled = booking.status === "cancelled";
 
     const handleCancel = async () => {
         setIsCanceling(true);
@@ -49,7 +39,7 @@ export function BookingCard({ booking }: BookingCardProps) {
             {/* Business Image & Status */}
             <div className="relative h-32 md:h-32">
                 <Image
-                    src={booking.image}
+                    src={booking.status === 'confirmed' ? "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80" : "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80"}
                     alt={booking.serviceName}
                     fill
                     className="object-cover"
@@ -64,7 +54,7 @@ export function BookingCard({ booking }: BookingCardProps) {
                     <div className="flex items-center gap-1">
                         <CheckCircle2 className={`w-3 h-3 ${isCanceled ? 'text-red-500' : 'text-green-600'}`} />
                         <span className={`text-xs font-medium ${isCanceled ? 'text-red-600' : 'text-green-700'}`}>
-                            {booking.status === "History" ? "Completed" : booking.status}
+                            {booking.status.replace('_', ' ')}
                         </span>
                     </div>
                 </div>
@@ -77,11 +67,11 @@ export function BookingCard({ booking }: BookingCardProps) {
                 <div className="space-y-1 mt-3">
                     <div className="flex items-center gap-2 text-gray-500">
                         <MapPin className="w-3 h-3" />
-                        <span className="text-xs">In-store · {booking.location}</span>
+                        <span className="text-xs">In-store</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
                         <User className="w-3 h-3" />
-                        <span className="text-xs">Therapist: {booking.staffName}</span>
+                        <span className="text-xs">Therapist: {booking.staffName || 'Any Available'}</span>
                     </div>
                 </div>
 
@@ -92,11 +82,11 @@ export function BookingCard({ booking }: BookingCardProps) {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-gray-500">
                         <Calendar className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium">{booking.date}</span>
+                        <span className="text-sm font-medium">{new Date(booking.bookingDate).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-500">
                         <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium">{booking.time} ({booking.duration})</span>
+                        <span className="text-sm font-medium">{booking.startTime}</span>
                     </div>
                 </div>
 
@@ -105,13 +95,13 @@ export function BookingCard({ booking }: BookingCardProps) {
                 {/* Footer: Price & Actions */}
                 <div className="mt-6 flex flex-col gap-4">
                     <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-gray-900">₦{booking.price}</span>
+                        <span className="text-xl font-bold text-gray-900">₦{booking.totalPrice.toLocaleString()}</span>
                         <button
                             onClick={() => setIsCalendarOpen(true)}
                             className="flex items-center gap-1.5 text-gray-600 hover:text-[#E89D24] transition text-sm font-medium"
                         >
                             <CalendarPlus className="w-4 h-4" />
-                            Add to calender
+                            Add to calendar
                         </button>
                     </div>
 
@@ -122,7 +112,7 @@ export function BookingCard({ booking }: BookingCardProps) {
                         </Button>
                         <Button variant="outline" className="flex items-center gap-2 h-11 border-gray-200 hover:border-[#E89D24] hover:text-[#E89D24]">
                             <Send className="w-4 h-4" />
-                            <span className="hidden sm:inline">Contact</span>
+                            <span className="hidden sm:inline">Directions</span>
                         </Button>
                         <Button
                             onClick={() => setIsCancelOpen(true)}
@@ -143,9 +133,9 @@ export function BookingCard({ booking }: BookingCardProps) {
                     id: booking.id,
                     serviceName: booking.serviceName,
                     businessName: booking.businessName,
-                    date: booking.date,
-                    time: booking.time,
-                    location: booking.location,
+                    date: new Date(booking.bookingDate).toLocaleDateString(),
+                    time: booking.startTime,
+                    location: 'In-store',
                 }}
             />
 

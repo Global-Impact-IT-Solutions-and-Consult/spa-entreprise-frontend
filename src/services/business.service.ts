@@ -120,6 +120,7 @@ export interface Business {
         id: string;
         code: string;
         name: string;
+        iconUrl?: string;
     };
     phone?: string;
     email?: string;
@@ -139,6 +140,7 @@ export interface Business {
     averageRating?: string | number;
     totalReviews?: number;
     primaryImageUrl?: string | null;
+    profileImage?: string | null;
     coverImage?: string | null;
     amenities?: string[] | null;
     operatingHours?: OperatingHours;
@@ -157,6 +159,7 @@ export interface BusinessType {
     id: string;
     code: string;
     name: string;
+    iconUrl?: string;
 }
 
 export interface Service {
@@ -175,7 +178,7 @@ export interface Service {
     homeServicePrice?: number;
     serviceRadius?: number;
     maxServiceRadius?: number;
-    imageUrl?: string;
+    imageUrl: string;
 }
 
 export interface Staff {
@@ -242,7 +245,7 @@ export interface EnrichedService extends Omit<Service, 'id'> {
     reviews: number;
     location: string;
     distance?: string;
-    image: string;
+    imageUrl: string;
 }
 
 export interface SearchServicesResponse {
@@ -466,11 +469,11 @@ export const businessService = {
             deliveryType: service.deliveryType || 'IN_LOCATION_ONLY',
             isActive: service.isActive ?? true,
             businessName: service.businessName || service.spa?.businessName || 'Wellness Business',
-            businessId: service.businessId || service.spa?.id || service.spaId || '',
+            businessId: service.business.id,
             rating: service.spa?.averageRating || service.rating || 0,
             reviews: service.spa?.totalReviews || service.reviews || 0,
-            location: service.business?.city,
-            image: service.imageUrl,
+            location: service.business?.city || service.spa?.addressDetails?.city || service.spa?.city || 'Nigeria',
+            imageUrl: service.imageUrl || service.image || '',
         }));
     },
 

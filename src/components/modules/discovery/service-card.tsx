@@ -5,8 +5,7 @@ import Image from "next/image";
 import { Heart, Clock, MapPin, Star, Store, House } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { BsShop } from "react-icons/bs";
-
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ServiceCardProps {
@@ -15,6 +14,7 @@ interface ServiceCardProps {
         name: string;
         businessName: string;
         businessId: string;
+        imageUrl: string;
         category: {
             id: string;
             name: string;
@@ -28,11 +28,11 @@ interface ServiceCardProps {
         reviews: number;
         location: string;
         distance?: string;
-        image: string;
     };
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
+    const router = useRouter();
     const [isFavorite, setIsFavorite] = useState(false);
 
     const businessId = service.businessId;
@@ -43,7 +43,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
             {/* Image Container */}
             <div className="relative h-48 md:h-52 overflow-hidden">
                 <Image
-                    src={service.image}
+                    src={service.imageUrl}
                     alt={service.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -108,7 +108,10 @@ export function ServiceCard({ service }: ServiceCardProps) {
                         <MapPin className="w-3.5 h-3.5" />
                         <span className="text-xs font-medium">{service.location}{service.distance ? ` • ${service.distance}` : ''}</span>
                     </div>
-                    <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs font-bold px-4 h-9 rounded transition-transform active:scale-95 shadow-sm">
+                    <Button
+                        onClick={() => router.push(`/bookings/new?serviceId=${service.id}&businessId=${businessId}`)}
+                        className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs font-bold px-4 h-9 rounded transition-transform active:scale-95 shadow-sm"
+                    >
                         Book Service
                     </Button>
                 </div>
