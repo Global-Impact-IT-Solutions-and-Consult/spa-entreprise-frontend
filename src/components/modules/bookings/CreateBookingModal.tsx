@@ -90,6 +90,7 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
             const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
 
             await bookingService.createBooking({
+                businessId: businessId!,
                 serviceId: selectedService,
                 staffId: selectedStaff || undefined,
                 bookingDate: selectedDate,

@@ -142,7 +142,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                 {/* Price and Button */}
                 <div className="flex items-center justify-between gap-2 mt-auto">
                     <div className="flex items-center gap-2">
-                        <p className="text-[10px] font-bold text-gray-400 tracking-wider uppercase">From</p>
+                        <p className="text-[10px] font-bold text-gray-400 tracking-wider">From</p>
                         <p className="font-bold text-gray-900 text-sm md:text-base">₦{price}</p>
                     </div>
                     <Link href={`/businesses/${businessId}`}>

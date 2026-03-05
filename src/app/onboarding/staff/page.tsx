@@ -102,6 +102,7 @@ export default function StaffsPage() {
     const [staffs, setStaffs] = useState<Staff[]>([]);
     const [staffToDelete, setStaffToDelete] = useState<string | null>(null);
     const [staffToEdit, setStaffToEdit] = useState<Staff | null>(null);
+    const [businessTypeIcon, setBusinessTypeIcon] = useState<string | undefined>(undefined);
 
     // Form state
     const [newStaff, setNewStaff] = useState({
@@ -121,12 +122,15 @@ export default function StaffsPage() {
             }
 
             try {
-                const [servicesData, staffsData] = await Promise.all([
+                const [servicesData, staffsData, myBusinesses] = await Promise.all([
                     businessService.getServices(businessId),
-                    businessService.getAllStaff(businessId)
+                    businessService.getAllStaff(businessId),
+                    businessService.getMyBusinesses()
                 ]);
                 setServices(servicesData);
                 setStaffs(staffsData);
+                const businessData = myBusinesses.find(b => b.id === businessId);
+                setBusinessTypeIcon(businessData?.businessType?.iconUrl);
             } catch (error) {
                 const err = error as { response?: { data?: { message?: string } } };
                 console.error("Failed to load data", err);
@@ -280,6 +284,7 @@ export default function StaffsPage() {
                     businessId={businessId}
                     staff={staffToEdit}
                     services={services}
+                    businessTypeIcon={businessTypeIcon}
                     isOpen={open || !!staffToEdit}
                     onClose={() => {
                         setOpen(false);

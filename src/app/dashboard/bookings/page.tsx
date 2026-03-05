@@ -194,7 +194,7 @@ export default function BookingsPage() {
 
     const handleConfirm = async (id: string) => {
         try {
-            await bookingService.confirmBooking(id, { notes: "Handled from dashboard" });
+            await bookingService.confirmBooking(id, businessId!, { notes: "Handled from dashboard" });
             fetchBookings();
         } catch (error) {
             console.error("Error confirming booking:", error);
@@ -479,7 +479,7 @@ export default function BookingsPage() {
                         )}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
                         {filteredBookings.map((booking) => (
                             <Card key={booking.id} className="border-none shadow-sm ring-1 ring-gray-100 overflow-hidden group">
                                 <CardContent className="p-0 flex h-full">

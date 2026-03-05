@@ -59,13 +59,15 @@ export function HeroSearch() {
     return (
         <section className="relative bg-gradient-to-br from-gray-50 to-gray-100 py-12 md:py-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
             {/* Background Image Overlay */}
-            <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 overflow-hidden rounded-md">
                 <div
-                    className="w-full h-full bg-cover bg-center rounded-md"
+                    className="w-full h-full bg-cover bg-center"
                     style={{
-                        backgroundImage: "url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=80')"
+                        backgroundImage: "url('/assets/images/hero.jpg')"
                     }}
                 />
+                {/* Dark Overlay for contrast */}
+                <div className="absolute inset-0 bg-black/20" />
             </div>
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Search Bar */}
@@ -116,7 +118,7 @@ export function HeroSearch() {
                                 onChange={(e) => setCategory(e.target.value)}
                                 className="flex-1 outline-none text-sm appearance-none bg-transparent cursor-pointer font-medium"
                             >
-                                <option value="">All Business Types</option>
+                                <option value="">Services</option>
                                 {businessTypes.map((type) => (
                                     <option key={type.id} value={type.id}>{type.name}</option>
                                 ))}
@@ -128,9 +130,11 @@ export function HeroSearch() {
                         <div className="flex items-center flex-1 px-4 py-3 border border-gray-200 rounded-lg md:rounded-none md:border-0 transition-all">
                             <Calendar className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
                             <input
-                                type="date"
-                                placeholder="Select Date"
+                                type={date ? "date" : "text"}
+                                placeholder="Date"
                                 value={date}
+                                onFocus={(e) => (e.target.type = "date")}
+                                onBlur={(e) => !date && (e.target.type = "text")}
                                 onChange={(e) => setDate(e.target.value)}
                                 className="flex-1 outline-none text-sm bg-transparent cursor-pointer font-medium"
                             />

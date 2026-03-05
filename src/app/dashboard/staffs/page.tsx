@@ -84,6 +84,7 @@ export default function StaffsPage() {
 
     const [staffs, setStaffs] = useState<Staff[]>([]);
     const [services, setServices] = useState<Service[]>([]);
+    const [businessTypeIcon, setBusinessTypeIcon] = useState<string | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery] = useState("");
@@ -94,12 +95,15 @@ export default function StaffsPage() {
         const fetchData = async () => {
             if (!businessId) return;
             try {
-                const [staffData, servicesData] = await Promise.all([
+                const [staffData, servicesData, myBusinesses] = await Promise.all([
                     businessService.getAllStaff(businessId),
-                    businessService.getServices(businessId)
+                    businessService.getServices(businessId),
+                    businessService.getMyBusinesses()
                 ]);
                 setStaffs(staffData);
                 setServices(servicesData);
+                const businessData = myBusinesses.find(b => b.id === businessId);
+                setBusinessTypeIcon(businessData?.businessType?.iconUrl);
             } catch (error) {
                 const err = error as { response?: { data?: { message?: string } } };
                 console.error("Failed to fetch staff data", err);
@@ -200,6 +204,7 @@ export default function StaffsPage() {
                     businessId={businessId}
                     staff={staffToEdit}
                     services={services}
+                    businessTypeIcon={businessTypeIcon}
                     isOpen={isModalOpen || !!staffToEdit}
                     onClose={() => {
                         setIsModalOpen(false);

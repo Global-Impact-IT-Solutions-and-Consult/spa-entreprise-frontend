@@ -18,7 +18,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
             className="fixed top-0 inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0 h-full p-4"
             onClick={() => onOpenChange(false)}
         >
-            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg">
+            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-2xl">
                 {children}
             </div>
         </div>

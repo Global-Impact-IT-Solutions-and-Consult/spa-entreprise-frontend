@@ -63,10 +63,10 @@ export function CategoryBrowser() {
         <section className="py-12 md:py-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between mb-8 md:mb-10">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Browse Category</h2>
-                    <Link href="/businesses" className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Trending Categories</h2>
+                    {/* <Link href="/businesses" className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">
                         View All
-                    </Link>
+                    </Link> */}
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

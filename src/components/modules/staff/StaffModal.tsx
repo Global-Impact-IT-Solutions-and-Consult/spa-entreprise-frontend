@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Loader2, Scissors, Upload, X, ImageIcon } from "lucide-react";
+import { getBusinessIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,12 +30,13 @@ interface StaffModalProps {
     businessId: string;
     staff: Staff | null;
     services: Service[];
+    businessTypeIcon?: string;
     isOpen: boolean;
     onClose: () => void;
     onSuccess: (staff: Staff) => void;
 }
 
-export const StaffModal = ({ businessId, staff, services, isOpen, onClose, onSuccess }: StaffModalProps) => {
+export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOpen, onClose, onSuccess }: StaffModalProps) => {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -49,6 +51,8 @@ export const StaffModal = ({ businessId, staff, services, isOpen, onClose, onSuc
         about: "",
         serviceIds: [],
     });
+
+    const ServiceIcon = useMemo(() => getBusinessIcon(businessTypeIcon), [businessTypeIcon]);
 
     useEffect(() => {
         if (staff && isOpen) {
@@ -312,9 +316,11 @@ export const StaffModal = ({ businessId, staff, services, isOpen, onClose, onSuc
                                                 onClick={() => handleServiceToggle(service.id)}
                                                 className="flex items-center gap-3 p-3 rounded border border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors"
                                             >
-                                                <div className="h-9 w-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                                                    <Scissors className="h-4 w-4 text-blue-400" />
-                                                </div>
+                                                {ServiceIcon && (
+                                                    <div className="h-9 w-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                                                        <ServiceIcon className="h-4 w-4 text-blue-400" />
+                                                    </div>
+                                                )}
                                                 <span className="flex-1 text-sm font-medium text-gray-900 truncate">{service.name}</span>
                                                 <Checkbox
                                                     checked={isChecked}

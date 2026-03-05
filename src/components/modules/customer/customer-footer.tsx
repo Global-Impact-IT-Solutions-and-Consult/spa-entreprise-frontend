@@ -7,7 +7,7 @@ import { Facebook, Twitter, Instagram } from "lucide-react";
 export function CustomerFooter() {
     return (
         <footer className="bg-[#2C3E50] text-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-12 pb-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {/* Brand Column */}
                     <div>
@@ -117,7 +117,7 @@ export function CustomerFooter() {
                 </div>
 
                 {/* Copyright */}
-                <div className="border-t border-gray-700 mt-8 pt-8 text-center">
+                <div className="border-t border-gray-700 mt-8 pt-4 text-center">
                     <p className="text-gray-400 text-sm">@copyright 2026</p>
                 </div>
             </div>

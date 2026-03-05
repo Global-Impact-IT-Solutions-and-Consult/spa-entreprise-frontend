@@ -40,8 +40,8 @@ export const bookingService = {
     },
 
     // Confirm a booking
-    confirmBooking: async (bookingId: string, data: { notes?: string }) => {
-        const response = await apiClient.post<Booking>(`/bookings/${bookingId}/confirm`, data);
+    confirmBooking: async (bookingId: string, businessId: string, data: { notes?: string }) => {
+        const response = await apiClient.post<Booking>(`/bookings/${bookingId}/confirm?businessId=${businessId}`, data);
         return response.data;
     },
 
@@ -59,16 +59,29 @@ export const bookingService = {
 
     // Create a new booking
     createBooking: async (data: {
+        businessId?: string;
         serviceId: string;
         staffId?: string;
         bookingDate: string;
         startTime: string;
-        endTime: string;
-        customerName: string;
-        customerPhone: string;
-        totalPrice: number;
+        endTime?: string;
+        userId?: string;
+        customerName?: string;
+        customerPhone?: string;
+        totalPrice?: number;
     }) => {
         const response = await apiClient.post<Booking>('/bookings', data);
         return response.data;
+    },
+
+    // Get bookings for the current user
+    getUserBookings: async (params?: { status?: string; page?: number; limit?: number }) => {
+        const response = await apiClient.get<Booking[] | { data: Booking[] }>('/bookings/my-bookings', { params });
+        if (Array.isArray(response.data)) {
+            return response.data as Booking[];
+        } else if (response.data && Array.isArray(response.data.data)) {
+            return response.data.data as Booking[];
+        }
+        return [] as Booking[];
     }
 };

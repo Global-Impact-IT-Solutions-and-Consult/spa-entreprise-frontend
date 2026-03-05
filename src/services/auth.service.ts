@@ -32,6 +32,8 @@ export interface User {
     business?: import('./business.service').Business;
     businesses?: import('./business.service').Business[];
     mfaEnabled?: boolean;
+    phone?: string;
+    profilePicture?: string;
 }
 
 export interface UserNotification {

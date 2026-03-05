@@ -132,8 +132,8 @@ export default function BusinessDetailsPage() {
         category: business?.businessType?.name || "Wellness",
         distance: "", // No placeholder — only show if API provides it
         startingPrice: services.length > 0 ? Math.min(...services.map(s => s.price)).toLocaleString() : "---",
-        bannerImage: gallery.find(img => !img.isPrimary)?.url || business.coverImage || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1600&q=80",
-        profileImage: gallery.find(img => img.isPrimary)?.url || business.primaryImageUrl || "https://images.unsplash.com/photo-1512690196246-86e580db7940?w=800&q=80",
+        bannerImage: business.coverImage || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1600&q=80",
+        profileImage: business.profileImage || "https://images.unsplash.com/photo-1512690196246-86e580db7940?w=800&q=80",
         address: business.address || business.addressDetails?.address || "Lagos, Nigeria",
         phone: business.phone || "---",
         email: business.email || "---",
@@ -145,6 +145,8 @@ export default function BusinessDetailsPage() {
             rating: 4.5, // Backend doesn't provide staff ratings yet
             reviews: 0,
             description: "Experienced wellness professional.",
+            about: s.about || "Experienced wellness professional.",
+            profilePicture: s.profilePicture || undefined,
             specialties: (s.serviceIds || [])
                 .map(id => services.find(svc => svc.id === id)?.name)
                 .filter(Boolean) as string[],
@@ -213,7 +215,6 @@ export default function BusinessDetailsPage() {
                                                     ...service,
                                                     businessName: business.businessName,
                                                     businessId: business.id,
-                                                    image: transformedBusiness.profileImage,
                                                     rating: transformedBusiness.rating,
                                                     reviews: transformedBusiness.reviews,
                                                     location: transformedBusiness.address,
@@ -250,7 +251,7 @@ export default function BusinessDetailsPage() {
                         )}
 
                         {activeTab === "Staff" && (
-                            <BusinessStaffTab staffs={transformedBusiness.staffs} />
+                            <BusinessStaffTab staffs={transformedBusiness?.staffs || []} />
                         )}
                     </div>
 
