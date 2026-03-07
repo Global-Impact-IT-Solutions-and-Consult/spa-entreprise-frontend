@@ -334,9 +334,9 @@ export default function AdminBookingsPage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Status</span>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">Status</Label>
             <Select
               options={STATUS_OPTIONS}
               value={statusFilter}
@@ -347,8 +347,8 @@ export default function AdminBookingsPage() {
               className="w-[160px]"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">
               Date From
             </Label>
             <Input
@@ -359,10 +359,8 @@ export default function AdminBookingsPage() {
               title="DD / MM / YYYY"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-              Date To
-            </Label>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">Date To</Label>
             <Input
               type="date"
               value={dateTo}
@@ -371,8 +369,10 @@ export default function AdminBookingsPage() {
               title="DD / MM / YYYY"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Business</span>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">
+              Business
+            </Label>
             <Select
               options={[{ value: '', label: 'All Business...' }]}
               value=""
@@ -380,8 +380,10 @@ export default function AdminBookingsPage() {
               className="w-[140px]"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Customers</span>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">
+              Customers
+            </Label>
             <Select
               options={[{ value: '', label: 'All Custom...' }]}
               value=""
