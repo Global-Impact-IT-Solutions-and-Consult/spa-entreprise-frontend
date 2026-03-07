@@ -16,6 +16,7 @@ import { BookingDetailsModal } from './modals/BookingDetailsModal';
 import { CancelBookingModal } from './modals/CancelBookingModal';
 import { Eye, RotateCcw } from 'lucide-react';
 import { toaster } from '@/components/ui/toaster';
+import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 15;
 const STATUS_OPTIONS: SelectOption[] = [
@@ -42,6 +43,27 @@ function formatDate(s: string) {
     });
   } catch {
     return s;
+  }
+}
+
+/** Format for Date & Time column: "Oct 18, 2023 • 14:30" */
+function formatDateTime(s: string | undefined) {
+  if (!s) return '—';
+  try {
+    const d = new Date(s);
+    const date = d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    const time = d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    return `${date} • ${time}`;
+  } catch {
+    return String(s);
   }
 }
 
@@ -77,15 +99,33 @@ function statusDot(status: string) {
   }
 }
 
-function paymentColor(status: string) {
+/** Pill background + text for Status (design: rounded pill with dot) */
+function statusPillClass(status: string) {
+  switch ((status || '').toLowerCase()) {
+    case 'confirmed':
+      return 'bg-green-100 text-green-700';
+    case 'completed':
+      return 'bg-purple-100 text-purple-700';
+    case 'cancelled':
+      return 'bg-red-100 text-red-700';
+    case 'expired':
+    case 'no_show':
+      return 'bg-gray-100 text-gray-700';
+    default:
+      return 'bg-gray-100 text-gray-700';
+  }
+}
+
+/** Pill background + text for Payment (design: light green/orange/red pills) */
+function paymentPillClass(status: string) {
   switch ((status || '').toLowerCase()) {
     case 'successful':
     case 'paid':
-      return 'text-green-600';
+      return 'bg-green-100 text-green-700';
     case 'refunded':
-      return 'text-red-600';
+      return 'bg-red-100 text-red-700';
     default:
-      return 'text-amber-600';
+      return 'bg-amber-100 text-amber-700';
   }
 }
 
@@ -217,43 +257,45 @@ export default function AdminBookingsPage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-          Bookings Management
-        </h1>
-        <p className="text-gray-600 mt-1">
-          View and manage all bookings across the platform.
-        </p>
+      {/* Title/subtitle left, stat cards top right (match User Management & Service Categories) */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Bookings Management
+          </h1>
+          <p className="text-gray-600 mt-1">
+            View and manage all bookings across the platform.
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-4 shrink-0">
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-500">Total Bookings</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.total.toLocaleString()}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-500">Pending</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.pending?.toLocaleString() ?? '0'}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-500">Completed</p>
+              <p className="text-2xl font-bold text-green-600">
+                {stats.completed?.toLocaleString() ?? '0'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-white border-gray-200">
-          <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Total Bookings</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {stats.total.toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border-gray-200">
-          <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Pending</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {stats.pending?.toLocaleString() ?? '0'}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border-gray-200">
-          <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Completed</p>
-            <p className="text-2xl font-bold text-green-600">
-              {stats.completed?.toLocaleString() ?? '0'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">Status</span>
@@ -309,7 +351,12 @@ export default function AdminBookingsPage() {
               className="w-[140px]"
             />
           </div>
-          <Button variant="outline" size="sm" onClick={resetFilters}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={resetFilters}
+            className="text-[#9333EA] hover:text-[#7e22ce] hover:bg-[#9333EA]/10"
+          >
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset Filters
           </Button>
@@ -352,8 +399,14 @@ export default function AdminBookingsPage() {
                   </td>
                 </tr>
               ) : (
-                list.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
+                list.map((row, index) => (
+                  <tr
+                    key={row.id}
+                    className={cn(
+                      'hover:bg-gray-50',
+                      index % 2 === 1 && 'bg-gray-50/50',
+                    )}
+                  >
                     <td className="px-4 py-3 font-medium text-gray-900">
                       #BK-{row.id.slice(0, 8).toUpperCase()}
                     </td>
@@ -367,25 +420,33 @@ export default function AdminBookingsPage() {
                       {row.serviceName}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {row.dateTime ||
-                        (row.createdAt ? formatDate(row.createdAt) : '—')}
+                      {formatDateTime(row.dateTime || row.createdAt)}
                     </td>
                     <td className="px-4 py-3 text-gray-900">
                       {formatAmount(row.amount)}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center gap-1.5 text-sm font-medium capitalize ${statusColor(row.status)}`}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium capitalize',
+                          statusPillClass(row.status),
+                        )}
                       >
                         <span
-                          className={`h-2 w-2 rounded-full shrink-0 ${statusDot(row.status)}`}
+                          className={cn(
+                            'h-1.5 w-1.5 rounded-full shrink-0',
+                            statusDot(row.status),
+                          )}
                         />
                         {row.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`text-sm font-medium ${paymentColor(row.paymentStatus)}`}
+                        className={cn(
+                          'inline-flex rounded-full px-2.5 py-1 text-xs font-medium',
+                          paymentPillClass(row.paymentStatus),
+                        )}
                       >
                         {row.paymentStatus === 'successful' ||
                         row.paymentStatus === 'paid'
@@ -399,22 +460,11 @@ export default function AdminBookingsPage() {
                       <button
                         type="button"
                         onClick={() => openDetails(row)}
-                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                        className="p-2 rounded-lg text-[#9333EA] hover:bg-[#9333EA]/10"
                         title="View"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      {row.status !== 'cancelled' &&
-                        row.status !== 'completed' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-amber-600 hover:text-amber-700"
-                            onClick={() => openCancel(row)}
-                          >
-                            Cancel
-                          </Button>
-                        )}
                     </td>
                   </tr>
                 ))

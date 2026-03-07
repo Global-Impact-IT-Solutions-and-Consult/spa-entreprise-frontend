@@ -204,8 +204,8 @@ export default function AdminCategoriesPage() {
         </div>
       </div>
 
-      {/* Filters: bordered strip, no extra white bg; Reset Filters = purple icon + text */}
-      <div className="border border-gray-200 rounded-lg p-4 mb-6">
+      {/* Filters: white background, bordered strip; Reset Filters = purple icon + text */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
