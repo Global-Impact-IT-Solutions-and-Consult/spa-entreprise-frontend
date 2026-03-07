@@ -46,24 +46,62 @@ function formatDate(s: string) {
   }
 }
 
-/** Format for Date & Time column: "Oct 18, 2023 • 14:30" */
+/** Format for Date & Time column: "Oct 18, 2023 • 14:30". Handles ISO, "YYYY-MM-DD", and "YYYY-MM-DD • HH:mm" from API. */
 function formatDateTime(s: string | undefined) {
-  if (!s) return '—';
+  if (!s || !s.trim()) return '—';
+  const raw = s.trim();
   try {
-    const d = new Date(s);
-    const date = d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-    const time = d.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-    return `${date} • ${time}`;
+    let d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) {
+      const date = d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      const time = d.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+      return `${date} • ${time}`;
+    }
+    // Backend may send "2026-02-15 • 10:00" or "2026-02-15 10:00" – parse date and time parts
+    const bullet = raw.indexOf(' • ');
+    const space = raw.indexOf(' ');
+    const sep = bullet >= 0 ? ' • ' : space >= 0 ? ' ' : null;
+    if (sep) {
+      const [datePart, timePart] = raw.split(sep);
+      if (datePart) {
+        const d2 = new Date(timePart ? `${datePart}T${timePart}` : datePart);
+        if (!Number.isNaN(d2.getTime())) {
+          const date = d2.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          });
+          const time = timePart
+            ? d2.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+              })
+            : '—';
+          return timePart ? `${date} • ${time}` : date;
+        }
+      }
+    }
+    // Try "YYYY-MM-DD" only
+    const d3 = new Date(raw);
+    if (!Number.isNaN(d3.getTime())) {
+      return d3.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+    return raw;
   } catch {
-    return String(s);
+    return raw;
   }
 }
 
