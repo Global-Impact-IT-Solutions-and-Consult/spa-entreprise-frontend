@@ -204,10 +204,11 @@ export function ApprovalContent() {
     if (!selectedBusiness || rejectReason.trim().length < 20) return;
     setProcessingId(selectedBusiness.id);
     try {
-      await adminService.rejectBusiness(selectedBusiness.id, {
-        reason: rejectReason.trim(),
+      await adminService.rejectBusiness(
+        selectedBusiness.id,
+        rejectReason.trim(),
         sendRejectionEmail,
-      });
+      );
       toaster.create({ title: 'Rejected', type: 'success' });
       setShowRejectModal(false);
       setSelectedBusiness(null);

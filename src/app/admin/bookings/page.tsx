@@ -367,7 +367,8 @@ export default function AdminBookingsPage() {
                       {row.serviceName}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {row.dateTime || formatDate(row.createdAt)}
+                      {row.dateTime ||
+                        (row.createdAt ? formatDate(row.createdAt) : '—')}
                     </td>
                     <td className="px-4 py-3 text-gray-900">
                       {formatAmount(row.amount)}
