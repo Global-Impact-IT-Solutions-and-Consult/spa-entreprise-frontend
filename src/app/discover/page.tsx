@@ -9,6 +9,10 @@ import { ServiceCard, ServiceSkeleton } from "@/components/modules/discovery/ser
 import { Search, MapPin, SlidersHorizontal, Heart, Store, Home, ChevronDown, Loader2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { businessService, EnrichedService, ServiceCategory } from "@/services/business.service";
+import { useAuthStore } from "@/store/auth.store";
+import { favoritesService } from "@/services/favorites.service";
+import Link from "next/link";
+import { AdvanceFilterModal, AdvancedFiltersState } from "@/components/modules/discovery/advance-filter-modal";
 
 function DiscoverContent() {
     const searchParams = useSearchParams();
@@ -23,6 +27,10 @@ function DiscoverContent() {
     const [cities, setCities] = useState<ICity[]>([]);
     const countryCode = "NG";
 
+    const { isAuthenticated } = useAuthStore();
+    const [favoriteServiceIds, setFavoriteServiceIds] = useState<Set<string>>(new Set());
+
+
     // Filter State
     const [activeFilter, setActiveFilter] = useState(searchParams.get("type") || "All Services");
     const [showAdvanced, setShowAdvanced] = useState(false);
@@ -31,6 +39,12 @@ function DiscoverContent() {
         state: searchParams.get("state") || "",
         city: searchParams.get("city") || "",
         category: searchParams.get("category") || "All Categories",
+    });
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>({
+        maxPrice: 100000,
+        distance: "any",
+        availability: [],
+        rating: "any",
     });
 
     const [tempSearch, setTempSearch] = useState(filters.search);
@@ -81,6 +95,25 @@ function DiscoverContent() {
         }
     }, [filters.state, states]);
 
+    // Fetch User Favorites
+    useEffect(() => {
+        if (isAuthenticated) {
+            favoritesService.getUserFavorites().then(res => {
+                console.log(res?.services);
+                const ids = new Set<string>();
+                const list = Array.isArray(res) ? res : (res?.services && Array.isArray(res.services) ? res.services : []);
+                list.forEach((item: { serviceId?: string; service?: { id?: string } }) => {
+                    if (item.serviceId) ids.add(item.serviceId);
+                    else if (item.service && item.service.id) ids.add(item.service.id);
+                });
+                console.log(ids);
+                setFavoriteServiceIds(ids);
+            }).catch(console.error);
+        } else {
+            setFavoriteServiceIds(new Set());
+        }
+    }, [isAuthenticated]);
+
     // Client-side filtering
     const filteredServices = useMemo(() => {
         let result = allServices;
@@ -110,10 +143,25 @@ function DiscoverContent() {
             result = result.filter(s => s.deliveryType?.toLowerCase() === 'in_location_only' || s.deliveryType?.toLowerCase() === 'both');
         } else if (activeFilter === "Home Service") {
             result = result.filter(s => s.deliveryType?.toLowerCase() === 'home_service_only' || s.deliveryType?.toLowerCase() === 'both');
+        } else if (activeFilter === "Favorite") {
+            result = result.filter(s => favoriteServiceIds.has(s.id));
+        }
+
+        // Apply Advanced Filters
+        // 1. Max Price
+        result = result.filter(s => s.price <= advancedFilters.maxPrice);
+
+        // 2. Rating
+        if (advancedFilters.rating !== "any") {
+            if (advancedFilters.rating === "4+") {
+                result = result.filter(s => Number(s.rating || 0) >= 4);
+            } else if (advancedFilters.rating === "3+") {
+                result = result.filter(s => Number(s.rating || 0) >= 3);
+            }
         }
 
         return result;
-    }, [allServices, filters, activeFilter]);
+    }, [allServices, filters, activeFilter, favoriteServiceIds, advancedFilters]);
 
     // Visible services (paginated slice)
     const visibleServices = filteredServices.slice(0, visibleCount);
@@ -148,6 +196,12 @@ function DiscoverContent() {
         setTempSearch("");
         setFilters({ search: "", state: "", city: "", category: "All Categories" });
         setActiveFilter("All Services");
+        setAdvancedFilters({
+            maxPrice: 100000,
+            distance: "any",
+            availability: [],
+            rating: "any",
+        });
     };
 
     return (
@@ -235,9 +289,9 @@ function DiscoverContent() {
                     <div className="flex flex-col gap-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xl font-bold text-gray-900">Filter by</h3>
-                            <button onClick={() => setShowAdvanced(!showAdvanced)} className="flex items-center gap-2 text-sm font-bold text-[#E89D24] hover:text-[#E5A800] transition-colors">
+                            <button onClick={() => setShowAdvanced(true)} className="flex items-center gap-2 text-sm font-bold text-[#E89D24] hover:text-[#E5A800] transition-colors">
                                 <SlidersHorizontal className="w-4 h-4" />
-                                {showAdvanced ? "Hide filters" : "Advance Filter Option"}
+                                Advance Filter Option
                             </button>
                         </div>
                         <div className="flex flex-wrap gap-3">
@@ -281,15 +335,33 @@ function DiscoverContent() {
                 ) : (
                     <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
                         <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">No services found</h3>
-                        <p className="text-gray-500">Try adjusting your filters or search terms.</p>
-                        <Button
-                            variant="outline"
-                            onClick={handleReset}
-                            className="mt-6 rounded-xl"
-                        >
-                            Clear All Filters
-                        </Button>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                            {activeFilter === "Favorite" ? (
+                                !isAuthenticated ? "Sign in to view favorites" : "No favorite services yet"
+                            ) : "No services found"}
+                        </h3>
+                        <p className="text-gray-500">
+                            {activeFilter === "Favorite" ? (
+                                !isAuthenticated
+                                    ? "Log in to your account so you can save and access your favorite services here."
+                                    : "Start exploring and mark the services you love by clicking the heart icon."
+                            ) : "Try adjusting your filters or search terms."}
+                        </p>
+                        {activeFilter === "Favorite" && !isAuthenticated ? (
+                            <Link href="/auth/login">
+                                <Button className="mt-6 rounded-xl h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold shadow-lg shadow-yellow-500/20">
+                                    Login to Account
+                                </Button>
+                            </Link>
+                        ) : (
+                            <Button
+                                variant="outline"
+                                onClick={handleReset}
+                                className="mt-6 rounded-xl"
+                            >
+                                Clear All Filters
+                            </Button>
+                        )}
                     </div>
                 )}
 
@@ -305,6 +377,13 @@ function DiscoverContent() {
                         </Button>
                     </div>
                 )}
+
+                <AdvanceFilterModal
+                    open={showAdvanced}
+                    onClose={() => setShowAdvanced(false)}
+                    initialFilters={advancedFilters}
+                    onApply={(filters) => setAdvancedFilters(filters)}
+                />
             </main>
 
             <CustomerFooter />

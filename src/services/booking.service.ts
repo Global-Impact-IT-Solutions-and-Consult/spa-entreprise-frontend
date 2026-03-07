@@ -14,6 +14,7 @@ export interface Booking {
     customerName?: string;
     customerPhone?: string;
     staffName?: string;
+    staffId?: string;
     createdAt: string;
 }
 

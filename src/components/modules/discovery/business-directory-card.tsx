@@ -4,6 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { Heart, MapPin, Star, BadgeCheck, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { favoritesService } from "@/services/favorites.service";
+import { useAuthStore } from "@/store/auth.store";
+import { useRouter } from "next/navigation";
+import { toaster } from "@/components/ui/toaster";
 
 interface BusinessDirectoryCardProps {
     business: {
@@ -31,6 +36,11 @@ interface BusinessDirectoryCardProps {
 }
 
 export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) {
+    const [isSaved, setIsSaved] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const { isAuthenticated } = useAuthStore();
+    const router = useRouter();
+
     const verified = business.verified ?? business.isVerified;
     const price = business.price ?? business.startingPrice;
     const name = business.businessName ?? business.name ?? "Wellness Business";
@@ -56,14 +66,53 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
     const reviews = reviewsCount;
 
     // For the demo, we use precision-cut as the ID if it matches our mock business
-    const businessId = typeof business.id === 'string' && name.toLowerCase().includes("precision") ? "precision-cut" : business.id;
+    const businessIdString = typeof business.id === 'string' && name.toLowerCase().includes("precision") ? "precision-cut" : business.id.toString();
+
+    // Fetch initial favorite status
+    useEffect(() => {
+        if (isAuthenticated && businessIdString) {
+            favoritesService.checkBusinessFavorite(businessIdString).then((status) => {
+                setIsSaved(status);
+            });
+        }
+    }, [isAuthenticated, businessIdString]);
+
+    const handleSaveToggle = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!isAuthenticated) {
+            router.push('/auth/login');
+            return;
+        }
+
+        if (!businessIdString) return;
+
+        setIsLoading(true);
+        try {
+            if (isSaved) {
+                await favoritesService.removeBusinessFavorite(businessIdString);
+                setIsSaved(false);
+                toaster.create({ title: "Removed from saved", type: "success" });
+            } else {
+                await favoritesService.addFavorite({ businessId: businessIdString });
+                setIsSaved(true);
+                toaster.create({ title: "Saved successfully", type: "success" });
+            }
+        } catch (error) {
+            console.error('Failed to toggle favorite status:', error);
+            toaster.create({ title: "Failed to update saved status", type: "error" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div
             className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col"
         >
             {/* Image */}
-            <Link href={`/businesses/${businessId}`} className="relative h-48 bg-gray-200 block overflow-hidden group">
+            <Link href={`/businesses/${businessIdString}`} className="relative h-48 bg-gray-200 block overflow-hidden group">
                 <Image
                     src={image}
                     alt={name}
@@ -78,13 +127,11 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                         </div>
                     )}
                     <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }}
-                        className="ml-auto bg-white/90 backdrop-blur-sm rounded-full p-1.5 hover:bg-gray-100 transition-colors shadow-sm"
+                        onClick={handleSaveToggle}
+                        disabled={isLoading}
+                        className="ml-auto bg-white/90 backdrop-blur-sm rounded-full p-1.5 hover:bg-gray-100 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        <Heart className="w-4 h-4 text-gray-600" />
+                        <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-600'} ${isLoading ? 'animate-pulse' : ''}`} />
                     </button>
                 </div>
             </Link>
@@ -93,7 +140,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
             <div className="p-4 flex flex-col flex-1">
                 {/* Business Name */}
                 <div className="flex items-center justify-between mb-2">
-                    <Link href={`/businesses/${businessId}`} className="flex items-center gap-2 group/title">
+                    <Link href={`/businesses/${businessIdString}`} className="flex items-center gap-2 group/title">
                         <Building2 className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover/title:text-[#E89D24] transition-colors" />
                         <h3 className="font-bold text-gray-900 text-xs md:text-sm line-clamp-1 group-hover/title:text-[#E89D24] transition-colors">{name}</h3>
                     </Link>
@@ -145,7 +192,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                         <p className="text-[10px] font-bold text-gray-400 tracking-wider">From</p>
                         <p className="font-bold text-gray-900 text-sm md:text-base">₦{price}</p>
                     </div>
-                    <Link href={`/businesses/${businessId}`}>
+                    <Link href={`/businesses/${businessIdString}`}>
                         <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs md:text-sm font-bold h-10 px-4 md:px-6 rounded-lg transition-all active:scale-95 shadow-lg shadow-yellow-500/10">
                             View More
                         </Button>
