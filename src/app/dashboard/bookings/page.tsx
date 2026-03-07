@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { CreateBookingModal } from "@/components/modules/bookings/CreateBookingModal";
 import { useAuthStore } from "@/store/auth.store";
 import { bookingService, Booking } from "@/services/booking.service";
@@ -157,9 +158,18 @@ export default function BookingsPage() {
             );
         }
 
-        return filtered;
+        // Enrich with full service and staff data
+        return filtered.map(booking => {
+            const fullService = businessServices.find(s => s.id === booking.serviceId);
+            const fullStaff = booking.staffId ? businessStaff.find(s => s.id === booking.staffId) : undefined;
+            return {
+                ...booking,
+                fullService,
+                fullStaff
+            };
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [allBookings, activeTab, appliedFilters]);
+    }, [allBookings, activeTab, appliedFilters, businessServices, businessStaff]);
 
     const handleApplyFilters = () => {
         setAppliedFilters({
@@ -255,6 +265,55 @@ export default function BookingsPage() {
     const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             setAppliedFilters(prev => ({ ...prev, search: searchQuery }));
+        }
+    };
+
+    // Date formatter for Today/Tomorrow, Month DD, YYYY
+    const formatBookingDate = (dateString: string) => {
+        if (!dateString) return "";
+        try {
+            // Need to handle potential timezone issues by parsing correctly
+            // dateString is typically YYYY-MM-DD
+            const [year, month, day] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const isToday = date.getDate() === today.getDate() &&
+                date.getMonth() === today.getMonth() &&
+                date.getFullYear() === today.getFullYear();
+
+            const isTomorrow = date.getDate() === tomorrow.getDate() &&
+                date.getMonth() === tomorrow.getMonth() &&
+                date.getFullYear() === tomorrow.getFullYear();
+
+            const formattedDate = date.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
+
+            if (isToday) return `Today, ${formattedDate}`;
+            if (isTomorrow) return `Tomorrow, ${formattedDate}`;
+            return formattedDate;
+        } catch (e) {
+            return dateString;
+        }
+    };
+
+    // Time formatter for 12-hour AM/PM format
+    const formatTime12h = (time24: string) => {
+        if (!time24) return "";
+        try {
+            const [hoursStr, minutes] = time24.split(':');
+            const hours = parseInt(hoursStr, 10);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12; // Convert 0 to 12
+            return `${displayHours}:${minutes} ${period}`;
+        } catch (e) {
+            return time24;
         }
     };
 
@@ -482,9 +541,14 @@ export default function BookingsPage() {
                     <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
                         {filteredBookings.map((booking) => (
                             <Card key={booking.id} className="border-none shadow-sm ring-1 ring-gray-100 overflow-hidden group">
-                                <CardContent className="p-0 flex h-full">
-                                    <div className="w-1/3 bg-gray-50 h-full min-h-[220px] flex items-center justify-center">
-                                        <Calendar className="h-12 w-12 text-gray-200" />
+                                <CardContent className="p-0 h-full">
+                                    <div className="h-[140px] relative w-full bg-gray-100">
+                                        <Image
+                                            src={booking.fullService?.imageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80"}
+                                            alt={booking.serviceName || "Service"}
+                                            fill
+                                            className="object-cover"
+                                        />
                                     </div>
                                     <div className="flex-1 p-6 space-y-4">
                                         <div className="flex items-start justify-between">
@@ -492,71 +556,84 @@ export default function BookingsPage() {
                                                 <h3 className="text-lg font-bold text-gray-900">{booking.serviceName}</h3>
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                                                        <User className="h-3.5 w-3.5" />
+                                                        <User className="h-3.5 w-3.5 text-[#192131]" strokeWidth={2} />
                                                         <span>{booking.customerName || "Guest"}</span>
                                                         {booking.customerPhone && (
                                                             <>
-                                                                <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                                                <span className="w-1 h-1 rounded-full bg-gray-500" />
                                                                 <div className="flex items-center gap-1">
-                                                                    <Phone className="h-3.5 w-3.5" />
+                                                                    <Phone className="h-3.5 w-3.5 text-[#192131]" strokeWidth={2} />
                                                                     <span>{booking.customerPhone}</span>
                                                                 </div>
                                                             </>
                                                         )}
                                                     </div>
-                                                    {booking.staffName && (
+                                                    {(booking.fullStaff || booking.staffName || booking.staffId) && (
                                                         <div className="flex items-center gap-2 text-sm text-gray-500">
                                                             <Users className="h-3.5 w-3.5" />
-                                                            <span>{booking.staffName}</span>
+                                                            <span>{booking.fullStaff?.name || booking.staffName || booking.staffId}</span>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
+                                        <hr className="border-gray-100" />
 
-                                        <div className="flex flex-col gap-1 py-2 border-y border-gray-50">
-                                            <div className="flex items-center gap-2 text-[13px] text-gray-600 font-medium">
-                                                <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                                                <span>{booking.bookingDate}</span>
+                                        <div className="flex justify-between">
+                                            <div className="flex flex-col gap-1 py-2 border-y border-gray-50">
+                                                <div className="flex items-center gap-2 text-[13px] text-gray-600 font-medium">
+                                                    <Calendar className="h-3.5 w-3.5 text-gray-400" strokeWidth={3} />
+                                                    <span>{formatBookingDate(booking.bookingDate)}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-[13px] text-gray-600 font-medium">
+                                                    <Clock className="h-3.5 w-3.5 text-gray-400" strokeWidth={3} />
+                                                    <span>
+                                                        {formatTime12h(booking.startTime)} - {formatTime12h(booking.endTime)}
+                                                        {booking.fullService && (
+                                                            <span className="ml-1 text-gray-400">
+                                                                ({(booking.fullService.duration || 0) + (booking.fullService.bufferTime || 0)} mins {booking.fullService.bufferTime ? 'with buffer' : ''})
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 text-[13px] text-gray-600">
-                                                <Clock className="h-3.5 w-3.5 text-gray-400" />
-                                                <span>{booking.startTime} - {booking.endTime}</span>
+
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-2">
+                                                    <div className={cn(
+                                                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize",
+                                                        booking.status === 'confirmed' || booking.status === 'completed'
+                                                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                                            : "bg-amber-50 text-amber-600 border-amber-100"
+                                                    )}>
+                                                        {booking.status.replace('_', ' ')}
+                                                    </div>
+                                                    <p className="text-lg font-bold text-gray-900">₦{booking.totalPrice.toLocaleString()}</p>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-2">
-                                                <div className={cn(
-                                                    "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize",
-                                                    booking.status === 'confirmed' || booking.status === 'completed'
-                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                                        : "bg-amber-50 text-amber-600 border-amber-100"
-                                                )}>
-                                                    {booking.status.replace('_', ' ')}
-                                                </div>
-                                                <p className="text-lg font-bold text-gray-900">₦{booking.totalPrice.toLocaleString()}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {booking.status === 'pending_payment' && (
-                                                    <Button
-                                                        onClick={() => handleConfirm(booking.id)}
-                                                        className="bg-[#1A1F2C] hover:bg-black text-white h-9 px-4 font-bold"
-                                                    >
-                                                        Confirm
-                                                    </Button>
-                                                )}
-                                                {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-                                                    <Button
-                                                        onClick={() => handleCancel(booking.id)}
-                                                        variant="outline"
-                                                        className="h-9 gap-1.5 text-red-600 border-red-200 hover:bg-red-50 font-semibold px-4"
-                                                    >
-                                                        <X className="h-3.5 w-3.5" />
-                                                        Cancel
-                                                    </Button>
-                                                )}
-                                            </div>
+                                        <hr className="border-gray-100" />
+
+                                        <div className="flex items-center justify-end gap-2">
+                                            {booking.status === 'pending_payment' && (
+                                                <Button
+                                                    onClick={() => handleConfirm(booking.id)}
+                                                    className="bg-[#1A1F2C] hover:bg-black text-white h-9 px-4 font-bold"
+                                                >
+                                                    Confirm
+                                                </Button>
+                                            )}
+                                            {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+                                                <Button
+                                                    onClick={() => handleCancel(booking.id)}
+                                                    variant="outline"
+                                                    className="h-9 gap-1.5 bg-[#CA3A311A] text-red-600 border-[#CA3A31] hover:bg-red-50 font-semibold px-4"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                    Cancel
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 </CardContent>

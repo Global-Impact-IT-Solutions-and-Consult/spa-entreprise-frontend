@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Phone, MessageSquare, Send, Calendar, CheckCircle2, Clock, MapPin, User, Building2, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddToCalendarModal } from "./add-to-calendar-modal";
 import { CancelBookingModal } from "./cancel-booking-modal";
 import { toaster } from "@/components/ui/toaster";
+import { businessService } from "@/services/business.service";
 
 import { Booking } from "@/services/booking.service";
 
@@ -18,8 +19,26 @@ export function BookingCard({ booking }: BookingCardProps) {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isCanceling, setIsCanceling] = useState(false);
+    const [serviceImage, setServiceImage] = useState<string | null>(null);
 
     const isCanceled = booking.status === "cancelled";
+
+    useEffect(() => {
+        const fetchServiceData = async () => {
+            if (!booking.businessId || !booking.serviceId) return;
+            try {
+                const services = await businessService.getServices(booking.businessId);
+                const relatedService = services.find(s => s.id === booking.serviceId);
+                if (relatedService?.imageUrl) {
+                    setServiceImage(relatedService.imageUrl);
+                }
+            } catch (err) {
+                console.error("Failed to load service data for booking card image", err);
+            }
+        };
+
+        fetchServiceData();
+    }, [booking.businessId, booking.serviceId]);
 
     const handleCancel = async () => {
         setIsCanceling(true);
@@ -39,7 +58,7 @@ export function BookingCard({ booking }: BookingCardProps) {
             {/* Business Image & Status */}
             <div className="relative h-32 md:h-32">
                 <Image
-                    src={booking.status === 'confirmed' ? "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80" : "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80"}
+                    src={serviceImage || (booking.status === 'confirmed' ? "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80" : "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80")}
                     alt={booking.serviceName}
                     fill
                     className="object-cover"

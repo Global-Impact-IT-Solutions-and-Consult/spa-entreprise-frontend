@@ -583,7 +583,7 @@ export default function ServicesPage() {
                                     placeholder="On Site & Home Service"
                                     options={[
                                         { label: 'On Site Only', value: 'IN_LOCATION_ONLY' },
-                                        // { label: 'Home Service Only', value: 'HOME_SERVICE' },
+                                        { label: 'Home Service Only', value: 'HOME_SERVICE' },
                                         { label: 'On Site & Home Service', value: 'BOTH' },
                                     ]}
                                     value={deliveryType}

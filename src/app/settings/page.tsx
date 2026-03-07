@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { User, Camera, Lock, Shield, AlertTriangle, Trash2, ChevronRight, Loader2 } from "lucide-react";
+import { User, Camera, Lock, Shield, AlertTriangle, Trash2, ChevronRight, Loader2, Bell, Calendar, CreditCard, Info } from "lucide-react";
 import Image from "next/image";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
@@ -9,13 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/auth.store";
 import { userService, UpdateProfileDto } from "@/services/user.service";
+import { notificationService, NotificationPreferences } from "@/services/notification.service";
 import { toaster } from "@/components/ui/toaster";
+import { ChangePasswordModal } from "@/components/modules/settings/change-password-modal";
 
 export default function SettingsPage() {
     const { user, updateUser } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState<UpdateProfileDto>({
@@ -24,6 +27,9 @@ export default function SettingsPage() {
         email: "",
         phone: "",
     });
+
+    const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
+    const [updating, setUpdating] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -36,6 +42,42 @@ export default function SettingsPage() {
             setAvatarPreview(user.profilePicture || null);
         }
     }, [user]);
+
+    useEffect(() => {
+        fetchPreferences();
+    }, []);
+
+    const fetchPreferences = async () => {
+        try {
+            const data = await notificationService.getPreferences();
+            setPreferences(data);
+        } catch (error) {
+            console.error("Failed to load notification preferences", error);
+        }
+    };
+
+    const handleToggle = async (key: keyof NotificationPreferences, value: boolean) => {
+        if (!preferences) return;
+
+        try {
+            setUpdating(key);
+            const updated = await notificationService.updatePreferences({ [key]: value });
+            setPreferences(updated);
+            toaster.create({
+                title: "Success",
+                description: "Notification preferences updated successfully",
+                type: "success",
+            });
+        } catch (error) {
+            toaster.create({
+                title: "Error",
+                description: "Failed to update notification preferences",
+                type: "error",
+            });
+        } finally {
+            setUpdating(null);
+        }
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -242,7 +284,11 @@ export default function SettingsPage() {
                                             <p className="text-sm text-gray-400">Last changed 3 months ago</p>
                                         </div>
                                     </div>
-                                    <Button variant="outline" className="rounded-lg h-10 px-6 font-bold border-gray-200 hover:bg-white hover:border-amber-500 hover:text-amber-600 transition-all">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setIsPasswordModalOpen(true)}
+                                        className="rounded-lg h-10 px-6 font-bold border-gray-200 hover:bg-white hover:border-amber-500 hover:text-amber-600 transition-all"
+                                    >
                                         Change
                                     </Button>
                                 </div>
@@ -263,6 +309,96 @@ export default function SettingsPage() {
                             </div>
                         </div>
                     </div>
+
+                    {/* Notifications Section */}
+                    {preferences && (
+                        <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-8 space-y-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-amber-50 rounded-lg">
+                                        <Bell className="w-5 h-5 text-amber-600" />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-gray-900 font-serif">Notifications</h2>
+                                </div>
+                                <p className="text-sm text-gray-500">Configure how and when you receive notifications</p>
+
+                                <div className="space-y-6 pt-2">
+                                    <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                                        <div>
+                                            <p className="font-bold text-gray-900">Email Notifications</p>
+                                            <p className="text-sm text-gray-400">Receive updates and alerts via email</p>
+                                        </div>
+                                        <Switch
+                                            checked={preferences.emailNotifications}
+                                            onCheckedChange={(val) => handleToggle("emailNotifications", val)}
+                                            disabled={updating === "emailNotifications"}
+                                            className="data-[state=checked]:bg-emerald-500"
+                                        />
+                                    </div>
+
+                                    {/* Granular Settings */}
+                                    <div className="space-y-4">
+                                        {/* Up Coming Booking */}
+                                        <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-100 shadow-sm">
+                                                    <Calendar className="w-5 h-5 text-gray-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900">Up Coming Booking</p>
+                                                    <p className="text-sm text-gray-400">Let you know your next boking</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences.upcomingBooking}
+                                                onCheckedChange={(val) => handleToggle("upcomingBooking", val)}
+                                                disabled={updating === "upcomingBooking"}
+                                                className="data-[state=checked]:bg-emerald-500"
+                                            />
+                                        </div>
+
+                                        {/* Payment Notifications */}
+                                        <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-100 shadow-sm">
+                                                    <CreditCard className="w-5 h-5 text-gray-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900">Payment Notifications</p>
+                                                    <p className="text-sm text-gray-400">When payments are received or released</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences.paymentNotifications}
+                                                onCheckedChange={(val) => handleToggle("paymentNotifications", val)}
+                                                disabled={updating === "paymentNotifications"}
+                                                className="data-[state=checked]:bg-emerald-500"
+                                            />
+                                        </div>
+
+                                        {/* System Alerts */}
+                                        <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-100 shadow-sm">
+                                                    <Info className="w-5 h-5 text-gray-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900">System Alerts</p>
+                                                    <p className="text-sm text-gray-400">Important platform updates and maintenance</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences.systemAlerts}
+                                                onCheckedChange={(val) => handleToggle("systemAlerts", val)}
+                                                disabled={updating === "systemAlerts"}
+                                                className="data-[state=checked]:bg-emerald-500"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Danger Zone Section */}
                     <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
@@ -294,6 +430,11 @@ export default function SettingsPage() {
             </main>
 
             <CustomerFooter />
+
+            <ChangePasswordModal
+                open={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+            />
         </div>
     );
 }

@@ -5,17 +5,33 @@ import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { BookingCard } from "@/components/modules/bookings/booking-card";
 import { Booking, bookingService } from "@/services/booking.service";
-import { Loader2, CalendarX, Lock } from "lucide-react";
+import { Loader2, CalendarX, Lock, Check } from "lucide-react";
 import { toaster } from "@/components/ui/toaster";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 
-export default function MyBookingsPage() {
+function MyBookingsContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
     const { isAuthenticated } = useAuthStore();
     const [activeTab, setActiveTab] = useState<"Upcoming" | "History" | "Canceled">("Upcoming");
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+
+    useEffect(() => {
+        if (searchParams.get("payment_success") === "true") {
+            setShowPaymentSuccess(true);
+        }
+    }, [searchParams]);
+
+    const handleCloseSuccessModal = () => {
+        setShowPaymentSuccess(false);
+        router.replace("/my-bookings");
+    };
 
     const tabs = ["Upcoming", "History", "Canceled"];
 
@@ -105,6 +121,39 @@ export default function MyBookingsPage() {
             </main>
 
             <CustomerFooter />
+
+            {/* Payment Success Modal */}
+            {showPaymentSuccess && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-[32px] p-10 max-w-sm w-full text-center shadow-2xl animate-in fade-in zoom-in duration-300">
+                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Check className="w-10 h-10 text-green-500" strokeWidth={3} />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-3 font-playfair">Payment Confirmed</h2>
+                        <p className="text-gray-500 mb-8 leading-relaxed">
+                            Your booking has been successfully secured. Check your email for details.
+                        </p>
+                        <Button
+                            onClick={handleCloseSuccessModal}
+                            className="w-full bg-[#E89D24] hover:bg-[#E5A800] text-white py-4 h-14 rounded-2xl font-bold text-lg shadow-lg shadow-yellow-500/20 transition-all active:scale-[0.98]"
+                        >
+                            Back to Bookings
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
+    );
+}
+
+export default function MyBookingsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <Loader2 className="w-10 h-10 animate-spin text-[#E89D24]" />
+            </div>
+        }>
+            <MyBookingsContent />
+        </Suspense>
     );
 }

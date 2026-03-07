@@ -1,10 +1,48 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Facebook, Twitter, Instagram } from "lucide-react";
+import { Facebook, Twitter, Instagram, Loader2 } from "lucide-react";
+import { miscService } from "@/services/misc.service";
+import { toaster } from "@/components/ui/toaster";
 
 export function CustomerFooter() {
+    const [email, setEmail] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubscribe = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!email) {
+            toaster.create({ title: "Email required", description: "Please enter your email address to subscribe.", type: "error" });
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            toaster.create({ title: "Invalid email", description: "Please enter a valid email address.", type: "error" });
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await miscService.subscribeNewsletter(email);
+            toaster.create({ title: "Subscribed Successfully!", description: "Thank you for subscribing to our newsletter.", type: "success" });
+            setEmail("");
+        } catch (error: Error | unknown) {
+            console.error("Newsletter error:", error);
+            const err = error as any;
+            toaster.create({
+                title: "Subscription Failed",
+                description: err?.response?.data?.message || "Something went wrong. Please try again.",
+                type: "error"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <footer className="bg-[#2C3E50] text-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-12 pb-4">
@@ -18,7 +56,7 @@ export function CustomerFooter() {
                             <h3 className="font-bold text-lg">WellnessPro</h3>
                         </div>
                         <p className="text-gray-300 text-sm mb-4">
-                            Nigeria's leading wellness and beauty services marketplace.
+                            Nigeria&apos;s leading wellness and beauty services marketplace.
                         </p>
                         <div className="flex items-center space-x-4">
                             <Link href="https://facebook.com" className="hover:text-[#E89D24] transition">
@@ -103,16 +141,23 @@ export function CustomerFooter() {
                         <p className="text-gray-300 text-sm mb-4">
                             Subscribe to our newsletter for updates and offers.
                         </p>
-                        <div className="flex flex-col sm:flex-row gap-2">
+                        <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2">
                             <input
                                 type="email"
                                 placeholder="Your Email"
-                                className="flex-1 px-4 py-2 rounded-md text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E89D24]"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                disabled={isLoading}
+                                className="flex-1 px-4 py-2 rounded-md text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E89D24] disabled:opacity-50 disabled:bg-gray-100"
                             />
-                            <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white whitespace-nowrap px-6">
-                                Subscribe
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className="bg-[#E89D24] hover:bg-[#E5A800] text-white whitespace-nowrap px-6 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
+                            >
+                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Subscribe"}
                             </Button>
-                        </div>
+                        </form>
                     </div>
                 </div>
 

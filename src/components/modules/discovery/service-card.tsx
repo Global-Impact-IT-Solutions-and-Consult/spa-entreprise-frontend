@@ -4,9 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { Heart, Clock, MapPin, Star, Store, House } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { favoritesService } from "@/services/favorites.service";
+import { useAuthStore } from "@/store/auth.store";
+import { toaster } from "@/components/ui/toaster";
 
 interface ServiceCardProps {
     service: {
@@ -34,9 +37,50 @@ interface ServiceCardProps {
 export function ServiceCard({ service }: ServiceCardProps) {
     const router = useRouter();
     const [isFavorite, setIsFavorite] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const { isAuthenticated } = useAuthStore();
 
     const businessId = service.businessId;
     const rating = typeof service.rating === 'string' ? parseFloat(service.rating) : service.rating;
+
+    // Fetch initial favorite status
+    useEffect(() => {
+        if (isAuthenticated && service.id) {
+            favoritesService.checkServiceFavorite(service.id).then((status) => {
+                setIsFavorite(status);
+            });
+        }
+    }, [isAuthenticated, service.id]);
+
+    const handleFavoriteToggle = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!isAuthenticated) {
+            router.push('/auth/login');
+            return;
+        }
+
+        if (!service.id) return;
+
+        setIsLoading(true);
+        try {
+            if (isFavorite) {
+                await favoritesService.removeServiceFavorite(service.id);
+                setIsFavorite(false);
+                toaster.create({ title: "Removed from favorites", type: "success" });
+            } else {
+                await favoritesService.addFavorite({ serviceId: service.id });
+                setIsFavorite(true);
+                toaster.create({ title: "Added to favorites", type: "success" });
+            }
+        } catch (error) {
+            console.error('Failed to toggle favorite status:', error);
+            toaster.create({ title: "Failed to update favorite status", type: "error" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group">
@@ -54,10 +98,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
                     </span>
                 </div>
                 <button
-                    onClick={() => setIsFavorite(!isFavorite)}
-                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm hover:bg-white transition-colors"
+                    onClick={handleFavoriteToggle}
+                    disabled={isLoading}
+                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm hover:bg-white transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'} ${isLoading ? 'animate-pulse' : ''}`} />
                 </button>
             </div>
 
