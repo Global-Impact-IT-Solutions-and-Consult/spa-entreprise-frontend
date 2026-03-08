@@ -45,6 +45,21 @@ const SORT_OPTIONS: SelectOption[] = [
   { value: 'date_asc', label: 'Oldest first' },
 ];
 
+function toApiRole(role: string): 'customer' | 'business' | 'admin' {
+  return role === 'business_owner' ? 'business' : (role as 'customer' | 'business' | 'admin');
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export default function AdminUsersPage() {
   const { setHeaderActions } = useAdminHeader();
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -129,13 +144,36 @@ export default function AdminUsersPage() {
         </Button>
         <Button
           variant="outline"
-          onClick={() =>
-            toaster.create({
-              title: 'Export',
-              description: 'Export is not yet provided by the backend.',
-              type: 'info',
-            })
-          }
+          onClick={async () => {
+            try {
+              const blob = await adminService.exportUsers({
+                search: searchParam.trim() || undefined,
+                status: statusFilter === 'all' ? undefined : statusFilter,
+              });
+              downloadBlob(
+                blob,
+                `admin-users-${new Date().toISOString().slice(0, 10)}.csv`,
+              );
+              toaster.create({
+                title: 'Export started',
+                description: 'The current user list has been downloaded.',
+                type: 'success',
+              });
+            } catch (e: unknown) {
+              const msg =
+                e && typeof e === 'object' && 'response' in e
+                  ? normalizeApiMessage(
+                      (e as { response?: { data?: { message?: unknown } } })
+                        .response?.data?.message,
+                    )
+                  : 'Failed to export users';
+              toaster.create({
+                title: 'Error',
+                description: msg,
+                type: 'error',
+              });
+            }
+          }}
         >
           <Upload className="h-4 w-4 mr-2" />
           Export
@@ -143,11 +181,11 @@ export default function AdminUsersPage() {
       </>,
     );
     return () => setHeaderActions(null);
-  }, [setHeaderActions]);
+  }, [searchParam, setHeaderActions, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(totalFromApi / PAGE_SIZE));
   const paginatedUsers = useMemo(() => {
-    let list = [...users];
+    const list = [...users];
     if (sortBy === 'name_asc')
       list.sort((a, b) =>
         `${a.firstName} ${a.lastName}`.localeCompare(
@@ -217,21 +255,63 @@ export default function AdminUsersPage() {
     setPermanentDeleteOpen(true);
   };
 
-  const handleCreateUser = (_data: CreateUserFormData) => {
-    toaster.create({
-      title: 'Not available',
-      description: 'Create user is not yet provided by the backend.',
-      type: 'info',
-    });
+  const handleCreateUser = async (data: CreateUserFormData) => {
+    try {
+      await adminService.createUser({
+        email: data.email.trim(),
+        password: data.password,
+        firstName: data.firstName.trim() || undefined,
+        lastName: data.lastName.trim() || undefined,
+        phone: data.phone.trim() || undefined,
+        role: toApiRole(data.role),
+      });
+      toaster.create({
+        title: 'User created',
+        description: 'The new user has been added successfully.',
+        type: 'success',
+      });
+      setPage(1);
+      fetchUsers();
+      fetchStats();
+    } catch (e: unknown) {
+      const msg =
+        e && typeof e === 'object' && 'response' in e
+          ? normalizeApiMessage(
+              (e as { response?: { data?: { message?: unknown } } }).response
+                ?.data?.message,
+            )
+          : 'Failed to create user';
+      toaster.create({ title: 'Error', description: msg, type: 'error' });
+      throw e;
+    }
   };
 
-  const handleEditUser = (_userId: string, _data: EditUserFormData) => {
-    setSelectedUser(null);
-    toaster.create({
-      title: 'Not available',
-      description: 'Update user is not yet provided by the backend.',
-      type: 'info',
-    });
+  const handleEditUser = async (userId: string, data: EditUserFormData) => {
+    try {
+      await adminService.updateUser(userId, {
+        firstName: data.firstName.trim() || undefined,
+        lastName: data.lastName.trim() || undefined,
+        phone: data.phone.trim() || undefined,
+        password: data.newPassword.trim() || undefined,
+      });
+      setSelectedUser(null);
+      toaster.create({
+        title: 'User updated',
+        description: 'The user profile has been updated.',
+        type: 'success',
+      });
+      fetchUsers();
+    } catch (e: unknown) {
+      const msg =
+        e && typeof e === 'object' && 'response' in e
+          ? normalizeApiMessage(
+              (e as { response?: { data?: { message?: unknown } } }).response
+                ?.data?.message,
+            )
+          : 'Failed to update user';
+      toaster.create({ title: 'Error', description: msg, type: 'error' });
+      throw e;
+    }
   };
 
   const handleSuspend = async (u: AdminUser, reason: string) => {
@@ -282,24 +362,55 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleSoftDelete = (_u: AdminUser) => {
-    setSelectedUser(null);
-    setDeleteOpen(false);
-    toaster.create({
-      title: 'Not available',
-      description: 'Soft delete user is not yet provided by the backend.',
-      type: 'info',
-    });
+  const handleSoftDelete = async (u: AdminUser) => {
+    try {
+      const result = await adminService.deleteUser(u.id);
+      setSelectedUser(null);
+      setDeleteOpen(false);
+      toaster.create({
+        title: 'User deactivated',
+        description: result.message || 'The user has been deactivated.',
+        type: 'success',
+      });
+      fetchUsers();
+      fetchStats();
+    } catch (e: unknown) {
+      const msg =
+        e && typeof e === 'object' && 'response' in e
+          ? normalizeApiMessage(
+              (e as { response?: { data?: { message?: unknown } } }).response
+                ?.data?.message,
+            )
+          : 'Failed to deactivate user';
+      toaster.create({ title: 'Error', description: msg, type: 'error' });
+      throw e;
+    }
   };
 
-  const handlePermanentDelete = (_u: AdminUser) => {
-    setSelectedUser(null);
-    setPermanentDeleteOpen(false);
-    toaster.create({
-      title: 'Not available',
-      description: 'Permanent delete user is not yet provided by the backend.',
-      type: 'info',
-    });
+  const handlePermanentDelete = async (u: AdminUser) => {
+    try {
+      const result = await adminService.hardDeleteUser(u.id);
+      setSelectedUser(null);
+      setPermanentDeleteOpen(false);
+      setDeleteOpen(false);
+      toaster.create({
+        title: 'User deleted',
+        description: result.message || 'The user has been permanently deleted.',
+        type: 'success',
+      });
+      fetchUsers();
+      fetchStats();
+    } catch (e: unknown) {
+      const msg =
+        e && typeof e === 'object' && 'response' in e
+          ? normalizeApiMessage(
+              (e as { response?: { data?: { message?: unknown } } }).response
+                ?.data?.message,
+            )
+          : 'Failed to permanently delete user';
+      toaster.create({ title: 'Error', description: msg, type: 'error' });
+      throw e;
+    }
   };
 
   const resetFilters = () => {

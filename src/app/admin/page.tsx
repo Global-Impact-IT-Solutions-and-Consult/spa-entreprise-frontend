@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   adminService,
@@ -184,41 +184,51 @@ function ActivityIcon({ type }: { type: string }) {
 export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [revenue, setRevenue] = useState<number | null>(null);
+  const [systemHealthy, setSystemHealthy] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [growthPeriod, setGrowthPeriod] = useState<GrowthPeriod>('7d');
   const [growthChartLoading, setGrowthChartLoading] = useState(false);
+  const hasLoadedDashboard = useRef(false);
 
   // Initial load: dashboard (with default 7d period) + payment stats
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    Promise.all([
-      adminService.getDashboard({ period: '7d' }),
-      adminService.getPaymentStats().catch(() => null),
-    ])
-      .then(([dashboard, paymentStats]) => {
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [dashboard, paymentStats, health] = await Promise.all([
+          adminService.getDashboard({ period: '7d' }),
+          adminService.getPaymentStats().catch(() => null),
+          adminService.getSystemHealth().catch(() => null),
+        ]);
+
         if (cancelled) return;
         setData(dashboard);
+        hasLoadedDashboard.current = true;
         setRevenue(
           paymentStats && typeof paymentStats.totalRevenue === 'number'
             ? paymentStats.totalRevenue
             : null,
         );
-      })
-      .catch((e: unknown) => {
+        setSystemHealthy(health?.status === 'ok');
+      } catch (e: unknown) {
         if (cancelled) return;
         const msg =
           e && typeof e === 'object' && e !== null && 'response' in e
             ? (e as { response?: { data?: { message?: string } } }).response
                 ?.data?.message
-            : (e as Error)?.message;
+            : e instanceof Error
+              ? e.message
+              : undefined;
         setError(msg || 'Failed to load dashboard');
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    void loadDashboard();
     return () => {
       cancelled = true;
     };
@@ -226,7 +236,7 @@ export default function AdminDashboardPage() {
 
   // When user changes period tab, refetch dashboard with ?period=7d|30d|90d
   useEffect(() => {
-    if (!data) return;
+    if (!hasLoadedDashboard.current) return;
     let cancelled = false;
     setGrowthChartLoading(true);
     adminService
@@ -446,6 +456,18 @@ export default function AdminDashboardPage() {
                     </div>
                   </Link>
                   <Link
+                    href="/admin/payments"
+                    className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
+                  >
+                    <DollarSign className="h-5 w-5 text-gray-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">View Payments</p>
+                      <p className="text-sm text-gray-500">
+                        Monitor transactions and revenue
+                      </p>
+                    </div>
+                  </Link>
+                  <Link
                     href="/admin/categories"
                     className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
                   >
@@ -459,18 +481,6 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
                   </Link>
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 w-full text-left"
-                  >
-                    <Download className="h-5 w-5 text-gray-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Export Report</p>
-                      <p className="text-sm text-gray-500">
-                        Download monthly data
-                      </p>
-                    </div>
-                  </button>
                 </>
               )}
             </div>
@@ -600,9 +610,18 @@ export default function AdminDashboardPage() {
             minute: '2-digit',
           })}
         </p>
-        <p className="flex items-center gap-1.5 text-green-600">
-          <span className="h-2 w-2 rounded-full bg-green-500" />
-          System Status: All Systems Operational
+        <p
+          className={`flex items-center gap-1.5 ${
+            systemHealthy === false ? 'text-red-600' : 'text-green-600'
+          }`}
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${
+              systemHealthy === false ? 'bg-red-500' : 'bg-green-500'
+            }`}
+          />
+          System Status:{' '}
+          {systemHealthy === false ? 'Service Degraded' : 'Operational'}
         </p>
       </div>
     </div>

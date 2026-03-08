@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, type SelectOption } from '@/components/ui/select';
@@ -14,7 +14,7 @@ import {
 } from '@/services/admin.service';
 import { BookingDetailsModal } from './modals/BookingDetailsModal';
 import { CancelBookingModal } from './modals/CancelBookingModal';
-import { Eye, RotateCcw } from 'lucide-react';
+import { Ban, Eye, RotateCcw } from 'lucide-react';
 import { toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 
@@ -32,26 +32,12 @@ function formatAmount(n: number) {
   return '₦' + n.toLocaleString();
 }
 
-function formatDate(s: string) {
-  if (!s) return '—';
-  try {
-    const d = new Date(s);
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  } catch {
-    return s;
-  }
-}
-
 /** Format for Date & Time column: "Oct 18, 2023 • 14:30". Handles ISO, "YYYY-MM-DD", and "YYYY-MM-DD • HH:mm" from API. */
 function formatDateTime(s: string | undefined) {
   if (!s || !s.trim()) return '—';
   const raw = s.trim();
   try {
-    let d = new Date(raw);
+    const d = new Date(raw);
     if (!Number.isNaN(d.getTime())) {
       const date = d.toLocaleDateString('en-US', {
         month: 'short',
@@ -102,22 +88,6 @@ function formatDateTime(s: string | undefined) {
     return raw;
   } catch {
     return raw;
-  }
-}
-
-function statusColor(status: string) {
-  switch ((status || '').toLowerCase()) {
-    case 'confirmed':
-      return 'text-green-600';
-    case 'completed':
-      return 'text-purple-600';
-    case 'cancelled':
-      return 'text-red-600';
-    case 'expired':
-    case 'no_show':
-      return 'text-gray-600';
-    default:
-      return 'text-gray-600';
   }
 }
 
@@ -180,6 +150,14 @@ export default function AdminBookingsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [businessId, setBusinessId] = useState('');
+  const [customerId, setCustomerId] = useState('');
+  const [businessOptions, setBusinessOptions] = useState<SelectOption[]>([
+    { value: '', label: 'All Businesses' },
+  ]);
+  const [customerOptions, setCustomerOptions] = useState<SelectOption[]>([
+    { value: '', label: 'All Customers' },
+  ]);
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -189,16 +167,16 @@ export default function AdminBookingsPage() {
     null,
   );
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const s = await adminService.getBookingStats();
       setStats({
         total: s.total ?? 0,
         pending: s.pending ?? 0,
         completed: s.completed ?? 0,
-        confirmed: (s as any).confirmed,
-        cancelled: (s as any).cancelled,
-        expired: (s as any).expired,
+        confirmed: s.confirmed,
+        cancelled: s.cancelled,
+        expired: s.expired,
       });
     } catch {
       setStats({ total: 0, pending: 0, completed: 0 });
@@ -208,15 +186,26 @@ export default function AdminBookingsPage() {
         type: 'error',
       });
     }
-  };
+  }, []);
 
-  const loadBookings = async () => {
+  const loadBookings = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = { page, limit: PAGE_SIZE, sortBy: 'newest' };
+      const params: {
+        page: number;
+        limit: number;
+        sortBy: 'newest';
+        status?: string;
+        dateFrom?: string;
+        dateTo?: string;
+        businessId?: string;
+        customerId?: string;
+      } = { page, limit: PAGE_SIZE, sortBy: 'newest' };
       if (statusFilter) params.status = statusFilter;
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
+      if (businessId) params.businessId = businessId;
+      if (customerId) params.customerId = customerId;
       const res = await adminService.getBookings(params);
       setList(res.data || []);
       setTotal(res.pagination?.total ?? 0);
@@ -231,14 +220,48 @@ export default function AdminBookingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, statusFilter, dateFrom, dateTo, businessId, customerId]);
 
   useEffect(() => {
     loadStats();
-  }, []);
+    Promise.all([
+      adminService.getAllBusinesses({
+        page: 1,
+        limit: 100,
+        sortBy: 'name_asc',
+      }),
+      adminService.getUsers({
+        page: 1,
+        limit: 100,
+        role: 'customer',
+      }),
+    ])
+      .then(([businesses, users]) => {
+        setBusinessOptions([
+          { value: '', label: 'All Businesses' },
+          ...(businesses.data || []).map((business) => ({
+            value: business.id,
+            label: business.businessName,
+          })),
+        ]);
+        setCustomerOptions([
+          { value: '', label: 'All Customers' },
+          ...(users.data || []).map((user) => ({
+            value: user.id,
+            label:
+              `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+              user.email,
+          })),
+        ]);
+      })
+      .catch(() => {
+        setBusinessOptions([{ value: '', label: 'All Businesses' }]);
+        setCustomerOptions([{ value: '', label: 'All Customers' }]);
+      });
+  }, [loadStats]);
   useEffect(() => {
-    loadBookings();
-  }, [page, statusFilter, dateFrom, dateTo]);
+    void loadBookings();
+  }, [loadBookings]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -276,13 +299,28 @@ export default function AdminBookingsPage() {
       setSelectedBookingId(null);
       loadBookings();
       loadStats();
-    } catch (e: any) {
-      const raw = e.response?.data?.message;
-      const msg = Array.isArray(raw)
-        ? raw[0] || 'Failed to cancel booking.'
-        : raw || e.message || 'Failed to cancel booking.';
+    } catch (error: unknown) {
+      const responseMessage =
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'data' in error.response &&
+        error.response.data &&
+        typeof error.response.data === 'object' &&
+        'message' in error.response.data
+          ? error.response.data.message
+          : undefined;
+      const msg = Array.isArray(responseMessage)
+        ? String(responseMessage[0] || 'Failed to cancel booking.')
+        : typeof responseMessage === 'string'
+          ? responseMessage
+          : error instanceof Error
+            ? error.message
+            : 'Failed to cancel booking.';
       toaster.create({ title: 'Error', description: msg, type: 'error' });
-      throw e;
+      throw error;
     }
   };
 
@@ -290,6 +328,8 @@ export default function AdminBookingsPage() {
     setStatusFilter('');
     setDateFrom('');
     setDateTo('');
+    setBusinessId('');
+    setCustomerId('');
     setPage(1);
   };
 
@@ -374,9 +414,12 @@ export default function AdminBookingsPage() {
               Business
             </Label>
             <Select
-              options={[{ value: '', label: 'All Business...' }]}
-              value=""
-              onChange={() => {}}
+              options={businessOptions}
+              value={businessId}
+              onChange={(e) => {
+                setBusinessId(e.target.value);
+                setPage(1);
+              }}
               className="w-[140px]"
             />
           </div>
@@ -385,9 +428,12 @@ export default function AdminBookingsPage() {
               Customers
             </Label>
             <Select
-              options={[{ value: '', label: 'All Custom...' }]}
-              value=""
-              onChange={() => {}}
+              options={customerOptions}
+              value={customerId}
+              onChange={(e) => {
+                setCustomerId(e.target.value);
+                setPage(1);
+              }}
               className="w-[140px]"
             />
           </div>
@@ -497,14 +543,28 @@ export default function AdminBookingsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => openDetails(row)}
-                        className="p-2 rounded-lg text-[#9333EA] hover:bg-[#9333EA]/10"
-                        title="View"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openDetails(row)}
+                          className="p-2 rounded-lg text-[#9333EA] hover:bg-[#9333EA]/10"
+                          title="View"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        {!['cancelled', 'completed', 'expired'].includes(
+                          row.status.toLowerCase(),
+                        ) && (
+                          <button
+                            type="button"
+                            onClick={() => openCancel(row)}
+                            className="p-2 rounded-lg text-red-600 hover:bg-red-50"
+                            title="Cancel booking"
+                          >
+                            <Ban className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

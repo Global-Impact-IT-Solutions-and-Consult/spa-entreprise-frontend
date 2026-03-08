@@ -7,41 +7,15 @@ import { Select, type SelectOption } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { adminService, type ActivityLogItem } from '@/services/admin.service';
-import type { DashboardActivityFeedItem } from '@/services/admin.service';
 import { toaster } from '@/components/ui/toaster';
 import { RotateCcw, Search } from 'lucide-react';
-
-function actionLabelFromType(type: string): string {
-  const t = (type || '').toLowerCase();
-  if (t === 'registration' || t === 'register') return 'User Registered';
-  if (t === 'booking') return 'Booking';
-  if (t === 'approval' || t === 'approved') return 'Business Approved';
-  if (t === 'rejection' || t === 'rejected') return 'Business Rejected';
-  if (t === 'suspended' || t === 'suspend') return 'User Suspended';
-  if (t === 'unsuspended') return 'User Unsuspended';
-  if (t === 'login') return 'Login';
-  if (t === 'failed_login') return 'Failed Login';
-  return type || 'Activity';
-}
-
-/** Map dashboard activityFeed item to table row when activity-logs endpoint is empty/unavailable */
-function feedItemToLogItem(item: DashboardActivityFeedItem): ActivityLogItem {
-  const meta = item.metadata || {};
-  return {
-    timestamp: item.date,
-    admin: (meta.admin as string) || (meta.email as string) || 'System',
-    action: actionLabelFromType(item.type) || item.summary,
-    details: item.summary,
-    ipAddress: (meta.ipAddress as string) || '—',
-    status: 'success',
-  };
-}
 
 const PAGE_SIZE = 15;
 const ACTION_OPTIONS: SelectOption[] = [
   { value: '', label: 'All Action' },
   { value: 'user_created', label: 'User Created' },
   { value: 'user_suspended', label: 'User Suspended' },
+  { value: 'user_unsuspended', label: 'User Unsuspended' },
   { value: 'business_approved', label: 'Business Approved' },
   { value: 'business_rejected', label: 'Business Rejected' },
   { value: 'login', label: 'Login' },
@@ -50,6 +24,7 @@ const ACTION_OPTIONS: SelectOption[] = [
 
 function actionTagClass(action: string) {
   const a = (action || '').toLowerCase();
+  if (a.includes('unsuspended')) return 'bg-green-100 text-green-800';
   if (a.includes('created') || a.includes('approved'))
     return 'bg-green-100 text-green-800';
   if (a.includes('suspended') || a.includes('rejected') || a.includes('failed'))
@@ -79,89 +54,22 @@ export default function AdminLogsPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
-  const [fallbackFullList, setFallbackFullList] = useState<
-    ActivityLogItem[] | null
-  >(null);
-
-  const hasFilters = !!(actionType || dateFrom || dateTo || search.trim());
 
   useEffect(() => {
-    setLoading(true);
-    // When we already have fallback data and only page changed (no filters), slice locally
-    if (fallbackFullList !== null && !hasFilters) {
-      const start = (page - 1) * PAGE_SIZE;
-      setList(fallbackFullList.slice(start, start + PAGE_SIZE));
-      setTotal(fallbackFullList.length);
-      setLoading(false);
-      return;
-    }
-    if (hasFilters) setFallbackFullList(null);
-
-    adminService
-      .getActivityLogs({
-        page,
-        limit: PAGE_SIZE,
-        actionType: actionType || undefined,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
-        search: search.trim() || undefined,
-      })
-      .then((res) => {
-        const data = res.data || [];
-        const totalFromApi = res.pagination?.total ?? 0;
-        if (data.length > 0 || totalFromApi > 0) {
-          setList(data);
-          setTotal(totalFromApi);
-          setFallbackFullList(null);
-          return;
-        }
-        // Dedicated endpoint returned empty; use dashboard activity feed as fallback (page 1, no filters)
-        if (page === 1 && !hasFilters) {
-          return adminService.getDashboard().then((d) => {
-            const feed = d.activityFeed || [];
-            const mapped = feed.map(feedItemToLogItem);
-            setFallbackFullList(mapped);
-            const start = (page - 1) * PAGE_SIZE;
-            setList(mapped.slice(start, start + PAGE_SIZE));
-            setTotal(mapped.length);
-          });
-        }
-        setList([]);
-        setTotal(0);
-        setFallbackFullList(null);
-      })
-      .catch(() => {
-        // Endpoint failed; try dashboard activity feed as fallback (page 1, no filters)
-        if (page === 1 && !hasFilters) {
-          adminService
-            .getDashboard()
-            .then((d) => {
-              const feed = d.activityFeed || [];
-              const mapped = feed.map(feedItemToLogItem);
-              setFallbackFullList(mapped);
-              const start = (page - 1) * PAGE_SIZE;
-              setList(mapped.slice(start, start + PAGE_SIZE));
-              setTotal(mapped.length);
-              if (mapped.length === 0) {
-                toaster.create({
-                  title: 'Error',
-                  description: 'Failed to load activity logs.',
-                  type: 'error',
-                });
-              }
-            })
-            .catch(() => {
-              setList([]);
-              setTotal(0);
-              toaster.create({
-                title: 'Error',
-                description: 'Failed to load activity logs.',
-                type: 'error',
-              });
-            })
-            .finally(() => setLoading(false));
-          return;
-        }
+    const loadActivityLogs = async () => {
+      setLoading(true);
+      try {
+        const res = await adminService.getActivityLogs({
+          page,
+          limit: PAGE_SIZE,
+          actionType: actionType || undefined,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
+          search: search.trim() || undefined,
+        });
+        setList(res.data || []);
+        setTotal(res.pagination?.total ?? 0);
+      } catch {
         setList([]);
         setTotal(0);
         toaster.create({
@@ -169,8 +77,12 @@ export default function AdminLogsPage() {
           description: 'Failed to load activity logs.',
           type: 'error',
         });
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadActivityLogs();
   }, [page, actionType, dateFrom, dateTo, search]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));

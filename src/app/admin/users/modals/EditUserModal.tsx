@@ -19,7 +19,7 @@ interface EditUserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: AdminUser | null;
-  onSave: (userId: string, data: EditUserFormData) => void;
+  onSave: (userId: string, data: EditUserFormData) => Promise<void> | void;
 }
 
 export interface EditUserFormData {
@@ -39,6 +39,7 @@ export function EditUserModal({
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -49,11 +50,16 @@ export function EditUserModal({
     }
   }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    onSave(user.id, { firstName, lastName, phone, newPassword });
-    onOpenChange(false);
+    setSaving(true);
+    try {
+      await onSave(user.id, { firstName, lastName, phone, newPassword });
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -141,8 +147,9 @@ export function EditUserModal({
             <Button
               type="submit"
               className="bg-[#9333EA] hover:bg-[#7e22ce] text-white"
+              disabled={saving}
             >
-              <Save className="h-4 w-4 mr-2" /> Update User
+              <Save className="h-4 w-4 mr-2" /> {saving ? 'Updating...' : 'Update User'}
             </Button>
           </DialogFooter>
         </form>

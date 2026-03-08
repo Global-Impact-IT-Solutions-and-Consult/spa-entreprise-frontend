@@ -34,15 +34,16 @@ export interface User {
     mfaEnabled?: boolean;
     phone?: string;
     profilePicture?: string;
+    bio?: string;
 }
 
 export interface UserNotification {
     id: string;
     type: string;
     title: string;
-    body: any;
+    body: unknown;
     read: boolean;
-    metadata: any;
+    metadata: unknown;
     createdAt: string;
 }
 
@@ -162,6 +163,11 @@ export const authService = {
     // Enable MFA (Verify Setup)
     enableMfa: async (otp: string) => {
         const response = await apiClient.post('/auth/mfa/verify', { code: otp });
+        return response.data;
+    },
+
+    disableMfa: async (otp: string) => {
+        const response = await apiClient.post('/auth/mfa/disable', { code: otp });
         return response.data;
     },
 

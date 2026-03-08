@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toaster } from '@/components/ui/toaster';
@@ -14,24 +13,16 @@ import {
   BusinessStats,
   PaginationInfo,
 } from '@/services/admin.service';
+import { businessService } from '@/services/business.service';
 import { cn } from '@/lib/utils';
 import {
-  Clock,
-  CheckCircle2,
-  XCircle,
-  Building2,
   MapPin,
-  ClipboardList,
-  Calendar,
-  CreditCard,
   Eye,
   Check,
   X,
-  User,
   X as XIcon,
   ChevronLeft,
   ChevronRight,
-  Search,
   RotateCcw,
   FileText,
   AlertCircle,
@@ -50,6 +41,28 @@ type StatusFilter =
   | 'rejected'
   | 'suspended'
   | 'ALL';
+
+function getApiMessage(error: unknown, fallback: string) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'data' in error.response &&
+    error.response.data &&
+    typeof error.response.data === 'object' &&
+    'message' in error.response.data
+  ) {
+    const message = error.response.data.message;
+    if (Array.isArray(message)) return String(message[0] || fallback);
+    if (typeof message === 'string') return message;
+  }
+
+  if (error instanceof Error && error.message) return error.message;
+
+  return fallback;
+}
 
 export default function AdminBusinessesPage() {
   const searchParams = useSearchParams();
@@ -76,9 +89,6 @@ export default function AdminBusinessesPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [endpointsAvailable, setEndpointsAvailable] = useState<boolean | null>(
-    null,
-  );
 
   // Business details panel
   const [selectedBusiness, setSelectedBusiness] =
@@ -91,11 +101,6 @@ export default function AdminBusinessesPage() {
   const [approveNotes, setApproveNotes] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [sendRejectionEmail, setSendRejectionEmail] = useState(true);
-
-  // When a city is selected we filter client-side (from fetched data) so it always matches the list
-  const [cityFilteredFullList, setCityFilteredFullList] = useState<
-    AdminBusiness[] | null
-  >(null);
 
   // Dropdown options: fetched once (unfiltered) so type/city can be changed to any value
   const [businessTypeOptions, setBusinessTypeOptions] = useState<
@@ -134,9 +139,67 @@ export default function AdminBusinessesPage() {
     selectedCity !== 'All Cities' && !cities.includes(selectedCity)
       ? [...cities, ...citiesFromList.filter((c) => c === selectedCity)]
       : cities;
+  const selectedBusinessId = selectedBusiness?.id;
 
-  useEffect(() => {
-    fetchData();
+  const fetchBusinessDetails = useCallback(async (businessId: string) => {
+    setLoadingBusinessDetails(true);
+    try {
+      const business = await adminService.getBusiness(businessId);
+      setSelectedBusiness(business);
+    } catch (error) {
+      console.error('Failed to fetch business details:', error);
+      toaster.create({
+        title: 'Error',
+        description: 'Failed to load business details',
+        type: 'error',
+      });
+    } finally {
+      setLoadingBusinessDetails(false);
+    }
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const baseFilters = {
+        status: activeStatus === 'ALL' ? undefined : activeStatus,
+        businessTypeCode:
+          selectedType !== 'All Types' ? selectedType : undefined,
+        city: selectedCity !== 'All Cities' ? selectedCity : undefined,
+        sortBy: sortBy as 'newest' | 'oldest' | 'name_asc' | 'name_desc',
+        search: searchQuery.trim() || undefined,
+      };
+
+      const [businessesData, statsData] = await Promise.all([
+        adminService.getAllBusinesses({
+          ...baseFilters,
+          page: pagination.page,
+          limit: 15,
+        }),
+        adminService.getBusinessStats(),
+      ]);
+
+      const rawData = businessesData.data || [];
+      setStats(statsData);
+      setBusinesses(rawData);
+      setPagination(
+        businessesData.pagination || {
+          total: 0,
+          page: 1,
+          limit: 15,
+          totalPages: 0,
+        },
+      );
+    } catch (error: unknown) {
+      console.error('Failed to fetch data:', error);
+      toaster.create({
+        title: 'Error',
+        description: getApiMessage(error, 'Failed to load businesses'),
+        type: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [
     activeStatus,
     pagination.page,
@@ -145,6 +208,10 @@ export default function AdminBusinessesPage() {
     sortBy,
     searchQuery,
   ]);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   // Fetch type and city options once (unfiltered) so dropdowns always show all options
   useEffect(() => {
@@ -167,12 +234,14 @@ export default function AdminBusinessesPage() {
             name: business?.businessType?.name || code!,
           };
         });
-        const cityList = Array.from(
-          new Set(list.map((b) => b.city).filter(Boolean)),
-        ) as string[];
+        if (!cancelled) setBusinessTypeOptions(types);
+      })
+      .catch(() => {});
+    businessService
+      .getCitiesWithBusinessCounts()
+      .then((cities) => {
         if (!cancelled) {
-          setBusinessTypeOptions(types);
-          setCityOptions(cityList);
+          setCityOptions(cities.map((city) => city.city));
         }
       })
       .catch(() => {});
@@ -183,10 +252,15 @@ export default function AdminBusinessesPage() {
 
   useEffect(() => {
     // Only fetch details if we're viewing (not approving/rejecting)
-    if (selectedBusiness && !showApproveModal && !showRejectModal) {
-      fetchBusinessDetails(selectedBusiness.id);
+    if (selectedBusinessId && !showApproveModal && !showRejectModal) {
+      void fetchBusinessDetails(selectedBusinessId);
     }
-  }, [selectedBusiness?.id, showApproveModal, showRejectModal]);
+  }, [
+    selectedBusinessId,
+    showApproveModal,
+    showRejectModal,
+    fetchBusinessDetails,
+  ]);
 
   // Open business detail when navigating from User Details "View Business" link
   useEffect(() => {
@@ -223,106 +297,9 @@ export default function AdminBusinessesPage() {
     router.replace(qs ? `/admin/businesses?${qs}` : '/admin/businesses', {
       scroll: false,
     });
-  }, [searchParams, businesses]);
+  }, [searchParams, businesses, router]);
 
-  const fetchBusinessDetails = async (businessId: string) => {
-    setLoadingBusinessDetails(true);
-    try {
-      const business = await adminService.getBusiness(businessId);
-      setSelectedBusiness(business);
-    } catch (error) {
-      console.error('Failed to fetch business details:', error);
-      toaster.create({
-        title: 'Error',
-        description: 'Failed to load business details',
-        type: 'error',
-      });
-    } finally {
-      setLoadingBusinessDetails(false);
-    }
-  };
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    setCityFilteredFullList(null);
-    try {
-      const isCityFilter = selectedCity !== 'All Cities';
-      const baseFilters = {
-        status: activeStatus === 'ALL' ? undefined : activeStatus,
-        businessTypeCode:
-          selectedType !== 'All Types' ? selectedType : undefined,
-        sortBy: sortBy as 'newest' | 'oldest' | 'name_asc' | 'name_desc',
-        search: searchQuery.trim() || undefined,
-      };
-
-      const [businessesData, statsData] = await Promise.all([
-        adminService.getAllBusinesses({
-          ...baseFilters,
-          // Never send city to API; we filter by city client-side from the data we get
-          page: isCityFilter ? 1 : pagination.page,
-          limit: isCityFilter ? 300 : 15,
-        }),
-        adminService.getBusinessStats(),
-      ]);
-
-      const rawData = businessesData.data || [];
-      const businessesAvailable =
-        (businessesData as any).endpointAvailable !== false;
-      const statsAvailable = (statsData as any).endpointAvailable !== false;
-      setEndpointsAvailable(businessesAvailable && statsAvailable);
-      setStats(statsData);
-
-      if (isCityFilter) {
-        const cityNorm = selectedCity.trim().toLowerCase();
-        const filtered = rawData.filter(
-          (b) =>
-            (b.city && b.city.trim().toLowerCase() === cityNorm) ||
-            (!b.city && cityNorm === ''),
-        );
-        setCityFilteredFullList(filtered);
-        const total = filtered.length;
-        const limit = 15;
-        const totalPages = Math.max(1, Math.ceil(total / limit));
-        const page = Math.min(pagination.page, totalPages) || 1;
-        const start = (page - 1) * limit;
-        setBusinesses(filtered.slice(start, start + limit));
-        setPagination({
-          total,
-          page,
-          limit,
-          totalPages,
-        });
-      } else {
-        setBusinesses(rawData);
-        setPagination(
-          businessesData.pagination || {
-            total: 0,
-            page: 1,
-            limit: 15,
-            totalPages: 0,
-          },
-        );
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch data:', error);
-      if (error.response?.status === 404) {
-        setEndpointsAvailable(false);
-      } else {
-        toaster.create({
-          title: 'Error',
-          description:
-            error.response?.data?.message ||
-            error.message ||
-            'Failed to load businesses',
-          type: 'error',
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleViewBusiness = async (business: AdminBusiness) => {
+  const handleViewBusiness = (business: AdminBusiness) => {
     setSelectedBusiness(business);
   };
 
@@ -361,13 +338,10 @@ export default function AdminBusinessesPage() {
       setSelectedBusiness(null);
       setApproveNotes('');
       fetchData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toaster.create({
         title: 'Error',
-        description:
-          error.response?.data?.message ||
-          error.message ||
-          'Failed to approve business',
+        description: getApiMessage(error, 'Failed to approve business'),
         type: 'error',
       });
     } finally {
@@ -407,13 +381,10 @@ export default function AdminBusinessesPage() {
       setRejectReason('');
       setSendRejectionEmail(true);
       fetchData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toaster.create({
         title: 'Error',
-        description:
-          error.response?.data?.message ||
-          error.message ||
-          'Failed to reject business',
+        description: getApiMessage(error, 'Failed to reject business'),
         type: 'error',
       });
     } finally {
@@ -462,7 +433,7 @@ export default function AdminBusinessesPage() {
     if (!business.operatingHours) return 'Not specified';
 
     const days = Object.entries(business.operatingHours)
-      .filter(([_, hours]) => !hours.closed)
+      .filter(([, hours]) => !hours.closed)
       .map(([day, hours]) => `${day}: ${hours.open} - ${hours.close}`);
 
     return days.length > 0 ? days.join(', ') : 'Closed';
@@ -507,69 +478,6 @@ export default function AdminBusinessesPage() {
               </p>
             </div>
           </div>
-
-          {/* Endpoint Availability Banner */}
-          {endpointsAvailable === false && (
-            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-yellow-600"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-yellow-800 mb-1">
-                    Admin API Endpoints Not Available
-                  </h3>
-                  <p className="text-sm text-yellow-700">
-                    The admin API endpoints are not yet implemented on the
-                    backend. Please contact the backend team to implement the
-                    following endpoints:
-                  </p>
-                  <ul className="mt-2 text-xs text-yellow-700 list-disc list-inside space-y-1">
-                    <li>
-                      <code className="bg-yellow-100 px-1 rounded">
-                        GET /api/v1/admin/spas/statistics
-                      </code>{' '}
-                      - Get business statistics
-                    </li>
-                    <li>
-                      <code className="bg-yellow-100 px-1 rounded">
-                        GET /api/v1/admin/spas
-                      </code>{' '}
-                      - Get all businesses
-                    </li>
-                    <li>
-                      <code className="bg-yellow-100 px-1 rounded">
-                        GET /api/v1/admin/spas/:id
-                      </code>{' '}
-                      - Get business details
-                    </li>
-                    <li>
-                      <code className="bg-yellow-100 px-1 rounded">
-                        POST /api/v1/admin/spas/:id/approve
-                      </code>{' '}
-                      - Approve business
-                    </li>
-                    <li>
-                      <code className="bg-yellow-100 px-1 rounded">
-                        POST /api/v1/admin/spas/:id/reject
-                      </code>{' '}
-                      - Reject business
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Filters: white background, light grey borders per design */}
           <div className="bg-white border border-gray-300 rounded-md p-4 mb-6">
@@ -693,9 +601,7 @@ export default function AdminBusinessesPage() {
                         colSpan={7}
                         className="px-4 py-12 text-center text-gray-500"
                       >
-                        {stats.allBusinesses === 0
-                          ? 'The admin API endpoints are not available yet.'
-                          : 'No businesses match the current filters.'}
+                        No businesses match the current filters.
                       </td>
                     </tr>
                   ) : (

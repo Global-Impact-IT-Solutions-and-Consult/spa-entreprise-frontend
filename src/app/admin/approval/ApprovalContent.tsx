@@ -12,6 +12,7 @@ import {
   AdminBusiness,
   BusinessStats,
   PaginationInfo,
+  PendingServiceApproval,
 } from '@/services/admin.service';
 import { cn } from '@/lib/utils';
 import {
@@ -45,12 +46,35 @@ type ApprovalType = 'business' | 'service';
 
 const PAGE_SIZE = 6;
 
+function getApiMessage(error: unknown, fallback: string) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'data' in error.response &&
+    error.response.data &&
+    typeof error.response.data === 'object' &&
+    'message' in error.response.data
+  ) {
+    const message = error.response.data.message;
+    if (Array.isArray(message)) return String(message[0] || fallback);
+    if (typeof message === 'string') return message;
+  }
+
+  return fallback;
+}
+
 export function ApprovalContent() {
   const { setHeaderActions } = useAdminHeader();
   const [approvalType, setApprovalType] = useState<ApprovalType>('business');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [businesses, setBusinesses] = useState<AdminBusiness[]>([]);
+  const [pendingServices, setPendingServices] = useState<PendingServiceApproval[]>(
+    [],
+  );
   const [stats, setStats] = useState<BusinessStats>({
     pendingApprovals: 0,
     approved: 0,
@@ -64,6 +88,7 @@ export function ApprovalContent() {
     totalPages: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [serviceLoading, setServiceLoading] = useState(false);
   const [selectedBusiness, setSelectedBusiness] =
     useState<AdminBusiness | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -73,12 +98,22 @@ export function ApprovalContent() {
   const [sendRejectionEmail, setSendRejectionEmail] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [serviceTotal, setServiceTotal] = useState(0);
 
   useEffect(() => {
     setHeaderActions(
       <Button
         className="bg-green-600 hover:bg-green-700 text-white"
         onClick={() => {
+          if (approvalType === 'service') {
+            toaster.create({
+              title: 'Review services individually',
+              description:
+                'Open the related business review to moderate each submission.',
+              type: 'info',
+            });
+            return;
+          }
           if (stats.pendingApprovals === 0) {
             toaster.create({ title: 'No pending approvals', type: 'info' });
           } else {
@@ -96,7 +131,7 @@ export function ApprovalContent() {
       </Button>,
     );
     return () => setHeaderActions(null);
-  }, [stats.pendingApprovals, setHeaderActions]);
+  }, [approvalType, stats.pendingApprovals, setHeaderActions]);
 
   // Fetch business stats for tab counters (All, Pending, Approved, Rejected)
   useEffect(() => {
@@ -115,12 +150,14 @@ export function ApprovalContent() {
   }, []);
 
   useEffect(() => {
-    if (approvalType !== 'business') {
-      setBusinesses([]);
-      setPagination((p) => ({ ...p, total: 0, totalPages: 0 }));
-      setLoading(false);
-      return;
-    }
+    adminService
+      .getPendingServiceApprovals({ page: 1, limit: 1 })
+      .then((res) => setServiceTotal(res.pagination?.total ?? 0))
+      .catch(() => setServiceTotal(0));
+  }, []);
+
+  useEffect(() => {
+    if (approvalType !== 'business') return;
     setLoading(true);
     adminService
       .getAllBusinesses({
@@ -151,6 +188,34 @@ export function ApprovalContent() {
       .catch(() => setBusinesses([]))
       .finally(() => setLoading(false));
   }, [approvalType, statusFilter, searchQuery, pagination.page]);
+
+  useEffect(() => {
+    if (approvalType !== 'service') return;
+    setServiceLoading(true);
+    adminService
+      .getPendingServiceApprovals({
+        page: pagination.page,
+        limit: PAGE_SIZE,
+        search: searchQuery.trim() || undefined,
+      })
+      .then((res) => {
+        setPendingServices(res.data || []);
+        setServiceTotal(res.pagination?.total ?? 0);
+        setPagination(
+          res.pagination || {
+            total: 0,
+            page: 1,
+            limit: PAGE_SIZE,
+            totalPages: 0,
+          },
+        );
+      })
+      .catch(() => {
+        setPendingServices([]);
+        setServiceTotal(0);
+      })
+      .finally(() => setServiceLoading(false));
+  }, [approvalType, pagination.page, searchQuery]);
 
   const handleApproveClick = (b: AdminBusiness) => {
     setSelectedBusiness(b);
@@ -189,10 +254,17 @@ export function ApprovalContent() {
           totalPages: 0,
         },
       );
-    } catch (e: any) {
+      adminService
+        .getPendingServiceApprovals({
+          page: 1,
+          limit: 1,
+        })
+        .then((serviceRes) => setServiceTotal(serviceRes.pagination?.total ?? 0))
+        .catch(() => {});
+    } catch (error: unknown) {
       toaster.create({
         title: 'Error',
-        description: e.response?.data?.message || 'Failed to approve',
+        description: getApiMessage(error, 'Failed to approve'),
         type: 'error',
       });
     } finally {
@@ -229,10 +301,17 @@ export function ApprovalContent() {
           totalPages: 0,
         },
       );
-    } catch (e: any) {
+      adminService
+        .getPendingServiceApprovals({
+          page: 1,
+          limit: 1,
+        })
+        .then((serviceRes) => setServiceTotal(serviceRes.pagination?.total ?? 0))
+        .catch(() => {});
+    } catch (error: unknown) {
       toaster.create({
         title: 'Error',
-        description: e.response?.data?.message || 'Failed to reject',
+        description: getApiMessage(error, 'Failed to reject'),
         type: 'error',
       });
     } finally {
@@ -330,7 +409,7 @@ export function ApprovalContent() {
           <Wrench className="h-4 w-4" />
           Service Approval
           <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs">
-            0
+            {serviceTotal}
           </span>
         </button>
       </div>
@@ -563,9 +642,100 @@ export function ApprovalContent() {
       )}
 
       {approvalType === 'service' && (
-        <div className="border border-gray-200 rounded-lg p-12 text-center text-gray-500">
-          No service approvals at the moment.
-        </div>
+        <>
+          <div className="bg-white border border-gray-300 rounded-md p-4 mb-4 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Pending service submissions
+                </p>
+                <p className="text-sm text-gray-500">
+                  Services attached to businesses still awaiting admin approval.
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Total
+                </p>
+                <p className="text-2xl font-bold text-gray-900">{serviceTotal}</p>
+              </div>
+            </div>
+          </div>
+
+          {serviceLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-12">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="border border-gray-200 rounded-lg p-5 h-56 bg-gray-50 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : pendingServices.length === 0 ? (
+            <div className="border border-gray-200 rounded-lg p-12 text-center text-gray-500">
+              No pending service submissions found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendingServices.map((service) => (
+                <div
+                  key={service.id}
+                  className="border border-gray-200 rounded-lg p-5 bg-white shadow-sm flex flex-col"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <h3 className="font-bold text-gray-900">{service.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        {service.category?.name || 'Uncategorized'}
+                      </p>
+                    </div>
+                    <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                      Pending
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-sm text-gray-600 mb-4">
+                    <p className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 shrink-0 text-gray-400" />
+                      {service.business.businessName}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                      {service.business.city || 'Location unavailable'}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 shrink-0 text-gray-400" />
+                      Submitted {formatDate(service.createdAt)}
+                    </p>
+                    <p className="text-gray-700">
+                      Price: ₦{Number(service.price).toLocaleString()} • Duration:{' '}
+                      {service.duration} mins
+                    </p>
+                    {service.owner && (
+                      <p className="text-gray-700">
+                        Owner: {service.owner.firstName || ''}{' '}
+                        {service.owner.lastName || ''} ({service.owner.email})
+                      </p>
+                    )}
+                    {service.description && (
+                      <p className="line-clamp-3">{service.description}</p>
+                    )}
+                  </div>
+                  <div className="mt-auto pt-2">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        window.location.href = `/admin/businesses?businessId=${service.business.id}`;
+                      }}
+                    >
+                      Open Business Review
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>

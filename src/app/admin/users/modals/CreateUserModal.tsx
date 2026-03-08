@@ -19,7 +19,7 @@ import { UserPlus, Mail, Lock } from 'lucide-react';
 interface CreateUserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: CreateUserFormData) => void;
+  onSubmit: (data: CreateUserFormData) => Promise<void> | void;
 }
 
 export interface CreateUserFormData {
@@ -44,17 +44,23 @@ export function CreateUserModal({
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ email, password, firstName, lastName, phone, role });
-    onOpenChange(false);
-    setEmail('');
-    setPassword('');
-    setFirstName('');
-    setLastName('');
-    setPhone('');
-    setRole('');
+    setSubmitting(true);
+    try {
+      await onSubmit({ email, password, firstName, lastName, phone, role });
+      onOpenChange(false);
+      setEmail('');
+      setPassword('');
+      setFirstName('');
+      setLastName('');
+      setPhone('');
+      setRole('');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -181,9 +187,10 @@ export function CreateUserModal({
             <Button
               type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={submitting}
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              Create User
+              {submitting ? 'Creating...' : 'Create User'}
             </Button>
           </DialogFooter>
         </form>
