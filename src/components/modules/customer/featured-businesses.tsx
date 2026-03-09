@@ -15,17 +15,18 @@ export function FeaturedBusinesses() {
             try {
                 // Fetch top rated businesses with starting prices enriched in service
                 const enrichedData = await businessService.getFeaturedBusinesses(3);
+                console.log("enrichedData", enrichedData);
 
                 // Map to UI format
                 const mappedBusinesses = enrichedData.map((b) => ({
                     id: b.id,
                     name: b.businessName,
-                    location: `${b.city}`,
+                    location: `${b.addressDetails?.state?.name}`,
                     description: b.description || "Premium spa and wellness services for your relaxation and beauty needs.",
                     rating: b.averageRating || 0,
                     reviews: b.totalReviews || 0,
                     price: b.startingPrice,
-                    image: b.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&q=80",
+                    image: (b as any).profileImage || b.image,
                     isOpen: true,
                     verified: true,
                 }));

@@ -106,7 +106,7 @@ function MyBookingsContent() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {bookings.length > 0 ? (
                             bookings.map((booking) => (
-                                <BookingCard key={booking.id} booking={booking} />
+                                <BookingCard key={booking.id} booking={booking} onCancelSuccess={fetchBookings} />
                             ))
                         ) : (
                             <div className="col-span-full py-20 text-center">

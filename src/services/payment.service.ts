@@ -26,9 +26,12 @@ export const paymentService = {
     },
 
     // Verify a payment after redirect
-    verifyPayment: async (transactionId: string): Promise<any> => {
+    verifyPayment: async (transactionId: string, txRef: string): Promise<any> => {
         const response = await apiClient.get(`/payments/verify`, {
-            params: { transaction_id: transactionId } // Assuming it expects it via query param or as path param? The docs had /api/v1/payments/verify
+            params: {
+                transaction_id: transactionId,
+                tx_ref: txRef
+            }
         });
         return response.data;
     }

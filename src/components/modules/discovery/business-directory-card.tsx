@@ -27,6 +27,7 @@ interface BusinessDirectoryCardProps {
         totalReviews?: number;
         image?: string;
         primaryImageUrl?: string | null;
+        profileImage?: string | null;
         isOpen?: boolean;
         isVerified?: boolean;
         verified?: boolean;
@@ -40,11 +41,12 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
     const [isLoading, setIsLoading] = useState(false);
     const { isAuthenticated } = useAuthStore();
     const router = useRouter();
+    console.log(business);
 
     const verified = business.verified ?? business.isVerified;
     const price = business.price ?? business.startingPrice;
     const name = business.businessName ?? business.name ?? "Wellness Business";
-    const image = business.primaryImageUrl || business.image || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80";
+    const image = business.image || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80";
     const city = business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : business.city?.name) || business.location;
 
     // Robust rating resolution

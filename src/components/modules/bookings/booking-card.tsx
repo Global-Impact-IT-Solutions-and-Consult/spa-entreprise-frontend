@@ -9,13 +9,14 @@ import { CancelBookingModal } from "./cancel-booking-modal";
 import { toaster } from "@/components/ui/toaster";
 import { businessService } from "@/services/business.service";
 
-import { Booking } from "@/services/booking.service";
+import { Booking, bookingService } from "@/services/booking.service";
 
 interface BookingCardProps {
     booking: Booking;
+    onCancelSuccess?: () => void;
 }
 
-export function BookingCard({ booking }: BookingCardProps) {
+export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isCanceling, setIsCanceling] = useState(false);
@@ -42,15 +43,32 @@ export function BookingCard({ booking }: BookingCardProps) {
 
     const handleCancel = async () => {
         setIsCanceling(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsCanceling(false);
-        setIsCancelOpen(false);
-        toaster.create({
-            title: "Booking Canceled",
-            description: "Your booking has been successfully canceled.",
-            type: "success"
-        });
+        try {
+            await bookingService.cancelBooking(booking.id, { reason: "Canceled by user" });
+            setIsCanceling(false);
+            setIsCancelOpen(false);
+            toaster.create({
+                title: "Booking Canceled",
+                description: "Your booking has been successfully canceled.",
+                type: "success"
+            });
+            // We'll need a way to refresh the booking list, but for now we fallback to reloading the page
+            // to ensure state matches the backend.
+            if (onCancelSuccess) {
+                onCancelSuccess();
+            } else {
+                window.location.reload();
+            }
+        } catch (error: any) {
+            console.error("Failed to cancel booking:", error);
+            setIsCanceling(false);
+            setIsCancelOpen(false);
+            toaster.create({
+                title: "Cancellation Failed",
+                description: error?.response?.data?.message || "Something went wrong. Please try again.",
+                type: "error"
+            });
+        }
     };
 
     return (

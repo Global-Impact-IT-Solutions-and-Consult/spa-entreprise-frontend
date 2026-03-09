@@ -28,9 +28,9 @@ function PaymentCallbackContent() {
                 return;
             }
 
-            if (transaction_id) {
+            if (transaction_id && tx_ref) {
                 try {
-                    await paymentService.verifyPayment(transaction_id);
+                    await paymentService.verifyPayment(transaction_id, tx_ref);
                     // Redirect to my-bookings with success flag to trigger modal
                     router.push("/my-bookings?payment_success=true");
                 } catch (error) {
@@ -39,7 +39,7 @@ function PaymentCallbackContent() {
                     setTimeout(() => router.push("/my-bookings?payment_failed=true"), 3000);
                 }
             } else {
-                setStatus("Missing transaction ID. Returning to bookings...");
+                setStatus("Missing transaction details. Returning to bookings...");
                 setTimeout(() => router.push("/my-bookings"), 2000);
             }
         };
