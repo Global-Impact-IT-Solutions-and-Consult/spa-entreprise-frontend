@@ -290,22 +290,35 @@ export default function DashboardPage() {
                                 <div key={booking.id} className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-50 shadow-sm">
                                     <div className="flex-1">
                                         <h3 className="text-sm font-bold text-gray-900 leading-none">{booking.customerName}</h3>
-                                        <p className="text-[10px] text-gray-400 mt-1">{booking.serviceName}</p>
+                                        <div className="flex items-center gap-1">
+                                            <p className="text-[10px] text-gray-400">{booking.serviceName}</p>
+                                            <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
+                                            <p className="text-[10px] text-gray-400">{booking.duration} mins</p>
+                                        </div>
                                         <div className="flex items-center gap-3 text-[10px] text-gray-400 mt-1.5">
-                                            <div className="flex items-center gap-1">
+                                            {booking.status === "confirmed" && <div className="flex items-center gap-1">
                                                 <Clock className="h-3 w-3" />
                                                 <span>{booking.startTime} - {booking.endTime}</span>
-                                            </div>
-                                            {booking.isHomeService && (
-                                                <div className="flex items-center gap-1 text-purple-400">
-                                                    <Home className="h-3 w-3" />
-                                                    <span>Home</span>
-                                                </div>
-                                            )}
-                                            {booking.location && (
+                                            </div>}
+                                            {booking.status === "pending_payment" && booking.location && (
                                                 <div className="flex items-center gap-1">
-                                                    <MapPin className="h-3 w-3" />
-                                                    <span>{booking.location}</span>
+                                                    <div className="flex items-center gap-1">
+                                                        <MapPin className="h-3 w-3" />
+                                                        <span>{booking.location}</span>
+                                                    </div>
+                                                    <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
+                                                    <div className="flex items-center gap-1">
+                                                        <span>
+                                                            {(() => {
+                                                                if (!booking.startTime) return "";
+                                                                const [h, m] = booking.startTime.split(":");
+                                                                const d = new Date();
+                                                                d.setHours(parseInt(h, 10));
+                                                                d.setMinutes(parseInt(m, 10));
+                                                                return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                                                            })()}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
