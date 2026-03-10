@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut } from "lucide-react";
+import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
@@ -15,6 +15,7 @@ export function CustomerHeader() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
     const router = useRouter();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
 
     // Close dropdown when clicking outside
@@ -41,6 +42,7 @@ export function CustomerHeader() {
     ];
 
     const handleLogout = async () => {
+        setIsLoggingOut(true);
         try {
             await authService.logout();
             logoutStore();
@@ -49,6 +51,8 @@ export function CustomerHeader() {
         } catch {
             logoutStore();
             // router.push("/");
+        } finally {
+            setIsLoggingOut(false);
         }
         setProfileDropdownOpen(false);
         setMobileMenuOpen(false);
@@ -136,10 +140,11 @@ export function CustomerHeader() {
                                             <div className="border-t border-gray-100 my-1" />
                                             <button
                                                 onClick={handleLogout}
-                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left"
+                                                disabled={isLoggingOut}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                <LogOut className="w-4 h-4 text-gray-500" />
-                                                Logout
+                                                {isLoggingOut ? <Loader2 className="w-4 h-4 text-gray-500 animate-spin" /> : <LogOut className="w-4 h-4 text-gray-500" />}
+                                                {isLoggingOut ? "Logging out..." : "Logout"}
                                             </button>
                                         </div>
                                     )}
@@ -255,11 +260,12 @@ export function CustomerHeader() {
                     {isAuthenticated && user ? (
                         <Button
                             onClick={handleLogout}
+                            disabled={isLoggingOut}
                             variant="outline"
-                            className="w-full flex items-center justify-center space-x-2 py-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                            className="w-full flex items-center justify-center space-x-2 py-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <LogOut className="w-4 h-4" />
-                            <span>Logout</span>
+                            {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                            <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
                         </Button>
                     ) : (
                         <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>

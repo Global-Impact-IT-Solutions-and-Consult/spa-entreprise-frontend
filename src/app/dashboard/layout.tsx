@@ -22,6 +22,7 @@ export default function DashboardLayout({
     const business = user?.businesses?.[0];
     const status = business?.status?.toLowerCase();
     const isPending = status === 'pending_approval' || status === 'pending';
+    const isAuthenticated = useAuthStore(state => state.isAuthenticated);
 
     const [activeTab, setActiveTab] = useState("All");
     const [notifications, setNotifications] = useState<UserNotification[]>([]);
@@ -30,6 +31,7 @@ export default function DashboardLayout({
 
     useEffect(() => {
         const refreshUserData = async () => {
+            if (!isAuthenticated || !business?.id) return;
             try {
                 const refreshedUser = await authService.getCurrentUser();
                 updateUser(refreshedUser);

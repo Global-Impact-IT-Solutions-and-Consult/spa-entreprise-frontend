@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -13,7 +14,8 @@ import {
     Clock,
     Settings,
     Headset,
-    LogOut
+    LogOut,
+    Loader2
 } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
@@ -33,11 +35,14 @@ export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { logout: logoutStore, user } = useAuthStore();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const business = user?.businesses?.[0];
 
     const handleLogout = async () => {
+        setIsLoggingOut(true);
         try {
             await authService.logout();
+            console.log("Server Logout")
             logoutStore();
             toaster.create({
                 title: "Logged out",
@@ -49,6 +54,8 @@ export function Sidebar() {
             console.error("Logout error:", error);
             logoutStore();
             router.push('/auth/login');
+        } finally {
+            setIsLoggingOut(false);
         }
     };
 
@@ -132,10 +139,11 @@ export function Sidebar() {
                 </div>
                 <button
                     onClick={handleLogout}
-                    className="w-fit flex items-center gap-3 text-sm font-medium text-[#F59E0B] hover:text-[#fbbf24] transition-colors"
+                    disabled={isLoggingOut}
+                    className="w-fit flex items-center gap-3 text-sm font-medium text-[#F59E0B] hover:text-[#fbbf24] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <LogOut className="h-5 w-5" />
-                    Sign Out
+                    {isLoggingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
+                    {isLoggingOut ? "Signing Out..." : "Sign Out"}
                 </button>
             </div>
         </div>
