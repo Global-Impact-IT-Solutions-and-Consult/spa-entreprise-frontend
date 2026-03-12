@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2 } from "lucide-react";
+import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2, Bookmark, History } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
@@ -128,6 +128,22 @@ export function CustomerHeader() {
                                             >
                                                 <Settings className="w-4 h-4 text-gray-500" />
                                                 Settings
+                                            </Link>
+                                            <Link
+                                                href="/saved"
+                                                onClick={() => setProfileDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <Bookmark className="w-4 h-4 text-gray-500" />
+                                                Saved
+                                            </Link>
+                                            <Link
+                                                href="/history"
+                                                onClick={() => setProfileDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <History className="w-4 h-4 text-gray-500" />
+                                                History
                                             </Link>
                                             <Link
                                                 href="/notifications"
