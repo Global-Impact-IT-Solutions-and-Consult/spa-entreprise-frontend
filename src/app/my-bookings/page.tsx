@@ -20,6 +20,9 @@ function MyBookingsContent() {
     const [activeTab, setActiveTab] = useState<"Upcoming" | "History" | "Canceled">("Upcoming");
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [totalBookings, setTotalBookings] = useState(0);
+    const [limit, setLimit] = useState(12); // Use 12 items as default limit for 3-col grid
     const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
     useEffect(() => {
@@ -35,8 +38,12 @@ function MyBookingsContent() {
 
     const tabs = ["Upcoming", "History", "Canceled"];
 
-    const fetchBookings = useCallback(async () => {
-        setIsLoading(true);
+    const fetchBookings = useCallback(async (isLoadMore = false, currentLimit = limit) => {
+        if (isLoadMore) {
+            setIsLoadingMore(true);
+        } else {
+            setIsLoading(true);
+        }
         try {
             // Map our UI tabs to API status
             let apiStatus = '';
@@ -44,8 +51,9 @@ function MyBookingsContent() {
             else if (activeTab === 'History') apiStatus = 'completed';
             else if (activeTab === 'Canceled') apiStatus = 'cancelled';
 
-            const data = await bookingService.getUserBookings({ status: apiStatus });
-            setBookings(data);
+            const response = await bookingService.getUserBookings({ status: apiStatus, limit: currentLimit });
+            setBookings(response.data);
+            setTotalBookings(response.meta?.total || 0);
         } catch (error) {
             console.error("Error fetching bookings:", error);
             toaster.create({
@@ -55,8 +63,20 @@ function MyBookingsContent() {
             });
         } finally {
             setIsLoading(false);
+            setIsLoadingMore(false);
         }
+    }, [activeTab, limit]);
+
+    // Reset limit when tab changes
+    useEffect(() => {
+        setLimit(12);
     }, [activeTab]);
+
+    const handleLoadMore = () => {
+        const newLimit = limit + 12;
+        setLimit(newLimit);
+        fetchBookings(true, newLimit);
+    };
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -106,7 +126,7 @@ function MyBookingsContent() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {bookings.length > 0 ? (
                             bookings.map((booking) => (
-                                <BookingCard key={booking.id} booking={booking} onCancelSuccess={fetchBookings} />
+                                <BookingCard key={booking.id} booking={booking} onCancelSuccess={() => fetchBookings()} />
                             ))
                         ) : (
                             <div className="col-span-full py-20 text-center">
@@ -116,6 +136,27 @@ function MyBookingsContent() {
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Pagination / Load More */}
+                {bookings.length > 0 && bookings.length < totalBookings && (
+                    <div className="flex justify-center pt-8 border-t border-gray-100 mt-12 mb-12">
+                        <Button
+                            variant="outline"
+                            disabled={isLoadingMore}
+                            onClick={handleLoadMore}
+                            className="h-12 px-10 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition-colors min-w-[200px]"
+                        >
+                            {isLoadingMore ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                    Loading...
+                                </>
+                            ) : (
+                                "Load More Bookings"
+                            )}
+                        </Button>
                     </div>
                 )}
             </main>

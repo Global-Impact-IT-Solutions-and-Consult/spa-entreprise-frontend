@@ -72,7 +72,7 @@ export interface CreateServiceDto {
     price: number;
     duration: number;
     bufferTime?: number;
-    deliveryType: 'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH';
+    deliveryType: 'in_location_only' | 'home_service' | 'both';
     homeServicePrice?: number;
     maxServiceRadius?: number;
 }
@@ -174,7 +174,7 @@ export interface Service {
     price: number;
     duration: number;
     bufferTime?: number;
-    deliveryType: 'in_location_only' | 'home_service_only' | 'both' | string;
+    deliveryType: 'in_location_only' | 'home_service' | 'both' | string;
     homeServicePrice?: number;
     serviceRadius?: number;
     maxServiceRadius?: number;
@@ -466,7 +466,7 @@ export const businessService = {
             bufferTime: service.bufferTime || 0,
             price: service.price || 0,
             homeServicePrice: service.homeServicePrice || null,
-            deliveryType: service.deliveryType || 'IN_LOCATION_ONLY',
+            deliveryType: service.deliveryType || 'in_location_only',
             isActive: service.isActive ?? true,
             businessName: service.businessName || service.spa?.businessName || 'Wellness Business',
             businessId: service.business.id,

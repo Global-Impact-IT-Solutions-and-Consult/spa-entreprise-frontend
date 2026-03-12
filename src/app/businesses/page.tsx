@@ -33,7 +33,7 @@ function BusinessDirectoryContent() {
         city: searchParams.get("city") || "",
         category: searchParams.get("category") || "All Businesses",
         minRating: searchParams.get("minRating") || "All Rating",
-        limit: parseInt(searchParams.get("limit") || "10"),
+        limit: parseInt(searchParams.get("limit") || "12"),
     };
 
     const [filters, setFilters] = useState(initialFilters);
@@ -108,20 +108,20 @@ function BusinessDirectoryContent() {
         if (filters.city) params.set("city", filters.city);
         if (filters.category !== "All Businesses") params.set("category", filters.category);
         if (filters.minRating !== "All Rating") params.set("minRating", filters.minRating);
-        if (filters.limit > 10) params.set("limit", filters.limit.toString());
+        if (filters.limit > 12) params.set("limit", filters.limit.toString());
 
         router.push(`/businesses?${params.toString()}`, { scroll: false });
     }, [filters, fetchBusinesses, router]);
 
     const handleApplyFilters = () => {
-        const newFilters = { ...pendingFilters, search: tempSearch, limit: 10 };
+        const newFilters = { ...pendingFilters, search: tempSearch, limit: 12 };
         setFilters(newFilters);
         setPendingFilters(newFilters);
     };
 
     const handleLoadMore = () => {
         if (businesses.length < total) {
-            const newLimit = filters.limit + 10;
+            const newLimit = filters.limit + 12;
             setFilters(prev => ({ ...prev, limit: newLimit }));
             setPendingFilters(prev => ({ ...prev, limit: newLimit }));
         }
@@ -135,7 +135,7 @@ function BusinessDirectoryContent() {
             city: "",
             category: "All Businesses",
             minRating: "All Rating",
-            limit: 10,
+            limit: 12,
         };
         setPendingFilters(resetState);
         setFilters(resetState);

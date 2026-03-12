@@ -77,12 +77,14 @@ export const bookingService = {
 
     // Get bookings for the current user
     getUserBookings: async (params?: { status?: string; page?: number; limit?: number }) => {
-        const response = await apiClient.get<Booking[] | { data: Booking[] }>('/bookings/my-bookings', { params });
+        const response = await apiClient.get<any>('/bookings/my-bookings', { params });
+
+        // Handle cases where response might be wrapped in { data: [...], meta: {...} } or direct array
         if (Array.isArray(response.data)) {
-            return response.data as Booking[];
+            return { data: response.data as Booking[], meta: { total: response.data.length } };
         } else if (response.data && Array.isArray(response.data.data)) {
-            return response.data.data as Booking[];
+            return { data: response.data.data as Booking[], meta: response.data.meta || { total: response.data.data.length } };
         }
-        return [] as Booking[];
+        return { data: [] as Booking[], meta: { total: 0 } };
     }
 };

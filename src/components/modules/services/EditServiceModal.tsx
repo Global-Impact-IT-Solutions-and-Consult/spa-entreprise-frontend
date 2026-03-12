@@ -27,7 +27,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
     const [serviceDuration, setServiceDuration] = useState('');
     const [bufferTime, setBufferTime] = useState('10');
     const [selectedCategory, setSelectedCategory] = useState('');
-    const [deliveryType, setDeliveryType] = useState<'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH'>('IN_LOCATION_ONLY');
+    const [deliveryType, setDeliveryType] = useState<'in_location_only' | 'home_service' | 'both'>('in_location_only');
     const [serviceRadius, setServiceRadius] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [serviceImage, setServiceImage] = useState<File | null>(null);
@@ -43,11 +43,11 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
             setServiceDuration(service.duration.toString());
             setBufferTime(service.bufferTime?.toString() || '15');
             setSelectedCategory(service.category?.id || '');
-            const type = service.deliveryType?.toUpperCase();
-            if (type === 'IN_LOCATION_ONLY' || type === 'HOME_SERVICE' || type === 'BOTH') {
+            const type = service?.deliveryType;
+            if (type === 'in_location_only' || type === 'home_service' || type === 'both') {
                 setDeliveryType(type);
             } else {
-                setDeliveryType('IN_LOCATION_ONLY');
+                setDeliveryType('in_location_only');
             }
             setServiceRadius(service.maxServiceRadius?.toString() || '');
             // Pre-populate with existing image
@@ -87,15 +87,15 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
             toaster.create({ title: "Validation Error", description: "Please fill all required fields", type: "error" });
             return;
         }
-        if ((deliveryType === 'IN_LOCATION_ONLY' || deliveryType === 'BOTH') && !servicePrice) {
+        if ((deliveryType === 'in_location_only' || deliveryType === 'both') && !servicePrice) {
             toaster.create({ title: "Validation Error", description: "On-site service price is required", type: "error" });
             return;
         }
-        if ((deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && !homeServicePrice) {
+        if ((deliveryType === 'home_service' || deliveryType === 'both') && !homeServicePrice) {
             toaster.create({ title: "Validation Error", description: "Home service price is required", type: "error" });
             return;
         }
-        if ((deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && !serviceRadius) {
+        if ((deliveryType === 'home_service' || deliveryType === 'both') && !serviceRadius) {
             toaster.create({ title: "Validation Error", description: "Service radius is required for home service", type: "error" });
             return;
         }
@@ -118,7 +118,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                 bufferTime: bufferTime ? parseInt(bufferTime) : 15,
             };
 
-            if (deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') {
+            if (deliveryType === 'home_service' || deliveryType === 'both') {
                 payload.homeServicePrice = parseFloat(homeServicePrice);
                 payload.maxServiceRadius = parseFloat(serviceRadius);
             }
@@ -246,11 +246,12 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                             <Select
                                 placeholder="On Site & Home Service"
                                 options={[
-                                    { label: 'On Site Only', value: 'IN_LOCATION_ONLY' },
-                                    { label: 'On Site & Home Service', value: 'BOTH' },
+                                    { label: 'On Site Only', value: 'in_location_only' },
+                                    { label: 'Home Service Only', value: 'home_service' },
+                                    { label: 'On Site & Home Service', value: 'both' },
                                 ]}
                                 value={deliveryType}
-                                onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH')}
+                                onChange={(e) => setDeliveryType(e.target.value as 'in_location_only' | 'home_service' | 'both')}
                                 className="h-[56px] rounded-lg border-gray-200"
                             />
                         </div>
@@ -265,7 +266,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                                         type="number"
                                         placeholder="7,000"
                                         value={servicePrice}
-                                        disabled={deliveryType === 'HOME_SERVICE'}
+                                        disabled={deliveryType === 'home_service'}
                                         onChange={(e) => setServicePrice(e.target.value)}
                                         className="h-[56px] rounded-lg border-gray-200 pl-8 bg-white disabled:opacity-50"
                                     />
@@ -279,7 +280,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                                         type="number"
                                         placeholder="15,000"
                                         value={homeServicePrice}
-                                        disabled={deliveryType === 'IN_LOCATION_ONLY'}
+                                        disabled={deliveryType === 'in_location_only'}
                                         onChange={(e) => setHomeServicePrice(e.target.value)}
                                         className="h-[56px] rounded-lg border-gray-200 pl-8 bg-white disabled:opacity-50"
                                     />
@@ -288,7 +289,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                         </div>
 
                         {/* Service Radius — only shown for home service */}
-                        {(deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && (
+                        {(deliveryType === 'home_service' || deliveryType === 'both') && (
                             <div className="space-y-2">
                                 <Label className="text-sm font-medium text-gray-400">Service Radius (km)</Label>
                                 <Input

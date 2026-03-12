@@ -49,8 +49,8 @@ function DiscoverContent() {
 
     const [tempSearch, setTempSearch] = useState(filters.search);
 
-    // Client-side pagination — show items in increments of 10
-    const PAGE_SIZE = 10;
+    // Client-side pagination — show items in increments of 12
+    const PAGE_SIZE = 12;
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     const deliveryFilters = [
@@ -142,7 +142,7 @@ function DiscoverContent() {
         if (activeFilter === "In-Store") {
             result = result.filter(s => s.deliveryType?.toLowerCase() === 'in_location_only' || s.deliveryType?.toLowerCase() === 'both');
         } else if (activeFilter === "Home Service") {
-            result = result.filter(s => s.deliveryType?.toLowerCase() === 'home_service_only' || s.deliveryType?.toLowerCase() === 'both');
+            result = result.filter(s => s.deliveryType?.toLowerCase() === 'home_service' || s.deliveryType?.toLowerCase() === 'both');
         } else if (activeFilter === "Favorite") {
             result = result.filter(s => favoriteServiceIds.has(s.id));
         }
