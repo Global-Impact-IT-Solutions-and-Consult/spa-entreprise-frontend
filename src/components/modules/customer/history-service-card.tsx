@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle2, MapPin, User, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -83,13 +84,22 @@ export function HistoryServiceCard({ booking }: HistoryServiceCardProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-1 mt-auto">
-                    <p className="font-black text-gray-900 text-lg">
-                        ₦{booking.price?.toLocaleString()}
-                    </p>
-                    <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">
-                        {booking.relativeTime}
-                    </span>
+                <div className="flex items-center justify-between pt-1 mt-auto gap-4">
+                    <div className="flex flex-col">
+                        <p className="font-black text-gray-900 text-lg leading-none mb-1">
+                            ₦{booking.price?.toLocaleString()}
+                        </p>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                            {booking.relativeTime}
+                        </span>
+                    </div>
+
+                    <Link
+                        href={`/reviews/${booking.id}`}
+                        className="bg-[#E89D24] hover:bg-[#D97706] text-white text-[10px] font-black uppercase tracking-widest h-9 px-6 flex items-center justify-center rounded-xl shadow-lg shadow-orange-100 transition-all active:scale-[0.98]"
+                    >
+                        Review
+                    </Link>
                 </div>
             </div>
         </div>
