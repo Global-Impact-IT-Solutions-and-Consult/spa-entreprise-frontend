@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { favoritesService } from "@/services/favorites.service";
 import { useAuthStore } from "@/store/auth.store";
 import { toaster } from "@/components/ui/toaster";
+import { getFallbackImage } from "@/lib/image.utils";
 
 interface ServiceCardProps {
     service: {
@@ -87,7 +88,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
             {/* Image Container */}
             <div className="relative h-48 md:h-52 overflow-hidden">
                 <Image
-                    src={service.imageUrl}
+                    src={service.imageUrl || getFallbackImage(service.name)}
                     alt={service.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"

@@ -14,7 +14,7 @@ interface ServiceCardProps {
 
 export const ServiceCard = ({ service, onDelete, onEdit }: ServiceCardProps) => {
     const isBoth = service.deliveryType?.toLowerCase() === 'both';
-    const isHomeOnly = service.deliveryType?.toLowerCase() === 'home_service_only';
+    const isHomeOnly = service.deliveryType?.toLowerCase() === 'home_service';
     const [expanded, setExpanded] = useState(false);
 
     return (

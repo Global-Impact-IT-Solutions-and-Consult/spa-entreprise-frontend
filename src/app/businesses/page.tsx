@@ -27,17 +27,19 @@ function BusinessDirectoryContent() {
     const countryCode = "NG";
 
     // Initial filter state from URL
-    const [filters, setFilters] = useState({
+    const initialFilters = {
         search: searchParams.get("search") || "",
         state: searchParams.get("state") || "",
         city: searchParams.get("city") || "",
         category: searchParams.get("category") || "All Businesses",
         minRating: searchParams.get("minRating") || "All Rating",
-        limit: parseInt(searchParams.get("limit") || "10"),
-        verifiedOnly: searchParams.get("verifiedOnly") === "true",
-    });
+        limit: parseInt(searchParams.get("limit") || "12"),
+    };
 
-    const [tempSearch, setTempSearch] = useState(filters.search);
+    const [filters, setFilters] = useState(initialFilters);
+    const [pendingFilters, setPendingFilters] = useState(initialFilters);
+
+    const [tempSearch, setTempSearch] = useState(initialFilters.search);
 
     // Fetch business types and states
     useEffect(() => {
@@ -55,8 +57,8 @@ function BusinessDirectoryContent() {
 
     // Fetch cities when State changes
     useEffect(() => {
-        if (filters.state) {
-            const stateObj = states.find(s => s.name === filters.state);
+        if (pendingFilters.state) {
+            const stateObj = states.find(s => s.name === pendingFilters.state);
             if (stateObj) {
                 setCities(City.getCitiesOfState(countryCode, stateObj.isoCode));
             } else {
@@ -65,7 +67,7 @@ function BusinessDirectoryContent() {
         } else {
             setCities([]);
         }
-    }, [filters.state, states]);
+    }, [pendingFilters.state, states]);
 
     // Main fetch function
     const fetchBusinesses = useCallback(async (currentFilters: typeof filters, isLoadMore = false) => {
@@ -81,7 +83,7 @@ function BusinessDirectoryContent() {
 
 
             if (currentFilters.city) params.city = currentFilters.city;
-            if (currentFilters.category !== "All Businesses") params.serviceTypes = JSON.stringify([currentFilters.category]);
+            if (currentFilters.category !== "All Businesses") params.serviceTypes = currentFilters.category;
             if (currentFilters.minRating !== "All Rating") params.minRating = parseFloat(currentFilters.minRating);
 
             const response = await businessService.searchSpasWithEnrichment(params);
@@ -106,33 +108,37 @@ function BusinessDirectoryContent() {
         if (filters.city) params.set("city", filters.city);
         if (filters.category !== "All Businesses") params.set("category", filters.category);
         if (filters.minRating !== "All Rating") params.set("minRating", filters.minRating);
-        if (filters.limit > 10) params.set("limit", filters.limit.toString());
-        if (filters.verifiedOnly) params.set("verifiedOnly", "true");
+        if (filters.limit > 12) params.set("limit", filters.limit.toString());
 
         router.push(`/businesses?${params.toString()}`, { scroll: false });
     }, [filters, fetchBusinesses, router]);
 
     const handleApplyFilters = () => {
-        setFilters(prev => ({ ...prev, search: tempSearch, limit: 10 }));
+        const newFilters = { ...pendingFilters, search: tempSearch, limit: 12 };
+        setFilters(newFilters);
+        setPendingFilters(newFilters);
     };
 
     const handleLoadMore = () => {
         if (businesses.length < total) {
-            setFilters(prev => ({ ...prev, limit: prev.limit + 10 }));
+            const newLimit = filters.limit + 12;
+            setFilters(prev => ({ ...prev, limit: newLimit }));
+            setPendingFilters(prev => ({ ...prev, limit: newLimit }));
         }
     };
 
     const handleReset = () => {
         setTempSearch("");
-        setFilters({
+        const resetState = {
             search: "",
             state: "",
             city: "",
             category: "All Businesses",
             minRating: "All Rating",
-            limit: 10,
-            verifiedOnly: false,
-        });
+            limit: 12,
+        };
+        setPendingFilters(resetState);
+        setFilters(resetState);
     };
 
     return (
@@ -183,8 +189,8 @@ function BusinessDirectoryContent() {
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">State</label>
                                 <div className="relative">
                                     <select
-                                        value={filters.state}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value, city: "", limit: 10 }))}
+                                        value={pendingFilters.state}
+                                        onChange={(e) => setPendingFilters(prev => ({ ...prev, state: e.target.value, city: "" }))}
                                         className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none cursor-pointer"
                                     >
                                         <option value="">Select State</option>
@@ -200,10 +206,10 @@ function BusinessDirectoryContent() {
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">City</label>
                                 <div className="relative">
                                     <select
-                                        value={filters.city}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value, limit: 10 }))}
-                                        disabled={!filters.state}
-                                        className={`w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none cursor-pointer ${!filters.state ? 'opacity-50' : ''}`}
+                                        value={pendingFilters.city}
+                                        onChange={(e) => setPendingFilters(prev => ({ ...prev, city: e.target.value }))}
+                                        disabled={!pendingFilters.state}
+                                        className={`w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none cursor-pointer ${!pendingFilters.state ? 'opacity-50' : ''}`}
                                     >
                                         <option value="">Select City</option>
                                         {cities.map((c, i) => (
@@ -218,8 +224,8 @@ function BusinessDirectoryContent() {
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Category</label>
                                 <div className="relative">
                                     <select
-                                        value={filters.category}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value, limit: 10 }))}
+                                        value={pendingFilters.category}
+                                        onChange={(e) => setPendingFilters(prev => ({ ...prev, category: e.target.value }))}
                                         className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none cursor-pointer"
                                     >
                                         <option>All Businesses</option>
@@ -236,8 +242,8 @@ function BusinessDirectoryContent() {
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Minimum Rating</label>
                                 <div className="relative">
                                     <select
-                                        value={filters.minRating}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, minRating: e.target.value, limit: 10 }))}
+                                        value={pendingFilters.minRating}
+                                        onChange={(e) => setPendingFilters(prev => ({ ...prev, minRating: e.target.value }))}
                                         className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none cursor-pointer"
                                     >
                                         <option>All Rating</option>
@@ -252,22 +258,7 @@ function BusinessDirectoryContent() {
                         </div>
 
                         {/* Bottom Filter Controls */}
-                        <div className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-4">
-                            <label className="flex items-center gap-3 cursor-pointer group self-start">
-                                <div className="relative w-6 h-6 rounded-lg border-2 border-gray-200 group-hover:border-[#E89D24] transition-colors">
-                                    <input
-                                        type="checkbox"
-                                        checked={filters.verifiedOnly}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, verifiedOnly: e.target.checked, limit: 10 }))}
-                                        className="absolute opacity-0 w-full h-full cursor-pointer peer"
-                                    />
-                                    <div className="absolute inset-0 bg-[#E89D24] rounded-sm scale-0 peer-checked:scale-100 transition-transform flex items-center justify-center text-white">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                    </div>
-                                </div>
-                                <span className="text-sm font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Verified businesses only</span>
-                            </label>
-
+                        <div className="flex flex-col sm:flex-row items-center justify-end pt-4 gap-4">
                             <div className="flex items-center gap-3 w-full sm:w-auto">
                                 <Button
                                     variant="ghost"

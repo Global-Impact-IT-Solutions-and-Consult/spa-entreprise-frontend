@@ -76,7 +76,7 @@ function BookingContent() {
 
                 // Set initial delivery type based on service support
                 if (currentService) {
-                    if (currentService.deliveryType === 'home_service_only') {
+                    if (currentService.deliveryType === 'home_service') {
                         setDeliveryType("home_service");
                     } else {
                         setDeliveryType("in_location");
@@ -116,7 +116,25 @@ function BookingContent() {
                     }
                     const allSlots = [...(data.availableSlots || []), ...(data.unavailableSlots || [])];
                     allSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
-                    setAvailableSlots(allSlots);
+
+                    // Filter out past slots if today is selected
+                    const now = new Date();
+                    const todayStr = now.toISOString().split('T')[0];
+                    let filteredSlots = allSlots;
+
+                    if (selectedDate === todayStr) {
+                        const currentHour = now.getHours();
+                        const currentMinute = now.getMinutes();
+
+                        filteredSlots = allSlots.filter(slot => {
+                            const [slotHour, slotMinute] = slot.startTime.split(':').map(Number);
+                            if (slotHour > currentHour) return true;
+                            if (slotHour === currentHour && slotMinute > currentMinute) return true;
+                            return false;
+                        });
+                    }
+
+                    setAvailableSlots(filteredSlots);
                 } catch (error) {
                     console.error("Error fetching availability:", error);
                     setAvailableSlots([]);
@@ -390,7 +408,7 @@ function BookingContent() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div
                                     onClick={() => {
-                                        if (service.deliveryType !== 'home_service_only') {
+                                        if (service.deliveryType !== 'home_service') {
                                             setDeliveryType("in_location");
                                         }
                                     }}
@@ -403,7 +421,7 @@ function BookingContent() {
                                                 : "border-gray-50 bg-white text-gray-400 hover:border-gray-100 cursor-pointer"
                                     )}
                                 >
-                                    <Store className={cn("w-5 h-5", service.deliveryType === 'home_service_only' ? "text-gray-300" : "text-[#E89D24]")} />
+                                    <Store className={cn("w-5 h-5", service.deliveryType === 'home_service' ? "text-gray-300" : "text-[#E89D24]")} />
                                     In Store
                                 </div>
                                 <div

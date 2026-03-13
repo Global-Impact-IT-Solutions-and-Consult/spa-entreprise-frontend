@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 import { FiCheck, FiLogOut } from 'react-icons/fi';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
@@ -19,11 +21,13 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     const pathname = usePathname();
     const router = useRouter();
     const { logout: logoutStore } = useAuthStore();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Determine current step index (1-based)
     const currentStepIndex = steps.findIndex(step => pathname.includes(step.path)) + 1 || 1;
 
     const handleLogout = async () => {
+        setIsLoggingOut(true);
         try {
             await authService.logout();
             logoutStore();
@@ -38,6 +42,8 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
             // Even if API call fails, clear local state and redirect
             logoutStore();
             router.push('/auth/login');
+        } finally {
+            setIsLoggingOut(false);
         }
     };
 
@@ -94,11 +100,12 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
                 <div className="px-8 pb-8 mt-auto">
                     <Button
                         onClick={handleLogout}
+                        disabled={isLoggingOut}
                         variant="outline"
-                        className="w-full flex items-center justify-center gap-2 h-10 text-sm font-medium text-gray-300 hover:text-white hover:bg-red-600/20 border-gray-600 hover:border-red-500 transition-colors"
+                        className="w-full flex items-center justify-center gap-2 h-10 text-sm font-medium text-gray-300 hover:text-white hover:bg-red-600/20 border-gray-600 hover:border-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <FiLogOut className="h-4 w-4" />
-                        Logout
+                        {isLoggingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <FiLogOut className="h-4 w-4" />}
+                        {isLoggingOut ? "Logging out..." : "Logout"}
                     </Button>
                 </div>
             </div>
