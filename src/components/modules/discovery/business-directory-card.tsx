@@ -9,6 +9,7 @@ import { favoritesService } from "@/services/favorites.service";
 import { useAuthStore } from "@/store/auth.store";
 import { useRouter } from "next/navigation";
 import { toaster } from "@/components/ui/toaster";
+import { getFallbackImage } from "@/lib/image.utils";
 
 interface BusinessDirectoryCardProps {
     business: {
@@ -46,7 +47,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
     const verified = business.verified ?? business.isVerified;
     const price = business.price ?? business.startingPrice;
     const name = business.businessName ?? business.name ?? "Wellness Business";
-    const image = business.image || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80";
+    const image = business.profileImage || getFallbackImage(name);
     const city = business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : business.city?.name) || business.location;
 
     // Robust rating resolution
@@ -59,7 +60,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
         ratingValue = business.rating;
     } else if (business.rating && typeof business.rating === 'object') {
         // Handle object format: { average: number, totalReviews: number }
-        const rObj = business.rating as any;
+        const rObj = business.rating as { average?: number; rating?: number; totalReviews?: number };
         ratingValue = rObj.average || rObj.rating || 0;
         if (rObj.totalReviews) reviewsCount = rObj.totalReviews;
     }

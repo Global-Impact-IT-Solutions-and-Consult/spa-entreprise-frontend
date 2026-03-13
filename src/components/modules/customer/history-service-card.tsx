@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle2, MapPin, User, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getFallbackImage } from "@/lib/image.utils";
 
 interface HistoryServiceCardProps {
     booking: {
@@ -28,7 +29,7 @@ export function HistoryServiceCard({ booking }: HistoryServiceCardProps) {
             {/* Image Section */}
             <div className="relative h-44 bg-gray-100 block overflow-hidden">
                 <Image
-                    src={booking.imageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80"}
+                    src={booking.imageUrl || getFallbackImage(booking.serviceName)}
                     alt={booking.serviceName}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"

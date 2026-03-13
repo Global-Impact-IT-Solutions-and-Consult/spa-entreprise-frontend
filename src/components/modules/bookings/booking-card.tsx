@@ -8,6 +8,7 @@ import { AddToCalendarModal } from "./add-to-calendar-modal";
 import { CancelBookingModal } from "./cancel-booking-modal";
 import { toaster } from "@/components/ui/toaster";
 import { businessService } from "@/services/business.service";
+import { getFallbackImage } from "@/lib/image.utils";
 
 import { Booking, bookingService } from "@/services/booking.service";
 
@@ -76,7 +77,7 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
             {/* Business Image & Status */}
             <div className="relative h-32 md:h-32">
                 <Image
-                    src={serviceImage || (booking.status === 'confirmed' ? "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80" : "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80")}
+                    src={serviceImage || getFallbackImage(booking.serviceName)}
                     alt={booking.serviceName}
                     fill
                     className="object-cover"
@@ -170,7 +171,7 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
                     id: booking.id,
                     serviceName: booking.serviceName,
                     businessName: booking.businessName,
-                    date: new Date(booking.bookingDate).toLocaleDateString(),
+                    date: booking.bookingDate,
                     time: booking.startTime,
                     location: 'In-store',
                 }}

@@ -6,6 +6,7 @@ import { Bookmark, MapPin, Star, BadgeCheck, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getFallbackImage } from "@/lib/image.utils";
 
 interface SavedBusinessCardProps {
     business: {
@@ -28,7 +29,7 @@ export function SavedBusinessCard({ business, onRemove }: SavedBusinessCardProps
     const [isRemoving, setIsRemoving] = useState(false);
 
     const name = business.businessName || "Wellness Business";
-    const image = business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80";
+    const image = business.primaryImageUrl || getFallbackImage(name);
     const city = business.city || "Lagos";
     const rating = typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0);
 

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { MapPin, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getFallbackImage } from "@/lib/image.utils";
 
 interface HistoryBusinessCardProps {
     business: {
@@ -22,7 +23,7 @@ export function HistoryBusinessCard({ business }: HistoryBusinessCardProps) {
             {/* Image Section */}
             <div className="relative w-28 md:w-56 h-auto min-h-[120px] bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
                 <Image
-                    src={business.imageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80"}
+                    src={business.imageUrl || getFallbackImage(business.name)}
                     alt={business.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
