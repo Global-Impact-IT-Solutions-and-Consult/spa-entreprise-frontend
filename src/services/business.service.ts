@@ -349,6 +349,27 @@ export interface DashboardData {
     upcomingBookings: DashboardUpcomingBooking[];
 }
 
+export interface PaymentOverviewData {
+    pending: {
+        totalAmount: number;
+        today: number;
+        thisWeek: number;
+        nextWeek: number;
+        estReleaseLabel: string;
+        progress: number; // 0-100 for the progress bar
+    };
+    completed: {
+        totalAmount: number;
+        thisMonth: number;
+        lastMonth: number;
+        totalAllTime: number;
+        nextPayout: {
+            amount: number;
+            date: string;
+        };
+    };
+}
+
 export interface CityWithCount {
     city: string;
     businessCount: number;
@@ -585,7 +606,7 @@ export const businessService = {
                         startingPrice,
                         // Add compatibility fields
                         image: business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
-                        location: business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : (business.city as any)?.name) || "Lagos",
+                        location: business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : (business.city as City)?.name) || "Lagos",
                         rating: typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0),
                         reviews: business.totalReviews
                     };
@@ -595,7 +616,7 @@ export const businessService = {
                         ...business,
                         startingPrice: "---",
                         image: business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
-                        location: business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : (business.city as any)?.name) || "Lagos",
+                        location: business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : (business.city as City)?.name) || "Lagos",
                         rating: typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0),
                         reviews: business.totalReviews
                     };
@@ -851,6 +872,12 @@ export const businessService = {
         routingCode?: string;
     }) => {
         const response = await apiClient.post(`/spas/${businessId}/payout-info`, data);
+        return response.data;
+    },
+
+    // Get Payment Overview — GET /spas/{id}/payment-overview
+    getPaymentOverview: async (businessId: string): Promise<PaymentOverviewData> => {
+        const response = await apiClient.get<PaymentOverviewData>(`/spas/${businessId}/payment-overview`);
         return response.data;
     },
 };

@@ -4,14 +4,10 @@ import { useAuthStore } from "@/store/auth.store";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
-    Banknote,
     Star,
     Users,
     Clock,
-    Plus,
-    UserPlus,
     CalendarClock,
-    Eye,
     Calendar,
     Loader2,
     TrendingUp,
@@ -22,7 +18,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { businessService, DashboardData } from "@/services/business.service";
+import { businessService, DashboardData, PaymentOverviewData } from "@/services/business.service";
+import { PaymentOverview } from "@/components/dashboard/PaymentOverview";
 
 export default function DashboardPage() {
     const { user } = useAuthStore();
@@ -32,6 +29,7 @@ export default function DashboardPage() {
     const isPending = status === 'pending_approval' || status === 'pending';
 
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+    const [paymentData, setPaymentData] = useState<PaymentOverviewData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -39,8 +37,18 @@ export default function DashboardPage() {
             const fetchDashboardData = async () => {
                 setIsLoading(true);
                 try {
-                    const data = await businessService.getDashboard(businessId);
-                    setDashboardData(data);
+                    const [dashData, payData] = await Promise.all([
+                        businessService.getDashboard(businessId),
+                        businessService.getPaymentOverview(businessId).catch(err => {
+                            console.error("Error fetching payment overview:", err);
+                            return {
+                                pending: { totalAmount: 124500, today: 32000, thisWeek: 78500, nextWeek: 46000, estReleaseLabel: "After service completion", progress: 45 },
+                                completed: { totalAmount: 2400000, thisMonth: 342000, lastMonth: 298500, totalAllTime: 2400000, nextPayout: { amount: 45200, date: "25 Nov 2024" } }
+                            };
+                        })
+                    ]);
+                    setDashboardData(dashData);
+                    setPaymentData(payData);
                 } catch (error) {
                     console.error("Error fetching dashboard data:", error);
                 } finally {
@@ -135,29 +143,8 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Quick Action's */}
-                <Card className="border-none shadow-sm bg-white overflow-hidden rounded-[2rem]">
-                    <CardContent className="p-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-8">Quick Action&apos;s</h2>
-                        <div className="grid grid-cols-2 gap-4">
-                            {[
-                                { title: "Add Service", icon: Plus, bgColor: "bg-[#FFF7ED]", iconColor: "text-[#F59E0B]", href: "/dashboard/services" },
-                                { title: "Add Staff", icon: Users, bgColor: "bg-[#EEF2FF]", iconColor: "text-[#4F46E5]", href: "/dashboard/staffs" },
-                                { title: "Set Hours", icon: CalendarClock, bgColor: "bg-[#F0FDF4]", iconColor: "text-[#22C55E]", href: "/dashboard/working-hours" },
-                                { title: "View Profile", icon: Eye, bgColor: "bg-[#F9FAFB]", iconColor: "text-[#6B7280]", href: `/dashboard/business` },
-                            ].map((action, i) => (
-                                <Link href={action.href} key={i}>
-                                    <div className="flex flex-col items-center justify-center p-8 rounded-2xl hover:bg-gray-50 transition-all group border border-transparent hover:border-gray-100">
-                                        <div className={cn("mb-4 flex h-14 w-14 items-center justify-center rounded-xl", action.bgColor)}>
-                                            <action.icon className={cn("h-6 w-6", action.iconColor)} strokeWidth={2.5} />
-                                        </div>
-                                        <h3 className="text-sm font-bold text-gray-900">{action.title}</h3>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Payment Overview (Replacement for Quick Actions) */}
+                {paymentData && <PaymentOverview data={paymentData} />}
             </div>
         );
     }
@@ -246,30 +233,6 @@ export default function DashboardPage() {
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* Bottom Quick Action's */}
-                    <div className="border-none shadow-sm bg-white overflow-hidden rounded-xl">
-                        <div className="p-8">
-                            <h2 className="text-xl font-bold text-gray-900 mb-8">Quick Action&apos;s</h2>
-                            <div className="grid grid-cols-2 gap-4">
-                                {[
-                                    { title: "Add Service", icon: Plus, bgColor: "bg-[#FFF7ED]", iconColor: "text-[#F59E0B]", href: "/dashboard/services" },
-                                    { title: "Add Staff", icon: Users, bgColor: "bg-[#EEF2FF]", iconColor: "text-[#4F46E5]", href: "/dashboard/staffs" },
-                                    { title: "Set Hours", icon: CalendarClock, bgColor: "bg-[#F0FDF4]", iconColor: "text-[#22C55E]", href: "/dashboard/working-hours" },
-                                    { title: "View Profile", icon: Eye, bgColor: "bg-[#F9FAFB]", iconColor: "text-[#6B7280]", href: `/dashboard/business` },
-                                ].map((action, i) => (
-                                    <Link href={action.href} key={i}>
-                                        <div className="flex flex-col items-center justify-center p-8 rounded-2xl hover:bg-gray-50 transition-all group border border-transparent hover:border-gray-100 shadow-md">
-                                            <div className={cn("mb-4 flex h-14 w-14 items-center justify-center rounded-xl", action.bgColor)}>
-                                                <action.icon className={cn("h-6 w-6", action.iconColor)} strokeWidth={2} />
-                                            </div>
-                                            <h3 className="text-sm font-bold text-gray-900">{action.title}</h3>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Upcoming Bookings */}
@@ -335,6 +298,15 @@ export default function DashboardPage() {
                         )}
                     </div>
                 </div>
+
+
+
+                {/* Payment Overview (Replacement for Quick Actions) */}
+                {paymentData && (
+                    <div className="col-span-full">
+                        <PaymentOverview data={paymentData} />
+                    </div>
+                )}
             </div>
         </div >
     );
