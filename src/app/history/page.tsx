@@ -15,7 +15,7 @@ import { formatDistanceToNow, format } from "date-fns";
 
 export default function HistoryPage() {
     const { isAuthenticated } = useAuthStore();
-    const [activeTab, setActiveTab] = useState<"businesses" | "services">("services");
+    const [activeTab, setActiveTab] = useState<"businesses" | "services">("businesses");
     const [historyServices, setHistoryServices] = useState<any[]>([]);
     const [historyBusinesses, setHistoryBusinesses] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);

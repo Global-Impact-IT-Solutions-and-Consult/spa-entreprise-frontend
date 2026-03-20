@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { favoritesService } from "@/services/favorites.service";
 import { useAuthStore } from "@/store/auth.store";
+import { useFavoritesStore } from "@/store/favorites.store";
 import { toaster } from "@/components/ui/toaster";
 import { getFallbackImage } from "@/lib/image.utils";
 
@@ -37,21 +38,16 @@ interface ServiceCardProps {
 
 export function ServiceCard({ service }: ServiceCardProps) {
     const router = useRouter();
-    const [isFavorite, setIsFavorite] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { isAuthenticated } = useAuthStore();
+    const { serviceIds: favoriteServiceIds, addService, removeService } = useFavoritesStore();
+    
+    const isFavorite = favoriteServiceIds.includes(service.id);
 
     const businessId = service.businessId;
     const rating = typeof service.rating === 'string' ? parseFloat(service.rating) : service.rating;
 
-    // Fetch initial favorite status
-    useEffect(() => {
-        if (isAuthenticated && service.id) {
-            favoritesService.checkServiceFavorite(service.id).then((status) => {
-                setIsFavorite(status);
-            });
-        }
-    }, [isAuthenticated, service.id]);
+
 
     const handleFavoriteToggle = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -68,11 +64,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
         try {
             if (isFavorite) {
                 await favoritesService.removeServiceFavorite(service.id);
-                setIsFavorite(false);
+                removeService(service.id);
                 toaster.create({ title: "Removed from favorites", type: "success" });
             } else {
                 await favoritesService.addFavorite({ serviceId: service.id });
-                setIsFavorite(true);
+                addService(service.id);
                 toaster.create({ title: "Added to favorites", type: "success" });
             }
         } catch (error) {

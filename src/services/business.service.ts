@@ -56,6 +56,9 @@ export interface UpdateProfileDto {
     operatingHours?: OperatingHours;
     coverImage?: string;
     timezone?: string;
+    facebookUrl?: string;
+    instagramUrl?: string;
+    twitterUrl?: string;
 }
 
 export interface RegisterBusinessDto {
@@ -142,6 +145,9 @@ export interface Business {
     primaryImageUrl?: string | null;
     profileImage?: string | null;
     coverImage?: string | null;
+    facebookUrl?: string | null;
+    instagramUrl?: string | null;
+    twitterUrl?: string | null;
     amenities?: string[] | null;
     operatingHours?: OperatingHours;
     owner?: BusinessOwner;
@@ -246,6 +252,47 @@ export interface EnrichedService extends Omit<Service, 'id'> {
     location: string;
     distance?: string;
     imageUrl: string;
+}
+
+interface RawService extends Partial<Service> {
+    id: string;
+    name: string;
+    businessName?: string;
+    businessId?: string;
+    business?: {
+        id: string;
+        city?: string;
+    };
+    spa?: {
+        businessName?: string;
+        averageRating?: string | number;
+        totalReviews?: number;
+        city?: string;
+        addressDetails?: {
+            city?: { name: string } | string;
+        };
+    };
+    rating?: number | string;
+    reviews?: number;
+    image?: string;
+    isActive?: boolean;
+}
+
+export interface SearchServicesParams {
+    latitude?: number;
+    longitude?: number;
+    maxDistance?: number;
+    distanceUnit?: 'km' | 'mi';
+    categoryIds?: string[];
+    minPrice?: number;
+    maxPrice?: number;
+    minRating?: number;
+    delivery?: 'in_store' | 'home_service' | 'both';
+    availableToday?: boolean;
+    weekendAvailability?: boolean;
+    eveningSessions?: boolean;
+    page?: number;
+    limit?: number;
 }
 
 export interface SearchServicesResponse {
@@ -405,7 +452,7 @@ export const businessService = {
     searchSpasWithEnrichment: async (params: SearchSpasParams) => {
         // 1. Get search results
         // Use /spas/search ONLY if city is provided, otherwise fallback to /spas
-        const endpoint = params.city || params.serviceTypes ? '/spas/search' : '/spas';
+        const endpoint = params.city || params.serviceTypes || params.minRating ? '/spas/search' : '/spas';
         const searchResponse = await apiClient.get<SearchSpasResponse>(endpoint, { params });
         const businesses = searchResponse.data.data;
         const meta = searchResponse.data.meta;
@@ -423,17 +470,20 @@ export const businessService = {
                     const fullBusiness = fullBusinessRes.data;
                     const services = servicesRes.data;
 
-                    // Find lowest price
+                    // Find lowest price and collect delivery types
                     let startingPrice = "---";
+                    let availableDeliveryTypes: string[] = [];
                     if (services && services.length > 0) {
                         const minPrice = Math.min(...services.map(s => s.price));
                         startingPrice = minPrice.toLocaleString();
+                        availableDeliveryTypes = Array.from(new Set(services.map(s => s.deliveryType)));
                     }
-
+    
                     return {
                         ...business,
                         ...fullBusiness,
-                        startingPrice
+                        startingPrice,
+                        availableDeliveryTypes
                     };
                 } catch (error) {
                     console.error(`Failed to enrich business ${business.id}:`, error);
@@ -457,7 +507,7 @@ export const businessService = {
         const rawServices = Array.isArray(response.data) ? response.data : (response.data?.data || []);
 
         // Map to EnrichedService format
-        return rawServices.map((service: any) => ({
+        return rawServices.map((service: RawService) => ({
             id: service.id,
             name: service.name,
             description: service.description || '',
@@ -465,16 +515,47 @@ export const businessService = {
             duration: service.duration || 0,
             bufferTime: service.bufferTime || 0,
             price: service.price || 0,
-            homeServicePrice: service.homeServicePrice || null,
+            homeServicePrice: service.homeServicePrice ?? undefined,
             deliveryType: service.deliveryType || 'in_location_only',
             isActive: service.isActive ?? true,
             businessName: service.businessName || service.spa?.businessName || 'Wellness Business',
-            businessId: service.business.id,
+            businessId: service.business?.id || service.businessId || '',
             rating: service.spa?.averageRating || service.rating || 0,
             reviews: service.spa?.totalReviews || service.reviews || 0,
             location: service.business?.city || service.spa?.addressDetails?.city || service.spa?.city || 'Nigeria',
             imageUrl: service.imageUrl || service.image || '',
         }));
+    },
+
+    // Discover Services with Advanced Filtering (Public)
+    discoverServicesFilter: async (params: SearchServicesParams): Promise<SearchServicesResponse> => {
+        const response = await apiClient.get<SearchServicesResponse>('/spas/services/filter', { params });
+        const rawData = response.data;
+        
+        // Ensure data follows EnrichedService format
+        const services: EnrichedService[] = (rawData.data || []).map((service: RawService) => ({
+            id: service.id,
+            name: service.name || 'Unnamed Service',
+            description: service.description || '',
+            category: service.category || { id: '', name: 'General' },
+            duration: service.duration || 0,
+            bufferTime: service.bufferTime || 0,
+            price: service.price || 0,
+            homeServicePrice: service.homeServicePrice ?? undefined,
+            deliveryType: service.deliveryType || 'in_location_only',
+            isActive: service.isActive ?? true,
+            businessName: service.businessName || service.spa?.businessName || 'Wellness Business',
+            businessId: service.business?.id || service.businessId || '',
+            rating: service.spa?.averageRating || service.rating || 0,
+            reviews: service.spa?.totalReviews || service.reviews || 0,
+            location: (typeof service.spa?.addressDetails?.city === 'object' ? service.spa?.addressDetails?.city?.name : service.spa?.addressDetails?.city) || service.business?.city || service.spa?.city || 'Nigeria',
+            imageUrl: service.imageUrl || service.image || '',
+        }));
+
+        return {
+            data: services,
+            meta: rawData.meta
+        };
     },
 
     // Get Featured Businesses with starting prices (Parallel enrichment)

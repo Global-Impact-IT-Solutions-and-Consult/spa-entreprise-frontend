@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { State, City, IState, ICity } from "country-state-city";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
-import { Search, ChevronDown, Loader2, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { businessService, BusinessType, SpaSearchResult, isBusinessOpen } from "@/services/business.service";
+import { businessService, BusinessType, SpaSearchResult, isBusinessOpen, Service } from "@/services/business.service";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthStore } from '@/store/auth.store';
+import { useFavoritesStore } from '@/store/favorites.store';
+import { favoritesService } from "@/services/favorites.service";
+import { Heart, Store, Home, SlidersHorizontal, MapPin, Search, ChevronDown, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AdvanceFilterModal, AdvancedFiltersState } from "@/components/modules/discovery/advance-filter-modal";
 
 function BusinessDirectoryContent() {
     const searchParams = useSearchParams();
@@ -25,6 +29,19 @@ function BusinessDirectoryContent() {
     const [states, setStates] = useState<IState[]>([]);
     const [cities, setCities] = useState<ICity[]>([]);
     const countryCode = "NG";
+    
+    const { isAuthenticated } = useAuthStore();
+    const { businessIds: favoriteBusinessIds, setServiceIds: setFavoriteServiceIds, setBusinessIds: setFavoriteBusinessIds, clear: clearFavorites } = useFavoritesStore();
+
+    // Filter State for Pills
+    const [activeFilter, setActiveFilter] = useState("All Services");
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>({
+        maxPrice: 100000,
+        distance: "any",
+        availability: [],
+        rating: "any",
+    });
 
     // Initial filter state from URL
     const initialFilters = {
@@ -69,22 +86,53 @@ function BusinessDirectoryContent() {
         }
     }, [pendingFilters.state, states]);
 
+    // Fetch User Favorites
+    useEffect(() => {
+        if (isAuthenticated) {
+            favoritesService.getUserFavorites().then(res => {
+                const sIds: string[] = [];
+                const bIds: string[] = [];
+                
+                // Extract Services
+                const serviceList = Array.isArray(res?.services) ? res.services : 
+                                   (Array.isArray(res) ? res.filter((f: any) => f.serviceId) : []);
+                serviceList.forEach((item: any) => {
+                    if (item.serviceId) sIds.push(item.serviceId);
+                    else if (item.service?.id) sIds.push(item.service.id);
+                });
+
+                // Extract Businesses
+                const businessList = Array.isArray(res?.businesses) ? res.businesses : 
+                                    (Array.isArray(res) ? res.filter((f: any) => f.businessId) : []);
+                businessList.forEach((item: any) => {
+                    if (item.businessId) bIds.push(item.businessId);
+                    else if (item.business?.id) bIds.push(item.business.id);
+                });
+
+                setFavoriteServiceIds(sIds);
+                setFavoriteBusinessIds(bIds);
+            }).catch(console.error);
+        } else {
+            clearFavorites();
+        }
+    }, [isAuthenticated, setFavoriteServiceIds, setFavoriteBusinessIds, clearFavorites]);
+
     // Main fetch function
     const fetchBusinesses = useCallback(async (currentFilters: typeof filters, isLoadMore = false) => {
         if (isLoadMore) setLoadingMore(true);
         else setLoading(true);
 
         try {
-            const params: any = {
-                limit: currentFilters.limit,
-                sortBy: 'rating',
-                sortOrder: 'desc',
-            };
+            const params: any = {};
 
 
             if (currentFilters.city) params.city = currentFilters.city;
             if (currentFilters.category !== "All Businesses") params.serviceTypes = currentFilters.category;
             if (currentFilters.minRating !== "All Rating") params.minRating = parseFloat(currentFilters.minRating);
+
+            params.limit = currentFilters.limit;
+            params.sortBy = 'rating';
+            params.sortOrder = 'desc';
 
             const response = await businessService.searchSpasWithEnrichment(params);
             setBusinesses(response.data);
@@ -113,6 +161,32 @@ function BusinessDirectoryContent() {
         router.push(`/businesses?${params.toString()}`, { scroll: false });
     }, [filters, fetchBusinesses, router]);
 
+    // Derived filtered businesses
+    const filteredBusinesses = useMemo(() => {
+        let result = businesses;
+
+        // Filter by delivery type
+        if (activeFilter === "In-Store") {
+            // We'll need to check if ANY service in the business is in-store
+            // Since we enriched businesses with full data, let's assume they have deliveryTypes
+            // If not, we'll need to update the enrichment query
+            result = result.filter(b => b.availableDeliveryTypes?.includes('in_location_only') || b.availableDeliveryTypes?.includes('both'));
+        } else if (activeFilter === "Home Service") {
+            result = result.filter(b => b.availableDeliveryTypes?.includes('home_service') || b.availableDeliveryTypes?.includes('both'));
+        } else if (activeFilter === "Saved") {
+            const favoriteIdsSet = new Set(favoriteBusinessIds);
+            result = result.filter(b => favoriteIdsSet.has(b.id));
+        }
+
+        // Apply Advanced Filters (Client-side for now)
+        if (advancedFilters.rating !== "any") {
+            const minR = parseFloat(advancedFilters.rating);
+            result = result.filter(b => (typeof b.averageRating === 'string' ? parseFloat(b.averageRating) : (b.averageRating || 0)) >= minR);
+        }
+
+        return result;
+    }, [businesses, activeFilter, favoriteBusinessIds, advancedFilters]);
+
     const handleApplyFilters = () => {
         const newFilters = { ...pendingFilters, search: tempSearch, limit: 12 };
         setFilters(newFilters);
@@ -139,6 +213,13 @@ function BusinessDirectoryContent() {
         };
         setPendingFilters(resetState);
         setFilters(resetState);
+        setActiveFilter("All Services");
+        setAdvancedFilters({
+            maxPrice: 100000,
+            distance: "any",
+            availability: [],
+            rating: "any",
+        });
     };
 
     return (
@@ -155,134 +236,125 @@ function BusinessDirectoryContent() {
                 </div>
 
                 {/* Filter Container */}
-                <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-sm mb-12">
-                    {/* Search Input */}
-                    <div className="relative mb-8 border border-gray-200 rounded-xl p-2 focus-within:ring-2 focus-within:ring-[#E89D24] transition-all">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <div className="flex flex-col md:flex-row gap-4">
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-12">
+                    {/* Search Bar */}
+                    <div className="flex flex-col lg:flex-row gap-4 mb-8 border border-gray-200 rounded-xl p-2 focus-within:ring-2 focus-within:ring-[#E89D24] transition-all">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <input
                                 type="text"
                                 placeholder="Search Business name"
                                 value={tempSearch}
                                 onChange={(e) => setTempSearch(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
-                                className="flex-1 pl-14 pr-4 h-12 focus:outline-none text-gray-700 font-medium"
+                                className="w-full pl-12 pr-4 h-12 focus:outline-none transition-all cursor-pointer font-medium text-gray-700"
                             />
-                            <Button
-                                onClick={handleApplyFilters}
-                                className="h-12 px-12 bg-[#E89D24] hover:bg-[#E5A800] font-bold text-white rounded-xl shadow-lg shadow-yellow-500/10"
-                            >
-                                Search
-                            </Button>
                         </div>
+                        {/* State Filter */}
+                        <div className="relative lg:w-48">
+                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <select
+                                value={pendingFilters.state}
+                                onChange={(e) => setPendingFilters(prev => ({ ...prev, state: e.target.value, city: "" }))}
+                                className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
+                            >
+                                <option value="">Select State</option>
+                                {states.map(s => (
+                                    <option key={s.isoCode} value={s.name}>{s.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                        {/* City Filter */}
+                        <div className={`relative lg:w-44 ${!pendingFilters.state ? 'opacity-50' : ''}`}>
+                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <select
+                                value={pendingFilters.city}
+                                onChange={(e) => setPendingFilters(prev => ({ ...prev, city: e.target.value }))}
+                                disabled={!pendingFilters.state}
+                                className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
+                            >
+                                <option value="">Select City</option>
+                                {cities.map((c, i) => (
+                                    <option key={`${c.name}-${i}`} value={c.name}>{c.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                        {/* Category Filter */}
+                        <div className="relative lg:w-52">
+                            <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <select
+                                value={pendingFilters.category}
+                                onChange={(e) => setPendingFilters(prev => ({ ...prev, category: e.target.value }))}
+                                className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
+                            >
+                                <option>All Businesses</option>
+                                {businessTypes.map(type => (
+                                    <option key={type.id} value={type.id}>{type.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                        {/* Rating Filter */}
+                        <div className="relative lg:w-44">
+                            <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <select
+                                value={pendingFilters.minRating}
+                                onChange={(e) => setPendingFilters(prev => ({ ...prev, minRating: e.target.value }))}
+                                className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
+                            >
+                                <option>All Rating</option>
+                                <option value="4.5">4.5+ Stars</option>
+                                <option value="4.0">4.0+ Stars</option>
+                                <option value="3.5">3.5+ Stars</option>
+                                <option value="3.0">3.0+ Stars</option>
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                        <Button
+                            onClick={handleApplyFilters}
+                            className="h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold rounded-xl shadow-lg shadow-yellow-500/20"
+                        >
+                            Search
+                        </Button>
                     </div>
 
-                    {/* Detailed Filters */}
-                    <div className="space-y-6">
-                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            Filter by
-                        </h3>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                            {/* State Filter */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">State</label>
-                                <div className="relative">
-                                    <select
-                                        value={pendingFilters.state}
-                                        onChange={(e) => setPendingFilters(prev => ({ ...prev, state: e.target.value, city: "" }))}
-                                        className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none cursor-pointer"
-                                    >
-                                        <option value="">Select State</option>
-                                        {states.map(s => (
-                                            <option key={s.isoCode} value={s.name}>{s.name}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
-                            {/* City Filter */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">City</label>
-                                <div className="relative">
-                                    <select
-                                        value={pendingFilters.city}
-                                        onChange={(e) => setPendingFilters(prev => ({ ...prev, city: e.target.value }))}
-                                        disabled={!pendingFilters.state}
-                                        className={`w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none cursor-pointer ${!pendingFilters.state ? 'opacity-50' : ''}`}
-                                    >
-                                        <option value="">Select City</option>
-                                        {cities.map((c, i) => (
-                                            <option key={`${c.name}-${i}`} value={c.name}>{c.name}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
-                            {/* Business Category */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Category</label>
-                                <div className="relative">
-                                    <select
-                                        value={pendingFilters.category}
-                                        onChange={(e) => setPendingFilters(prev => ({ ...prev, category: e.target.value }))}
-                                        className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none cursor-pointer"
-                                    >
-                                        <option>All Businesses</option>
-                                        {businessTypes.map(type => (
-                                            <option key={type.id} value={type.id}>{type.name}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
-
-                            {/* Minimum Rating */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Minimum Rating</label>
-                                <div className="relative">
-                                    <select
-                                        value={pendingFilters.minRating}
-                                        onChange={(e) => setPendingFilters(prev => ({ ...prev, minRating: e.target.value }))}
-                                        className="w-full h-12 px-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm font-medium focus:ring-2 focus:ring-[#E89D24] transition-all appearance-none cursor-pointer"
-                                    >
-                                        <option>All Rating</option>
-                                        <option value="4.5">4.5+ Stars</option>
-                                        <option value="4.0">4.0+ Stars</option>
-                                        <option value="3.5">3.5+ Stars</option>
-                                        <option value="3.0">3.0+ Stars</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
+                    {/* Filter by Section (Pills) */}
+                    <div className="flex flex-col gap-6">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xl font-bold text-gray-900">Filter by</h3>
+                            {/* <button onClick={() => setShowAdvanced(true)} className="flex items-center gap-2 text-sm font-bold text-[#E89D24] hover:text-[#E5A800] transition-colors">
+                                <SlidersHorizontal className="w-4 h-4" />
+                                Advance Filter Option
+                            </button> */}
                         </div>
-
-                        {/* Bottom Filter Controls */}
-                        <div className="flex flex-col sm:flex-row items-center justify-end pt-4 gap-4">
-                            <div className="flex items-center gap-3 w-full sm:w-auto">
-                                <Button
-                                    variant="ghost"
-                                    onClick={handleReset}
-                                    className="flex-1 sm:flex-none h-12 px-8 font-bold text-gray-500 hover:text-gray-700 rounded-xl"
+                        <div className="flex flex-wrap gap-3">
+                            {[
+                                { id: "All Services", label: "All Services", icon: null },
+                                { id: "Saved", label: "Saved", icon: Heart },
+                                { id: "In-Store", label: "In-Store", icon: Store },
+                                { id: "Home Service", label: "Home Service", icon: Home },
+                            ].map((filter) => (
+                                <button
+                                    key={filter.id}
+                                    onClick={() => setActiveFilter(filter.id)}
+                                    className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-sm font-bold transition-all border ${activeFilter === filter.id
+                                        ? "bg-[#E89D24] border-[#E89D24] text-white shadow-md scale-105"
+                                        : "bg-white border-gray-100 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                                        }`}
                                 >
-                                    Reset All
-                                </Button>
-                                <Button
-                                    onClick={handleApplyFilters}
-                                    className="flex-1 sm:flex-none h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] font-bold text-white rounded-xl"
-                                >
-                                    Apply Filters
-                                </Button>
-                            </div>
+                                    {filter.icon && <filter.icon className={`w-4 h-4 ${activeFilter === filter.id ? 'text-white' : 'text-gray-400'}`} />}
+                                    {filter.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
 
                 {/* Client-side name filtering */}
                 {(() => {
-                    const filteredBusinesses = filters.search
-                        ? businesses.filter(b => (b.businessName || b.name || '').toLowerCase().includes(filters.search.toLowerCase()))
-                        : businesses;
+                    const finalBusinesses = filteredBusinesses;
 
                     return (
                         <>
@@ -291,9 +363,9 @@ function BusinessDirectoryContent() {
                                 <h2 className="text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
                                     {filters.search ? `Search Results for "${filters.search}"` : "All Businesses"}
                                 </h2>
-                                <p className="text-sm font-medium text-gray-500">{filteredBusinesses.length} results found</p>
+                                <p className="text-sm font-medium text-gray-500">{finalBusinesses.length} results found</p>
                             </div>
-
+ 
                             {/* Business Grid */}
                             {
                                 loading ? (
@@ -314,9 +386,9 @@ function BusinessDirectoryContent() {
                                             </div>
                                         ))}
                                     </div>
-                                ) : filteredBusinesses.length > 0 ? (
+                                ) : finalBusinesses.length > 0 ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                                        {filteredBusinesses.map((business) => (
+                                        {finalBusinesses.map((business: any) => (
                                             <BusinessDirectoryCard
                                                 key={business.id}
                                                 business={{
@@ -362,8 +434,15 @@ function BusinessDirectoryContent() {
                         </div>
                     )
                 }
+ 
+                <AdvanceFilterModal
+                    open={showAdvanced}
+                    onClose={() => setShowAdvanced(false)}
+                    initialFilters={advancedFilters}
+                    onApply={(filters) => setAdvancedFilters(filters)}
+                />
             </main >
-
+ 
             <CustomerFooter />
         </div >
     );

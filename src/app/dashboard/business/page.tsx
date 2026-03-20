@@ -104,6 +104,9 @@ export default function BusinessProfilePage() {
         email: "",
         address: "",
         addressNote: "",
+        facebookUrl: "",
+        instagramUrl: "",
+        twitterUrl: "",
     });
 
     // Address selection state
@@ -143,6 +146,9 @@ export default function BusinessProfilePage() {
                 email: (business as any).email || "",
                 address: addressData?.address || "",
                 addressNote: addressData?.note || "",
+                facebookUrl: business.facebookUrl || "",
+                instagramUrl: business.instagramUrl || "",
+                twitterUrl: business.twitterUrl || "",
             });
 
             // Set address selections from database
@@ -416,7 +422,10 @@ export default function BusinessProfilePage() {
                 state: stateObject,
                 city: cityObject,
                 address: formData.address,
-                addressNote: formData.addressNote
+                addressNote: formData.addressNote,
+                facebookUrl: formData.facebookUrl,
+                instagramUrl: formData.instagramUrl,
+                twitterUrl: formData.twitterUrl
             });
 
             // Refresh user data in store after profile update
@@ -599,7 +608,7 @@ export default function BusinessProfilePage() {
                 </div>
 
                 <div className="flex items-center gap-3 flex-shrink-0">
-                    <Tooltip content="Available after verification is complete">
+                    <Tooltip content={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL' ? "Available after verification is complete" : "View Public Profile"}>
                         <Button
                             variant="outline"
                             onClick={handleOpenLive}
@@ -616,7 +625,7 @@ export default function BusinessProfilePage() {
                         </Button>
                     </Tooltip>
 
-                    <Tooltip content="Available after verification is complete">
+                    <Tooltip content={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL' ? "Available after verification is complete" : "Share Business Profile"}>
                         <Button
                             variant="outline"
                             disabled={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL'}
@@ -774,6 +783,36 @@ export default function BusinessProfilePage() {
                                         labelClassName="uppercase tracking-widest text-[11px] font-bold"
                                     />
                                 </div>
+                            </div>
+                        </section>
+
+                        <section className="space-y-6">
+                            <h3 className="text-xl font-bold text-gray-900">Business Socials</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <CustomInput
+                                    label="Facebook URL"
+                                    name="facebookUrl"
+                                    value={formData.facebookUrl}
+                                    onChange={handleInputChange}
+                                    placeholder="https://facebook.com/..."
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
+                                <CustomInput
+                                    label="Instagram URL"
+                                    name="instagramUrl"
+                                    value={formData.instagramUrl}
+                                    onChange={handleInputChange}
+                                    placeholder="https://instagram.com/..."
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
+                                <CustomInput
+                                    label="X(Twitter) URL"
+                                    name="twitterUrl"
+                                    value={formData.twitterUrl}
+                                    onChange={handleInputChange}
+                                    placeholder="https://x.com/..."
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
                             </div>
                         </section>
 
@@ -969,7 +1008,7 @@ export default function BusinessProfilePage() {
 
             {/* Share Modal */}
             <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
-                <DialogContent className="sm:max-w-md bg-white rounded-2xl p-0 overflow-hidden border-none">
+                <DialogContent className="sm:max-w-lg bg-white rounded-lg p-0 overflow-hidden border-none">
                     <div className="p-8">
                         <DialogHeader className="mb-6">
                             <DialogTitle className="text-2xl font-bold text-gray-900">Share Business</DialogTitle>

@@ -15,6 +15,7 @@ const steps = [
     { id: 2, path: '/onboarding/business-hours', title: 'Operating Hours' },
     { id: 3, path: '/onboarding/services', title: 'Create Services' },
     { id: 4, path: '/onboarding/staff', title: 'Add Staffs' },
+    { id: 5, path: '/onboarding/account-info', title: 'Account Information' },
 ];
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
