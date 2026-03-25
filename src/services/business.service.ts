@@ -199,6 +199,8 @@ export interface Staff {
     profilePicture?: string | null;
     createdAt?: string;
     updatedAt?: string;
+    rating?: number | null;
+    reviewCount?: number;
 }
 
 export interface SearchSpasParams {
@@ -377,14 +379,15 @@ export interface CityWithCount {
 
 export interface BusinessReview {
     id: string;
+    bookingId?: string;
+    businessId: string;
+    businessName?: string;
     rating: number;
-    comment: string;
+    reviewText: string;
+    tipAmount?: number;
+    staffId?: string;
+    customerName: string;
     createdAt: string;
-    user: {
-        id: string;
-        firstName: string;
-        lastName: string;
-    };
     service?: {
         id: string;
         name: string;
@@ -398,8 +401,11 @@ export interface BusinessReview {
 export interface ReviewsResponse {
     data: BusinessReview[];
     meta: PaginationMeta;
-    averageRating: number;
-    ratingDistribution: { stars: number; count: number }[];
+    statistics: {
+        averageRating: number;
+        totalReviews: number;
+        ratingDistribution: Record<string, number>;
+    };
 }
 
 // Utility: check if a business is currently open based on operating hours

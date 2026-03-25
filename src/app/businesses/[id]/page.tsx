@@ -12,7 +12,7 @@ import { BusinessStaffTab } from "@/components/modules/discovery/business-staff-
 import { BusinessAboutTab } from "@/components/modules/discovery/business-about-tab";
 import { BusinessReviewsTab } from "@/components/modules/discovery/business-reviews-tab";
 import { BusinessGalleryTab } from "@/components/modules/discovery/business-gallery-tab";
-import { businessService, Business, Service, Staff, BusinessImage, BusinessReview, isBusinessOpen } from "@/services/business.service";
+import { businessService, Business, Service, Staff, BusinessImage, BusinessReview, ReviewsResponse, isBusinessOpen } from "@/services/business.service";
 import { Loader2, AlertCircle, Share2, Copy, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -61,9 +61,12 @@ export default function BusinessDetailsPage() {
                     businessService.getBusinessReviews(id).catch(() => ({
                         data: [],
                         meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
-                        averageRating: 0,
-                        ratingDistribution: []
-                    }))
+                        statistics: {
+                            averageRating: 0,
+                            totalReviews: 0,
+                            ratingDistribution: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 }
+                        }
+                    } as ReviewsResponse))
                 ]);
 
                 setBusiness(businessData);
@@ -72,8 +75,11 @@ export default function BusinessDetailsPage() {
                 setGallery(galleryData);
                 setReviews(reviewsData.data);
                 setReviewStats({
-                    averageRating: reviewsData.averageRating,
-                    ratingDistribution: reviewsData.ratingDistribution
+                    averageRating: reviewsData.statistics.averageRating,
+                    ratingDistribution: Object.entries(reviewsData.statistics.ratingDistribution).map(([stars, count]) => ({
+                        stars: parseInt(stars),
+                        count: count as number
+                    }))
                 });
             } catch (err: any) {
                 console.error("Error fetching business profile data:", err);
@@ -159,9 +165,8 @@ export default function BusinessDetailsPage() {
         gallery: gallery.map(img => img.url),
         staffs: staff.map(s => ({
             ...s,
-            rating: 4.5, // Backend doesn't provide staff ratings yet
-            reviews: 0,
-            description: "Experienced wellness professional.",
+            rating: s.rating ?? 0,
+            reviews: s.reviewCount ?? 0,
             about: s.about || "Experienced wellness professional.",
             profilePicture: s.profilePicture || undefined,
             specialties: (s.serviceIds || [])
@@ -183,13 +188,13 @@ export default function BusinessDetailsPage() {
     // Map API reviews to the component's expected format
     const mappedReviews = reviews.map(r => ({
         id: r.id,
-        userName: `${r.user.firstName} ${r.user.lastName}`,
+        userName: r.customerName || "Anonymous Customer",
         userAvatar: undefined,
         rating: r.rating,
         date: new Date(r.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-        comment: r.comment,
-        service: r.service?.name || "General",
-        provider: r.staff?.name || "---"
+        comment: r.reviewText || "No comment provided.",
+        service: r.service?.name || "General Service",
+        provider: r.staff?.name || "Team Member"
     }));
 
     const handleCopyLink = () => {
