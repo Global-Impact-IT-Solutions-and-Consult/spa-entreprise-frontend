@@ -26,7 +26,7 @@ export function FeaturedBusinesses() {
                     rating: b.averageRating || 0,
                     reviews: b.totalReviews || 0,
                     price: b.startingPrice,
-                    image: (b as any).profileImage || b.image,
+                    profileImage: (b as any).profileImage,
                     isOpen: true,
                     verified: true,
                 }));

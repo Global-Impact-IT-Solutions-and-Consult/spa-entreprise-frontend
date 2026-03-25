@@ -187,13 +187,8 @@ export default function StaffsPage() {
                 return;
             }
 
-            // Onboarding is complete - redirect to dashboard
-            toaster.create({
-                title: "Onboarding Complete!",
-                description: "Your business profile is set up. Waiting for admin approval.",
-                type: "success"
-            });
-            router.push('/dashboard');
+            // Continue to the next step: Account Information
+            router.push('/onboarding/account-info');
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
@@ -273,7 +268,7 @@ export default function StaffsPage() {
                     onClick={handleFinish}
                     disabled={isLoading}
                 >
-                    {isLoading ? "Saving..." : "Finish & Submit"}
+                    {isLoading ? "Saving..." : "Continue"}
                     {!isLoading && <FiArrowRight className="h-5 w-5" />}
                 </Button>
             </div>

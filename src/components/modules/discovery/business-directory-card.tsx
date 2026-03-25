@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { favoritesService } from "@/services/favorites.service";
 import { useAuthStore } from "@/store/auth.store";
+import { useFavoritesStore } from "@/store/favorites.store";
 import { useRouter } from "next/navigation";
 import { toaster } from "@/components/ui/toaster";
 import { getFallbackImage } from "@/lib/image.utils";
@@ -38,9 +39,9 @@ interface BusinessDirectoryCardProps {
 }
 
 export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) {
-    const [isSaved, setIsSaved] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { isAuthenticated } = useAuthStore();
+    const { businessIds, addBusiness, removeBusiness } = useFavoritesStore();
     const router = useRouter();
     console.log(business);
 
@@ -71,14 +72,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
     // For the demo, we use precision-cut as the ID if it matches our mock business
     const businessIdString = typeof business.id === 'string' && name.toLowerCase().includes("precision") ? "precision-cut" : business.id.toString();
 
-    // Fetch initial favorite status
-    useEffect(() => {
-        if (isAuthenticated && businessIdString) {
-            favoritesService.checkBusinessFavorite(businessIdString).then((status) => {
-                setIsSaved(status);
-            });
-        }
-    }, [isAuthenticated, businessIdString]);
+    const isSaved = businessIds.includes(businessIdString);
 
     const handleSaveToggle = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -95,11 +89,11 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
         try {
             if (isSaved) {
                 await favoritesService.removeBusinessFavorite(businessIdString);
-                setIsSaved(false);
+                removeBusiness(businessIdString);
                 toaster.create({ title: "Removed from saved", type: "success" });
             } else {
                 await favoritesService.addFavorite({ businessId: businessIdString });
-                setIsSaved(true);
+                addBusiness(businessIdString);
                 toaster.create({ title: "Saved successfully", type: "success" });
             }
         } catch (error) {
@@ -115,12 +109,12 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
             className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col"
         >
             {/* Image */}
-            <Link href={`/businesses/${businessIdString}`} className="relative h-48 bg-gray-200 block overflow-hidden group">
+            <Link href={`/businesses/${businessIdString}`} className="relative h-48 bg-gray-200 block overflow-hidden group rounded-t-2xl">
                 <Image
                     src={image}
                     alt={name}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-t-2xl"
                 />
                 {/* Badges */}
                 <div className="absolute top-3 left-3 right-3 flex items-center justify-between">

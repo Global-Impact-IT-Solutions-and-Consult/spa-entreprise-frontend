@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { businessService, CityWithCount } from "@/services/business.service";
 
 export function CityListings() {
@@ -26,9 +27,19 @@ export function CityListings() {
 
     if (loading) {
         return (
-            <div className="py-20 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#E89D24]" />
-            </div>
+            <section className="py-12 md:py-16 bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1,2,3].map(i => (
+                            <div key={i} className="bg-white rounded-2xl p-8 shadow-sm">
+                                <Skeleton className="h-20 w-20 rounded-full mb-4 mx-auto bg-gray-100" />
+                                <Skeleton className="h-6 w-3/4 mx-auto mb-2 bg-gray-100" />
+                                <Skeleton className="h-4 w-1/2 mx-auto bg-gray-100" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
         );
     }
 

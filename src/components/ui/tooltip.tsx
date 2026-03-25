@@ -19,9 +19,9 @@ export function Tooltip({ content, children, className }: TooltipProps) {
             onMouseLeave={() => setIsVisible(false)}
         >
             {children}
-            {isVisible && (
+            {isVisible && content?.trim() && (
                 <div className={cn(
-                    "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-bold rounded-lg whitespace-nowrap z-[110] shadow-xl animate-in fade-in zoom-in-95 duration-200",
+                    "absolute bottom-full left-1/2 -translate-x-1/2 -ms-8 mb-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-bold rounded-lg whitespace-nowrap z-[110] shadow-xl animate-in fade-in zoom-in-95 duration-200",
                     className
                 )}>
                     {content}

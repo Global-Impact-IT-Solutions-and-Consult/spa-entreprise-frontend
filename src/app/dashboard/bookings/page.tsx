@@ -81,26 +81,16 @@ export default function BookingsPage() {
         if (!businessId) return;
         setIsLoading(true);
         try {
-            const [fetchedBookings, services, staff] = await Promise.all([
+            const [fetchedBookings, services, staff, metrics] = await Promise.all([
                 bookingService.getSpaBookings(businessId, { limit: 100 }),
                 businessService.getServices(businessId),
-                businessService.getAllStaff(businessId)
+                businessService.getAllStaff(businessId),
+                bookingService.getBookingsMetrics(businessId).catch(() => null)
             ]);
             const bookingsArray = Array.isArray(fetchedBookings) ? fetchedBookings : [];
             setBusinessServices(Array.isArray(services) ? services : []);
             setBusinessStaff(Array.isArray(staff) ? staff : []);
             setAllBookings(bookingsArray);
-
-            // Calculate stats from all bookings
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-
-            const pending = bookingsArray.filter(b => b.status === 'pending_payment').length;
-            const confirmedTodayData = bookingsArray.filter(b => b.status === 'confirmed' && b.bookingDate === todayStr);
-            const confirmedToday = confirmedTodayData.length;
-            const revenueToday = confirmedTodayData.reduce((sum, b) => sum + b.totalPrice, 0) +
-                bookingsArray.filter(b => b.status === 'completed' && b.bookingDate === todayStr)
-                    .reduce((sum, b) => sum + b.totalPrice, 0);
 
             setTabCount({
                 upcoming: bookingsArray.filter(b => b.status === 'pending_payment' || b.status === 'confirmed').length,
@@ -108,12 +98,29 @@ export default function BookingsPage() {
                 canceled: bookingsArray.filter(b => b.status === 'cancelled' || b.status === 'expired').length
             });
 
-            setStats({
-                pending,
-                confirmedToday,
-                requireAction: pending,
-                revenueToday
-            });
+            if (metrics) {
+                setStats({
+                    pending: metrics.pendingConfirmation || 0,
+                    confirmedToday: metrics.todaysConfirmed || 0,
+                    requireAction: metrics.requireAction || 0,
+                    revenueToday: metrics.revenueToday || 0
+                });
+            } else {
+                // Fallback client-side calculation if metrics API fails
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                const pending = bookingsArray.filter(b => b.status === 'pending_payment').length;
+                const confirmedTodayData = bookingsArray.filter(b => b.status === 'confirmed' && b.bookingDate === todayStr);
+                
+                setStats({
+                    pending,
+                    confirmedToday: confirmedTodayData.length,
+                    requireAction: pending,
+                    revenueToday: confirmedTodayData.reduce((sum, b) => sum + b.totalPrice, 0) +
+                        bookingsArray.filter(b => b.status === 'completed' && b.bookingDate === todayStr)
+                            .reduce((sum, b) => sum + b.totalPrice, 0)
+                });
+            }
         } catch (error) {
             console.error("Error fetching bookings:", error);
         } finally {

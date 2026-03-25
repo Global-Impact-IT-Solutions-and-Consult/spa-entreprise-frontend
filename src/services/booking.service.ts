@@ -27,7 +27,31 @@ export interface BookingStats {
     totalRevenue: number;
 }
 
+export interface BookingsMetricsResponseDto {
+    pendingConfirmation: number;
+    todaysConfirmed: number;
+    requireAction: number;
+    revenueToday: number;
+}
+
+export interface RescheduleBookingDto {
+    bookingDate: string;
+    startTime: string;
+}
+
 export const bookingService = {
+    // Reschedule a booking
+    rescheduleBooking: async (bookingId: string, data: RescheduleBookingDto) => {
+        const response = await apiClient.post<Booking>(`/bookings/${bookingId}/reschedule`, data);
+        return response.data;
+    },
+
+    // Get bookings metrics for a business dashboard
+    getBookingsMetrics: async (businessId: string): Promise<BookingsMetricsResponseDto> => {
+        const response = await apiClient.get<BookingsMetricsResponseDto>(`/bookings/business/${businessId}/metrics`);
+        return response.data;
+    },
+
     // Get bookings for a spa
     getSpaBookings: async (spaId: string, params?: { status?: string; date?: string; page?: number; limit?: number }) => {
         const response = await apiClient.get<Booking[] | { data: Booking[] }>(`/spas/${spaId}/bookings`, { params });
@@ -76,15 +100,20 @@ export const bookingService = {
     },
 
     // Get bookings for the current user
-    getUserBookings: async (params?: { status?: string; page?: number; limit?: number }) => {
-        const response = await apiClient.get<any>('/bookings/my-bookings', { params });
+    getUserBookings: async (params?: { status?: string; page?: number; limit?: number }): Promise<{ data: Booking[]; meta: { total: number } }> => {
+        const response = await apiClient.get<Booking[] | { data: Booking[]; meta?: { total: number } }>('/bookings/my-bookings', { params });
+
+        const { data } = response;
 
         // Handle cases where response might be wrapped in { data: [...], meta: {...} } or direct array
-        if (Array.isArray(response.data)) {
-            return { data: response.data as Booking[], meta: { total: response.data.length } };
-        } else if (response.data && Array.isArray(response.data.data)) {
-            return { data: response.data.data as Booking[], meta: response.data.meta || { total: response.data.data.length } };
+        if (Array.isArray(data)) {
+            return { data: data, meta: { total: data.length } };
+        } else if (data && Array.isArray(data.data)) {
+            return { 
+                data: data.data, 
+                meta: data.meta || { total: data.data.length } 
+            };
         }
-        return { data: [] as Booking[], meta: { total: 0 } };
+        return { data: [], meta: { total: 0 } };
     }
 };

@@ -5,5 +5,5 @@
  */
 export const getFallbackImage = (text: string): string => {
     const encodedText = encodeURIComponent(text);
-    return `https://placehold.co/600x400.png?font=raleway&text=${encodedText}`;
+    return `https://placehold.co/600x400@3x.png?font=raleway&text=${encodedText}`;
 };

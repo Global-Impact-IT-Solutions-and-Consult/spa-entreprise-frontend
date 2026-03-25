@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { SavedBusinessCard, SavedBusinessSkeleton } from "@/components/modules/customer/saved-business-card";
@@ -9,6 +9,7 @@ import { favoritesService } from "@/services/favorites.service";
 import { useAuthStore } from "@/store/auth.store";
 import { toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
+import { useFavoritesStore } from "@/store/favorites.store";
 import { Bookmark, Heart, Grid3X3, Store } from "lucide-react";
 
 export default function SavedPage() {
@@ -17,6 +18,18 @@ export default function SavedPage() {
     const [savedBusinesses, setSavedBusinesses] = useState<any[]>([]);
     const [savedServices, setSavedServices] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    const { serviceIds, businessIds, setServiceIds, setBusinessIds, removeBusiness, removeService } = useFavoritesStore();
+
+    // Use useMemo to filter the fetched data by what's actually in the store
+    // This allows the UI to react instantly when a favorite is removed via a card's heart/bookmark icon
+    const filteredSavedBusinesses = useMemo(() => {
+        return savedBusinesses.filter(b => businessIds.includes(b.id));
+    }, [savedBusinesses, businessIds]);
+
+    const filteredSavedServices = useMemo(() => {
+        return savedServices.filter(s => serviceIds.includes(s.id));
+    }, [savedServices, serviceIds]);
 
     const fetchFavorites = async () => {
         if (!isAuthenticated) return;
@@ -57,6 +70,12 @@ export default function SavedPage() {
                     deliveryType: s.deliveryType || "both"
                 };
             }));
+
+            // Sync the store with the initially fetched IDs
+            const bizIds = bizList.map((f: any) => f.businessId).filter(Boolean);
+            const servIds = serviceList.map((f: any) => f.serviceId).filter(Boolean);
+            setBusinessIds(bizIds);
+            setServiceIds(servIds);
         } catch (error) {
             console.error("Failed to fetch favorites", error);
             toaster.create({ title: "Error", description: "Failed to load saved items.", type: "error" });
@@ -72,7 +91,7 @@ export default function SavedPage() {
     const handleRemoveBusiness = async (id: string) => {
         try {
             await favoritesService.removeBusinessFavorite(id);
-            setSavedBusinesses(prev => prev.filter(b => b.id !== id));
+            removeBusiness(id);
             toaster.create({ title: "Removed from saved", type: "success" });
         } catch (error) {
             toaster.create({ title: "Error", description: "Failed to remove item.", type: "error" });
@@ -125,7 +144,7 @@ export default function SavedPage() {
                             activeTab === "businesses" ? <SavedBusinessSkeleton key={i} /> : <ServiceSkeleton key={i} />
                         ))}
                     </div>
-                ) : (activeTab === "businesses" ? savedBusinesses : savedServices).length === 0 ? (
+                ) : (activeTab === "businesses" ? filteredSavedBusinesses : filteredSavedServices).length === 0 ? (
                     <div className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-3xl border border-dashed border-gray-200 shadow-sm">
                         <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-6">
                             {activeTab === "businesses" ? (
@@ -145,7 +164,7 @@ export default function SavedPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {activeTab === "businesses" ? (
-                            savedBusinesses.map((biz) => (
+                            filteredSavedBusinesses.map((biz) => (
                                 <SavedBusinessCard
                                     key={biz.id}
                                     business={biz}
@@ -153,7 +172,7 @@ export default function SavedPage() {
                                 />
                             ))
                         ) : (
-                            savedServices.map((service) => (
+                            filteredSavedServices.map((service) => (
                                 <ServiceCard
                                     key={service.id}
                                     service={service}

@@ -13,8 +13,13 @@ import { BusinessAboutTab } from "@/components/modules/discovery/business-about-
 import { BusinessReviewsTab } from "@/components/modules/discovery/business-reviews-tab";
 import { BusinessGalleryTab } from "@/components/modules/discovery/business-gallery-tab";
 import { businessService, Business, Service, Staff, BusinessImage, BusinessReview, isBusinessOpen } from "@/services/business.service";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Share2, Copy, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toaster } from "@/components/ui/toaster";
+import { getFallbackImage } from "@/lib/image.utils";
 
 export default function BusinessDetailsPage() {
     const params = useParams();
@@ -32,8 +37,15 @@ export default function BusinessDetailsPage() {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
+    const [businessUrl, setBusinessUrl] = useState("");
 
     const tabs = ["Services", "About", "Reviews", "Gallery", "Staff"];
+
+    useEffect(() => {
+        setBusinessUrl(window.location.href);
+    }, []);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -132,13 +144,18 @@ export default function BusinessDetailsPage() {
         category: business?.businessType?.name || "Wellness",
         distance: "", // No placeholder — only show if API provides it
         startingPrice: services.length > 0 ? Math.min(...services.map(s => s.price)).toLocaleString() : "---",
-        bannerImage: business.coverImage || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1600&q=80",
-        profileImage: business.profileImage || "https://images.unsplash.com/photo-1512690196246-86e580db7940?w=800&q=80",
-        address: business.address || business.addressDetails?.address || "Lagos, Nigeria",
+        bannerImage: business.coverImage || getFallbackImage(business.businessName),
+        profileImage: business.profileImage || getFallbackImage(business.businessName),
+        address: business.addressRelation ? 
+            `${business.addressRelation.address}, ${business.addressRelation.city?.name}, ${business.addressRelation.state?.name}` :
+            (business.address || business.addressDetails?.address),
         phone: business.phone || "---",
         email: business.email || "---",
         status: isOpen ? "Open now" : "Closed",
         description: business.description || "No description available.",
+        facebookUrl: business.facebookUrl,
+        instagramUrl: business.instagramUrl,
+        twitterUrl: business.twitterUrl,
         gallery: gallery.map(img => img.url),
         staffs: staff.map(s => ({
             ...s,
@@ -175,11 +192,21 @@ export default function BusinessDetailsPage() {
         provider: r.staff?.name || "---"
     }));
 
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(businessUrl);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+        toaster.create({ title: "Link copied to clipboard", type: "success" });
+    };
+
     return (
         <div className="min-h-screen bg-gray-50/10">
             <CustomerHeader />
 
-            <BusinessHeader business={transformedBusiness} />
+            <BusinessHeader 
+                business={transformedBusiness} 
+                onShareClick={() => setIsShareModalOpen(true)}
+            />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-20">
                 <div className="flex flex-col lg:flex-row gap-12">
@@ -217,7 +244,7 @@ export default function BusinessDetailsPage() {
                                                     businessId: business.id,
                                                     rating: transformedBusiness.rating,
                                                     reviews: transformedBusiness.reviews,
-                                                    location: transformedBusiness.address,
+                                                    location: transformedBusiness.address || "",
                                                 }}
                                             />
                                         ))}
@@ -264,6 +291,57 @@ export default function BusinessDetailsPage() {
             </main>
 
             <CustomerFooter />
+
+            {/* Share Modal */}
+            <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
+                <DialogContent className="sm:max-w-lg bg-white rounded-lg p-0 overflow-hidden border-none cursor-default">
+                    <div className="p-8">
+                        <DialogHeader className="mb-6">
+                            <DialogTitle className="text-2xl font-bold text-gray-900">Share Business</DialogTitle>
+                            <DialogDescription className="text-gray-500 font-medium">
+                                Share this business profile with your friends and family.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-6">
+                            <div className="flex items-center space-x-2">
+                                <div className="grid flex-1 gap-2">
+                                    <Label htmlFor="link" className="sr-only">Link</Label>
+                                    <Input
+                                        id="link"
+                                        defaultValue={businessUrl}
+                                        readOnly
+                                        className="h-12 bg-gray-50 border-gray-100 rounded-xl focus-visible:ring-[#E89D24]"
+                                    />
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={handleCopyLink}
+                                    className="h-12 px-6 bg-[#E89D24] hover:bg-[#D48616] text-white font-bold rounded-xl flex items-center gap-2 min-w-[120px]"
+                                >
+                                    {isCopied ? (
+                                        <>
+                                            <Check className="h-4 w-4" />
+                                            Copied
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="h-4 w-4" />
+                                            Copy
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+
+                            <div className="flex justify-center gap-4 pt-4 border-t border-gray-50">
+                                <p className="text-xs text-gray-400 font-medium">
+                                    Publicly accessible at the link above
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

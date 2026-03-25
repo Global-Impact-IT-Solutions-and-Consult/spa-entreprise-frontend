@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { userService } from "@/services/user.service";
 import { toaster } from "@/components/ui/toaster";
+import { handleApiError } from "@/lib/api";
 
 interface ChangePasswordModalProps {
     open: boolean;
@@ -55,11 +56,7 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
             setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
             onClose();
         } catch (error: any) {
-            toaster.create({
-                title: "Failed to update password",
-                description: error?.response?.data?.message || "Please check your current password and try again.",
-                type: "error"
-            });
+            handleApiError(error, "Update Failed");
         } finally {
             setIsLoading(false);
         }

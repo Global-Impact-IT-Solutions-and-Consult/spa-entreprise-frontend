@@ -8,10 +8,14 @@ import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/auth.store";
-import { userService, UpdateProfileDto } from "@/services/user.service";
+import { userService, UpdateProfileDto, SecuritySettings } from "@/services/user.service";
 import { notificationService, NotificationPreferences } from "@/services/notification.service";
 import { toaster } from "@/components/ui/toaster";
 import { ChangePasswordModal } from "@/components/modules/settings/change-password-modal";
+import { DeleteAccountModal } from "@/components/modules/settings/delete-account-modal";
+import { MFAModal } from "@/components/modules/settings/mfa-modal";
+import { format } from "date-fns";
+import { handleApiError } from "@/lib/api";
 
 export default function SettingsPage() {
     const { user, updateUser } = useAuthStore();
@@ -19,6 +23,10 @@ export default function SettingsPage() {
     const [isUploading, setIsUploading] = useState(false);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isMfaModalOpen, setIsMfaModalOpen] = useState(false);
+    const [mfaMode, setMfaMode] = useState<"enable" | "disable">("enable");
+    const [securitySettings, setSecuritySettings] = useState<SecuritySettings | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState<UpdateProfileDto>({
@@ -45,7 +53,17 @@ export default function SettingsPage() {
 
     useEffect(() => {
         fetchPreferences();
+        fetchSecuritySettings();
     }, []);
+
+    const fetchSecuritySettings = async () => {
+        try {
+            const data = await userService.getSecuritySettings();
+            setSecuritySettings(data);
+        } catch (error) {
+            console.error("Failed to load security settings", error);
+        }
+    };
 
     const fetchPreferences = async () => {
         try {
@@ -69,11 +87,7 @@ export default function SettingsPage() {
                 type: "success",
             });
         } catch (error) {
-            toaster.create({
-                title: "Error",
-                description: "Failed to update notification preferences",
-                type: "error",
-            });
+            handleApiError(error, "Update Failed");
         } finally {
             setUpdating(null);
         }
@@ -95,11 +109,7 @@ export default function SettingsPage() {
             updateUser(updatedUser);
             toaster.create({ title: "Profile updated successfully", type: "success" });
         } catch (error) {
-            toaster.create({
-                title: "Failed to update profile",
-                description: "Something went wrong. Please try again.",
-                type: "error",
-            });
+            handleApiError(error, "Update Failed");
         } finally {
             setIsLoading(false);
         }
@@ -108,6 +118,28 @@ export default function SettingsPage() {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Validation
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+        if (file.size > maxSize) {
+            toaster.create({
+                title: "File too large",
+                description: "Profile picture must be less than 5MB",
+                type: "error"
+            });
+            return;
+        }
+
+        if (!allowedTypes.includes(file.type)) {
+            toaster.create({
+                title: "Invalid file type",
+                description: "Please upload a JPG, PNG, or WEBP image",
+                type: "error"
+            });
+            return;
+        }
 
         // Preview
         const reader = new FileReader();
@@ -123,11 +155,7 @@ export default function SettingsPage() {
             updateUser({ ...user!, profilePicture: res.profilePicture });
             toaster.create({ title: "Profile picture updated", type: "success" });
         } catch (error) {
-            toaster.create({
-                title: "Upload failed",
-                description: "Could not upload profile picture.",
-                type: "error",
-            });
+            handleApiError(error, "Upload Failed");
         } finally {
             setIsUploading(false);
         }
@@ -281,7 +309,11 @@ export default function SettingsPage() {
                                         </div>
                                         <div>
                                             <p className="font-bold text-gray-900">Password</p>
-                                            <p className="text-sm text-gray-400">Last changed 3 months ago</p>
+                                            <p className="text-sm text-gray-400">
+                                                {securitySettings?.lastLoginAt 
+                                                    ? `Last login: ${format(new Date(securitySettings.lastLoginAt), "MMM d, yyyy")}`
+                                                    : "Password secured"}
+                                            </p>
                                         </div>
                                     </div>
                                     <Button
@@ -301,10 +333,18 @@ export default function SettingsPage() {
                                         </div>
                                         <div>
                                             <p className="font-bold text-gray-900">Two-Factor Authentication</p>
-                                            <p className="text-sm text-gray-400">Add extra security to your account</p>
+                                            <p className="text-sm text-gray-400">
+                                                {securitySettings?.mfaEnabled ? "MFA is currently enabled" : "Add extra security to your account"}
+                                            </p>
                                         </div>
                                     </div>
-                                    <Switch />
+                                    <Switch 
+                                        checked={securitySettings?.mfaEnabled || false} 
+                                        onCheckedChange={(checked) => {
+                                            setMfaMode(checked ? "enable" : "disable");
+                                            setIsMfaModalOpen(true);
+                                        }}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -420,7 +460,10 @@ export default function SettingsPage() {
                                         <p className="text-sm text-red-400">Permanently remove your account and all data</p>
                                     </div>
                                 </div>
-                                <Button className="bg-[#E74C3C] hover:bg-[#C0392B] text-white px-8 h-10 rounded-lg font-bold">
+                                <Button 
+                                    onClick={() => setIsDeleteModalOpen(true)}
+                                    className="bg-[#E74C3C] hover:bg-[#C0392B] text-white px-8 h-10 rounded-lg font-bold"
+                                >
                                     Delete
                                 </Button>
                             </div>
@@ -434,6 +477,18 @@ export default function SettingsPage() {
             <ChangePasswordModal
                 open={isPasswordModalOpen}
                 onClose={() => setIsPasswordModalOpen(false)}
+            />
+
+            <DeleteAccountModal
+                open={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+            />
+
+            <MFAModal
+                open={isMfaModalOpen}
+                mode={mfaMode}
+                onClose={() => setIsMfaModalOpen(false)}
+                onSuccess={fetchSecuritySettings}
             />
         </div>
     );

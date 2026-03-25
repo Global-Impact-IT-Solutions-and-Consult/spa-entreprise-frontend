@@ -271,7 +271,12 @@ function BookingContent() {
                             <div className="text-right flex flex-col items-end">
                                 <p className="text-xl font-bold text-gray-900">₦{service.price.toLocaleString()}</p>
                                 <p className="text-xs text-gray-400 font-medium mt-1">{service.duration} minutes</p>
-                                <button className="text-[#E89D24] text-xs font-bold hover:underline mt-2">Change service</button>
+                                <Link 
+                                    href={`/businesses/${businessId}`}
+                                    className="text-[#E89D24] text-xs font-bold hover:underline mt-2 inline-block"
+                                >
+                                    Change service
+                                </Link>
                             </div>
                         </div>
 

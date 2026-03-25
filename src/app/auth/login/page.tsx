@@ -15,6 +15,7 @@ import { useOnboardingStore } from '@/store/onboarding.store';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { determineOnboardingStep } from '@/lib/onboarding-utils';
+import { handleApiError } from '@/lib/api';
 
 function LoginContent() {
     const router = useRouter();
@@ -114,9 +115,7 @@ function LoginContent() {
             }
 
         } catch (error) {
-            const err = error as { response?: { data?: { message?: string } } };
-            const message = err.response?.data?.message || "Invalid credentials. Please try again.";
-            toaster.create({ title: "Login failed", description: message, type: "error" });
+            handleApiError(error, "Login Failed");
         } finally {
             setIsLoading(false);
         }
