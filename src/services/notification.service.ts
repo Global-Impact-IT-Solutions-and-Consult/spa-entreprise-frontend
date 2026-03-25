@@ -28,9 +28,9 @@ export interface UserNotification {
     id: string;
     type: string;
     title: string;
-    body: any;
+    body: string;
     read: boolean;
-    metadata: any;
+    metadata: Record<string, unknown>;
     createdAt: string;
 }
 

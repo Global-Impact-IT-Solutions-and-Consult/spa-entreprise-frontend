@@ -244,7 +244,7 @@ export default function BusinessDetailsPage() {
                                                     businessId: business.id,
                                                     rating: transformedBusiness.rating,
                                                     reviews: transformedBusiness.reviews,
-                                                    location: transformedBusiness.address,
+                                                    location: transformedBusiness.address || "",
                                                 }}
                                             />
                                         ))}

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { bookingService } from "@/services/booking.service";
 import { reviewService } from "@/services/review.service";
+import { paymentService } from "@/services/payment.service";
 import { toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -72,12 +73,38 @@ export default function ReviewPage() {
 
         setIsSubmitting(true);
         try {
+            const parsedTip = tipAmount ? parseFloat(tipAmount) : undefined;
+            
             await reviewService.submitReview({
                 bookingId,
                 rating,
                 reviewText: comment,
-                tipAmount: tipAmount ? parseFloat(tipAmount) : undefined
+                tipAmount: parsedTip
             });
+
+            if (parsedTip && parsedTip > 0) {
+                // Initialize tip payment
+                try {
+                    const paymentResponse = await paymentService.initializeTipPayment({
+                        bookingId,
+                        amount: parsedTip
+                    });
+                    
+                    if (paymentResponse?.paymentLink) {
+                        toaster.create({ title: "Success", description: "Review saved. Redirecting to secure payment...", type: "success" });
+                        window.location.href = paymentResponse.paymentLink;
+                        return; // Stop execution, let the redirect happen
+                    } else {
+                        throw new Error("No payment link returned");
+                    }
+                } catch (paymentError) {
+                    console.error("Failed to initialize tip payment", paymentError);
+                    toaster.create({ title: "Warning", description: "Review saved, but we couldn't process the tip payment currently. Returning to history...", type: "warning" });
+                    router.push("/history");
+                    return;
+                }
+            }
+            
             toaster.create({ title: "Success", description: "Thank you! Your review has been submitted.", type: "success" });
             router.push("/history");
         } catch (error) {

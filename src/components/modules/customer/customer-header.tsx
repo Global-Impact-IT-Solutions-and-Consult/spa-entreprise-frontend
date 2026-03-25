@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2, Bookmark, History } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
+import { notificationService } from "@/services/notification.service";
 import { toaster } from "@/components/ui/toaster";
 
 export function CustomerHeader() {
@@ -17,6 +18,26 @@ export function CustomerHeader() {
     const router = useRouter();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Fetch unread notifications count
+    useEffect(() => {
+        if (isAuthenticated) {
+            const fetchUnreadCount = async () => {
+                try {
+                    const data = await notificationService.getNotifications({ limit: 1 });
+                    setUnreadCount(data.unreadCount);
+                } catch (error) {
+                    console.error("Failed to fetch unread count", error);
+                }
+            };
+            fetchUnreadCount();
+            
+            // Optional: poll every 5 minutes
+            const interval = setInterval(fetchUnreadCount, 5 * 60 * 1000);
+            return () => clearInterval(interval);
+        }
+    }, [isAuthenticated]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -112,9 +133,14 @@ export function CustomerHeader() {
                                 <div className="relative" ref={dropdownRef}>
                                     <button
                                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                                        className="flex items-center space-x-2 hover:opacity-80 transition"
+                                        className="flex items-center space-x-2 hover:opacity-80 transition relative"
                                     >
-                                        <User className="w-5 h-5 text-gray-600" />
+                                        <div className="relative">
+                                            <User className="w-5 h-5 text-gray-600" />
+                                            {unreadCount > 0 && (
+                                                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
+                                            )}
+                                        </div>
                                         <span className="text-sm font-medium text-gray-700">Profile</span>
                                     </button>
 
@@ -148,10 +174,17 @@ export function CustomerHeader() {
                                             <Link
                                                 href="/notifications"
                                                 onClick={() => setProfileDropdownOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                                className="flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                             >
-                                                <Bell className="w-4 h-4 text-gray-500" />
-                                                Notifications
+                                                <div className="flex items-center gap-3">
+                                                    <Bell className="w-4 h-4 text-gray-500" />
+                                                    Notifications
+                                                </div>
+                                                {unreadCount > 0 && (
+                                                    <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] text-center">
+                                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                                    </span>
+                                                )}
                                             </Link>
                                             <div className="border-t border-gray-100 my-1" />
                                             <button
@@ -179,12 +212,17 @@ export function CustomerHeader() {
                     {/* Mobile: Hamburger Menu Button */}
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="md:hidden p-2 rounded-md hover:bg-gray-100"
+                        className="md:hidden p-2 rounded-md hover:bg-gray-100 relative"
                     >
                         {mobileMenuOpen ? (
                             <X className="w-6 h-6 text-gray-700" />
                         ) : (
-                            <Menu className="w-6 h-6 text-gray-700" />
+                            <div className="relative">
+                                <Menu className="w-6 h-6 text-gray-700" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
+                                )}
+                            </div>
                         )}
                     </button>
                 </div>
@@ -259,14 +297,21 @@ export function CustomerHeader() {
                                 <Settings className="w-5 h-5" />
                                 <span>Settings</span>
                             </Link>
-                            <Link
+                             <Link
                                 href="/notifications"
-                                className="flex items-center space-x-3 rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
+                                className="flex items-center justify-between rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
                                 onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <Bell className="w-5 h-5" />
-                                <span>Notifications</span>
-                            </Link>
+                             >
+                                <div className="flex items-center space-x-3">
+                                    <Bell className="w-5 h-5" />
+                                    <span>Notifications</span>
+                                </div>
+                                {unreadCount > 0 && (
+                                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                    </span>
+                                )}
+                             </Link>
                         </>
                     )}
                 </nav>

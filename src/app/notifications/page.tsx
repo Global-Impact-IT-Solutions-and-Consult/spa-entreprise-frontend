@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, CalendarPlus, ClipboardCheck, Tag, Zap, Loader2, Calendar } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, CalendarPlus, ClipboardCheck, Tag, Zap, Loader2, Calendar, Star, CheckCircle2 } from "lucide-react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { Button } from "@/components/ui/button";
@@ -30,11 +31,62 @@ function formatTimeAgo(dateString: string) {
 }
 
 export default function NotificationsPage() {
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [notifications, setNotifications] = useState<UserNotification[]>([]);
     const [activeTab, setActiveTab] = useState("All Notifications");
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+
+    const renderNotificationActions = (notif: UserNotification) => {
+        if (notif.type === "service_completion" && notif.metadata?.bookingId) {
+            return (
+                <div className="flex items-center gap-3 mt-1">
+                    <button 
+                        onClick={() => router.push(`/reviews/${notif.metadata.bookingId}`)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E89D24] hover:bg-[#D97706] text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                    >
+                        <Star className="w-3.5 h-3.5 fill-current" />
+                        Leave a Review
+                    </button>
+                    <button 
+                        onClick={() => router.push(`/my-bookings`)}
+                        className="px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-bold rounded-lg transition-colors"
+                    >
+                        Cancel Booking
+                    </button>
+                </div>
+            );
+        }
+
+        if (notif.type === "BOOKING" || notif.type === "UPCOMING_BOOKING") {
+            return (
+                <button 
+                    onClick={() => router.push(`/my-bookings`)}
+                    className="text-xs font-bold text-[#E89D24] hover:text-[#D58C1B] transition-colors"
+                >
+                    View Details
+                </button>
+            );
+        }
+
+        if (notif.type === "OFFER" || notif.type === "PROMO") {
+            return (
+                <button 
+                    onClick={() => router.push(`/discover`)}
+                    className="text-xs font-bold text-[#E89D24] hover:text-[#D58C1B] transition-colors"
+                >
+                    Explore Offers
+                </button>
+            );
+        }
+
+        return (
+            <button className="text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors">
+                Dismiss
+            </button>
+        );
+    };
 
     useEffect(() => {
         fetchNotifications(true);
@@ -70,7 +122,7 @@ export default function NotificationsPage() {
 
     const filteredNotifications = notifications.filter(notif => {
         if (activeTab === "All Notifications") return true;
-        if (activeTab === "Bookings") return notif.type === "BOOKING" || notif.type === "UPCOMING_BOOKING";
+        if (activeTab === "Bookings") return notif.type === "BOOKING" || notif.type === "UPCOMING_BOOKING" || notif.type === "service_completion";
         if (activeTab === "Offers") return notif.type === "OFFER" || notif.type === "PROMO";
         if (activeTab === "System Updates") return notif.type === "SYSTEM" || notif.type === "ALERT";
         return true;
@@ -87,6 +139,8 @@ export default function NotificationsPage() {
             case "SYSTEM":
             case "ALERT":
                 return <ClipboardCheck className="w-5 h-5 text-blue-500" />;
+            case "service_completion":
+                return <CheckCircle2 className="w-5 h-5 text-green-500" />;
             default:
                 return <Bell className="w-5 h-5 text-gray-500" />;
         }
@@ -103,6 +157,8 @@ export default function NotificationsPage() {
             case "SYSTEM":
             case "ALERT":
                 return "bg-blue-50";
+            case "service_completion":
+                return "bg-green-200";
             default:
                 return "bg-gray-100";
         }
@@ -163,12 +219,12 @@ export default function NotificationsPage() {
                                         className={`p-6 rounded-2xl border transition-all ${!notif.read ? "bg-[#FFF9F0] border-amber-100" : "bg-white border-gray-100"
                                             }`}
                                     >
-                                        <div className="flex gap-4">
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${getBgForType(notif.type)}`}>
-                                                {getIconForType(notif.type)}
-                                            </div>
-                                            <div className="flex-1 space-y-1">
-                                                <div className="flex items-center justify-between">
+                                        <div className="space-y-2">
+                                            <div className="flex gap-2">
+                                                <div className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${getBgForType(notif.type)}`}>
+                                                    {getIconForType(notif.type)}
+                                                </div>
+                                                <div className="flex items-center justify-between w-full">
                                                     <h3 className="font-bold text-gray-900">{notif.title}</h3>
                                                     <div className="flex items-center gap-3">
                                                         {!notif.read && (
@@ -181,26 +237,14 @@ export default function NotificationsPage() {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <p className="text-sm text-gray-600 leading-relaxed max-w-3xl">
-                                                    {notif.body}
-                                                </p>
-                                                <div className="flex items-center gap-4 pt-3">
-                                                    <span className="text-xs text-gray-400 whitespace-nowrap sm:hidden">
-                                                        {formatTimeAgo(notif.createdAt)}
-                                                    </span>
-                                                    {(notif.type === "BOOKING" || notif.type === "UPCOMING_BOOKING") ? (
-                                                        <>
-                                                            <span className="text-gray-300 text-xs hidden sm:inline-block">•</span>
-                                                            <button className="text-xs font-bold text-[#E89D24] hover:text-[#D58C1B]">
-                                                                View Details
-                                                            </button>
-                                                        </>
-                                                    ) : (
-                                                        <button className="text-xs font-bold text-gray-500 hover:text-gray-700">
-                                                            Dismiss
-                                                        </button>
-                                                    )}
-                                                </div>
+                                            </div>
+                                            <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">
+                                                {notif.body} <span className="text-xs text-gray-400 whitespace-nowrap sm:hidden">
+                                                    {formatTimeAgo(notif.createdAt)}
+                                                </span>
+                                            </p>
+                                            <div className="flex flex-wrap items-center gap-4">
+                                                {renderNotificationActions(notif)}
                                             </div>
                                         </div>
                                     </div>
