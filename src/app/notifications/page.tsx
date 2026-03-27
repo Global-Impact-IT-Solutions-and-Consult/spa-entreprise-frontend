@@ -38,7 +38,6 @@ export default function NotificationsPage() {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [markingAll, setMarkingAll] = useState(false);
-
     const renderNotificationActions = (notif: UserNotification) => {
         if (notif.type === "service_completion" && notif.metadata?.bookingId) {
             return (
@@ -62,51 +61,11 @@ export default function NotificationsPage() {
             );
         }
 
-        if (notif.type === "appointment_reminder" || notif.type === "booking_confirmation" || notif.type === "BOOKING" || notif.type === "UPCOMING_BOOKING") {
-            return (
-                <div className="flex items-center gap-3 mt-1">
-                    <button 
-                        onClick={() => router.push(`/my-bookings`)}
-                        className="text-xs font-bold text-[#E89D24] hover:text-[#D58C1B] transition-colors"
-                    >
-                        View Details
-                    </button>
-                    {notif.metadata?.cancellationLink && (
-                        <button 
-                            onClick={() => router.push(`/my-bookings`)}
-                            className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                            Cancel if needed
-                        </button>
-                    )}
-                </div>
-            );
-        }
-
-        if (notif.type === "payment_confirmation" || notif.type === "PAYMENT") {
-            return (
-                <button 
-                    onClick={() => router.push(`/my-bookings`)}
-                    className="text-xs font-bold text-[#E89D24] hover:text-[#D58C1B] transition-colors"
-                >
-                    View Receipt
-                </button>
-            );
-        }
-
-        if (notif.type === "OFFER" || notif.type === "PROMO") {
-            return (
-                <button 
-                    onClick={() => router.push(`/discover`)}
-                    className="text-xs font-bold text-[#E89D24] hover:text-[#D58C1B] transition-colors"
-                >
-                    Explore Offers
-                </button>
-            );
-        }
-
         return (
-            <button className="text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors">
+            <button 
+                onClick={() => !notif.read && handleMarkAsRead(notif.id)}
+                className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+            >
                 Dismiss
             </button>
         );
