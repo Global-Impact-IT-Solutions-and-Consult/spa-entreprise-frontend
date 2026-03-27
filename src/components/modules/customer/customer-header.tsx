@@ -21,21 +21,30 @@ export function CustomerHeader() {
     const [unreadCount, setUnreadCount] = useState(0);
 
     // Fetch unread notifications count
+    const fetchUnreadCount = async () => {
+        try {
+            const data = await notificationService.getNotifications({ limit: 1 });
+            setUnreadCount(data.unreadCount);
+        } catch (error) {
+            console.error("Failed to fetch unread count", error);
+        }
+    };
+
     useEffect(() => {
         if (isAuthenticated) {
-            const fetchUnreadCount = async () => {
-                try {
-                    const data = await notificationService.getNotifications({ limit: 1 });
-                    setUnreadCount(data.unreadCount);
-                } catch (error) {
-                    console.error("Failed to fetch unread count", error);
-                }
-            };
             fetchUnreadCount();
             
             // Optional: poll every 5 minutes
             const interval = setInterval(fetchUnreadCount, 5 * 60 * 1000);
-            return () => clearInterval(interval);
+
+            // Listen for manual refresh events
+            const handleRefresh = () => fetchUnreadCount();
+            window.addEventListener('notifications:refresh', handleRefresh);
+
+            return () => {
+                clearInterval(interval);
+                window.removeEventListener('notifications:refresh', handleRefresh);
+            };
         }
     }, [isAuthenticated]);
 
