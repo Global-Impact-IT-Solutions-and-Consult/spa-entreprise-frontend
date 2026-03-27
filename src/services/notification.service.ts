@@ -27,10 +27,11 @@ export interface UpdateNotificationPreferencesDto {
 export interface UserNotification {
     id: string;
     type: string;
+    category: string;
     title: string;
     body: string;
     read: boolean;
-    metadata: Record<string, unknown>;
+    metadata: Record<string, any>;
     createdAt: string;
 }
 
@@ -60,5 +61,13 @@ export const notificationService = {
             params,
         });
         return response.data;
+    },
+
+    markAsRead: async (notificationId: string): Promise<void> => {
+        await api.patch(`/users/me/notifications/${notificationId}/read`);
+    },
+
+    markAllAsRead: async (): Promise<void> => {
+        await api.post('/users/me/notifications/read-all');
     },
 };

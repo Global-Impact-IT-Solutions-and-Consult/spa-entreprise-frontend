@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CalendarPlus, ClipboardCheck, Tag, Zap, Loader2, Calendar, Star, CheckCircle2 } from "lucide-react";
+import { Bell, CalendarPlus, ClipboardCheck, Tag, Zap, Loader2, Calendar, Star, CheckCircle2, CreditCard, Clock, XCircle } from "lucide-react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export default function NotificationsPage() {
     const [activeTab, setActiveTab] = useState("All Notifications");
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+    const [markingAll, setMarkingAll] = useState(false);
 
     const renderNotificationActions = (notif: UserNotification) => {
         if (notif.type === "service_completion" && notif.metadata?.bookingId) {
@@ -49,23 +50,46 @@ export default function NotificationsPage() {
                         <Star className="w-3.5 h-3.5 fill-current" />
                         Leave a Review
                     </button>
-                    <button 
-                        onClick={() => router.push(`/my-bookings`)}
-                        className="px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-bold rounded-lg transition-colors"
-                    >
-                        Cancel Booking
-                    </button>
+                    {notif.metadata?.cancellationLink && (
+                        <button 
+                            onClick={() => router.push(`/my-bookings`)}
+                            className="px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-bold rounded-lg transition-colors"
+                        >
+                            Cancel Booking
+                        </button>
+                    )}
                 </div>
             );
         }
 
-        if (notif.type === "BOOKING" || notif.type === "UPCOMING_BOOKING") {
+        if (notif.type === "appointment_reminder" || notif.type === "booking_confirmation" || notif.type === "BOOKING" || notif.type === "UPCOMING_BOOKING") {
+            return (
+                <div className="flex items-center gap-3 mt-1">
+                    <button 
+                        onClick={() => router.push(`/my-bookings`)}
+                        className="text-xs font-bold text-[#E89D24] hover:text-[#D58C1B] transition-colors"
+                    >
+                        View Details
+                    </button>
+                    {notif.metadata?.cancellationLink && (
+                        <button 
+                            onClick={() => router.push(`/my-bookings`)}
+                            className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            Cancel if needed
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
+        if (notif.type === "payment_confirmation" || notif.type === "PAYMENT") {
             return (
                 <button 
                     onClick={() => router.push(`/my-bookings`)}
                     className="text-xs font-bold text-[#E89D24] hover:text-[#D58C1B] transition-colors"
                 >
-                    View Details
+                    View Receipt
                 </button>
             );
         }
@@ -116,31 +140,78 @@ export default function NotificationsPage() {
         }
     };
 
+    const handleMarkAsRead = async (notificationId: string) => {
+        try {
+            // Update local state first for instant feedback
+            setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n));
+            
+            await notificationService.markAsRead(notificationId);
+            
+            // Dispatch event to refresh header count
+            window.dispatchEvent(new CustomEvent('notifications:refresh'));
+        } catch (error) {
+            console.error("Failed to mark notification as read", error);
+        }
+    };
+
+    const handleMarkAllAsRead = async () => {
+        if (markingAll) return;
+        setMarkingAll(true);
+        try {
+            await notificationService.markAllAsRead();
+            
+            // Update local state
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+            
+            // Dispatch event to refresh header count
+            window.dispatchEvent(new CustomEvent('notifications:refresh'));
+        } catch (error) {
+            console.error("Failed to mark all notifications as read", error);
+        } finally {
+            setMarkingAll(false);
+        }
+    };
+
     const handleLoadMore = () => {
         fetchNotifications(false);
     };
 
     const filteredNotifications = notifications.filter(notif => {
         if (activeTab === "All Notifications") return true;
-        if (activeTab === "Bookings") return notif.type === "BOOKING" || notif.type === "UPCOMING_BOOKING" || notif.type === "service_completion";
-        if (activeTab === "Offers") return notif.type === "OFFER" || notif.type === "PROMO";
-        if (activeTab === "System Updates") return notif.type === "SYSTEM" || notif.type === "ALERT";
+        if (activeTab === "Bookings") return notif.category === "bookings";
+        if (activeTab === "Offers") return notif.category === "offers";
+        if (activeTab === "System Updates") return notif.category === "system_updates";
         return true;
     });
 
     const getIconForType = (type: string) => {
         switch (type) {
+            case "service_completion":
+                return <CheckCircle2 className="w-5 h-5 text-green-500" />;
+            case "appointment_reminder":
+                return <Clock className="w-5 h-5 text-amber-500" />;
+            case "payment_confirmation":
+            case "PAYMENT":
+            case "PAYMENT_SUCCESSFUL":
+                return <CreditCard className="w-5 h-5 text-emerald-500" />;
+            case "booking_confirmation":
             case "BOOKING":
             case "UPCOMING_BOOKING":
-                return <CalendarPlus className="w-5 h-5 text-amber-500" />;
+                return <Calendar className="w-5 h-5 text-blue-500" />;
+            case "booking_cancelled":
+                return <XCircle className="w-5 h-5 text-red-500" />;
             case "OFFER":
             case "PROMO":
                 return <Tag className="w-5 h-5 text-green-500" />;
             case "SYSTEM":
             case "ALERT":
                 return <ClipboardCheck className="w-5 h-5 text-blue-500" />;
-            case "service_completion":
-                return <CheckCircle2 className="w-5 h-5 text-green-500" />;
+            case "REVIEW":
+            case "NEW_REVIEW":
+                return <Star className="w-5 h-5 text-yellow-500" />;
+            case "ONBOARDING":
+            case "ONBOARDING_UPDATE":
+                return <Zap className="w-5 h-5 text-purple-500" />;
             default:
                 return <Bell className="w-5 h-5 text-gray-500" />;
         }
@@ -148,17 +219,32 @@ export default function NotificationsPage() {
 
     const getBgForType = (type: string) => {
         switch (type) {
+            case "appointment_reminder":
+                return "bg-amber-50";
+            case "service_completion":
+                return "bg-green-100";
+            case "payment_confirmation":
+            case "PAYMENT":
+            case "PAYMENT_SUCCESSFUL":
+                return "bg-emerald-50";
+            case "booking_confirmation":
             case "BOOKING":
             case "UPCOMING_BOOKING":
-                return "bg-amber-50";
+                return "bg-blue-50";
+            case "booking_cancelled":
+                return "bg-red-50";
             case "OFFER":
             case "PROMO":
                 return "bg-green-50";
             case "SYSTEM":
             case "ALERT":
                 return "bg-blue-50";
-            case "service_completion":
-                return "bg-green-200";
+            case "REVIEW":
+            case "NEW_REVIEW":
+                return "bg-yellow-50";
+            case "ONBOARDING":
+            case "ONBOARDING_UPDATE":
+                return "bg-purple-50";
             default:
                 return "bg-gray-100";
         }
@@ -171,9 +257,22 @@ export default function NotificationsPage() {
             <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-5xl mx-auto space-y-6">
                     {/* Header */}
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 font-serif mb-2">Notifications</h1>
-                        <p className="text-gray-500">Manage and track your business updates and alerts.</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 font-serif mb-2">Notifications</h1>
+                            <p className="text-gray-500">Manage and track your business updates and alerts.</p>
+                        </div>
+                        {notifications.some(n => !n.read) && (
+                            <Button 
+                                variant="outline" 
+                                onClick={handleMarkAllAsRead}
+                                disabled={markingAll}
+                                className="sm:self-end h-10 px-4 rounded-xl text-xs font-bold border-gray-200 hover:border-amber-500 hover:text-amber-600 transition-all shadow-sm flex items-center gap-2"
+                            >
+                                {markingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                Mark all as read
+                            </Button>
+                        )}
                     </div>
 
                     {/* Tabs */}
@@ -216,7 +315,8 @@ export default function NotificationsPage() {
                                 filteredNotifications.map((notif) => (
                                     <div
                                         key={notif.id}
-                                        className={`p-6 rounded-2xl border transition-all ${!notif.read ? "bg-[#FFF9F0] border-amber-100" : "bg-white border-gray-100"
+                                        onClick={() => !notif.read && handleMarkAsRead(notif.id)}
+                                        className={`p-6 rounded-2xl border transition-all cursor-pointer hover:shadow-md ${!notif.read ? "bg-[#FFF9F0] border-amber-100" : "bg-white border-gray-100"
                                             }`}
                                     >
                                         <div className="space-y-2">
