@@ -58,6 +58,8 @@ export interface AuthResponse {
     refreshToken?: string;
     user?: User;
     message?: string;
+    mfaRequired?: boolean;
+    tempToken?: string;
     // New fields potentially from verify-email or other endpoints
     access_token?: string;
     refresh_token?: string;

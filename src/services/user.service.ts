@@ -47,6 +47,7 @@ export const userService = {
   changePassword: async (data: {
     currentPassword: string;
     newPassword: string;
+    mfaCode?: string;
   }) => {
     const response = await apiClient.put('/users/me/password', data);
     return response.data;

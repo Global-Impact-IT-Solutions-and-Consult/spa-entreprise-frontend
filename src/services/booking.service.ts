@@ -99,6 +99,12 @@ export const bookingService = {
         return response.data;
     },
 
+    // Get a single booking by ID
+    getBookingById: async (id: string): Promise<Booking> => {
+        const response = await apiClient.get<Booking>(`/bookings/${id}`);
+        return response.data;
+    },
+
     // Get bookings for the current user
     getUserBookings: async (params?: { status?: string; page?: number; limit?: number }): Promise<{ data: Booking[]; meta: { total: number } }> => {
         const response = await apiClient.get<Booking[] | { data: Booking[]; meta?: { total: number } }>('/bookings/my-bookings', { params });

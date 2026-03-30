@@ -49,9 +49,9 @@ export default function NotificationsPage() {
                         <Star className="w-3.5 h-3.5 fill-current" />
                         Leave a Review
                     </button>
-                    {notif.metadata?.cancellationLink && (
+                    {notif.metadata?.bookingId && (
                         <button 
-                            onClick={() => router.push(`/my-bookings`)}
+                            onClick={() => router.push(`/bookings/${notif.metadata.bookingId}/cancel`)}
                             className="px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-bold rounded-lg transition-colors"
                         >
                             Cancel Booking

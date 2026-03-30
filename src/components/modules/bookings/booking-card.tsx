@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Phone, MessageSquare, Send, Calendar, CheckCircle2, Clock, MapPin, User, Building2, CalendarPlus, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddToCalendarModal } from "./add-to-calendar-modal";
-import { CancelBookingModal } from "./cancel-booking-modal";
 import { toaster } from "@/components/ui/toaster";
 import { businessService } from "@/services/business.service";
 import { getFallbackImage } from "@/lib/image.utils";
@@ -22,8 +21,6 @@ interface BookingCardProps {
 export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
     const router = useRouter();
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-    const [isCancelOpen, setIsCancelOpen] = useState(false);
-    const [isCanceling, setIsCanceling] = useState(false);
     const [serviceImage, setServiceImage] = useState<string | null>(null);
 
     const isCanceled = booking.status === "cancelled";
@@ -46,35 +43,6 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
         fetchServiceData();
     }, [booking.businessId, booking.serviceId]);
 
-    const handleCancel = async () => {
-        setIsCanceling(true);
-        try {
-            await bookingService.cancelBooking(booking.id, { reason: "Canceled by user" });
-            setIsCanceling(false);
-            setIsCancelOpen(false);
-            toaster.create({
-                title: "Booking Canceled",
-                description: "Your booking has been successfully canceled.",
-                type: "success"
-            });
-            // We'll need a way to refresh the booking list, but for now we fallback to reloading the page
-            // to ensure state matches the backend.
-            if (onCancelSuccess) {
-                onCancelSuccess();
-            } else {
-                window.location.reload();
-            }
-        } catch (error: any) {
-            console.error("Failed to cancel booking:", error);
-            setIsCanceling(false);
-            setIsCancelOpen(false);
-            toaster.create({
-                title: "Cancellation Failed",
-                description: error?.response?.data?.message || "Something went wrong. Please try again.",
-                type: "error"
-            });
-        }
-    };
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
@@ -175,7 +143,7 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
                                 </Button>
                             )}
                             <Button
-                                onClick={() => setIsCancelOpen(true)}
+                                onClick={() => router.push(`/bookings/${booking.id}/cancel`)}
                                 className="bg-[#E74C3C] hover:bg-[#C0392B] text-white flex items-center gap-1 h-11"
                             >
                                 <XCircle className="w-3 h-3" />
@@ -200,12 +168,6 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
                 }}
             />
 
-            <CancelBookingModal
-                isOpen={isCancelOpen}
-                onClose={() => setIsCancelOpen(false)}
-                onConfirm={handleCancel}
-                isLoading={isCanceling}
-            />
         </div>
     );
 }
