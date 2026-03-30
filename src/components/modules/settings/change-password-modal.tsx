@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Lock, Eye, EyeOff, CheckCircle2, Loader2, RefreshCcw } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,10 @@ import { handleApiError } from "@/lib/api";
 interface ChangePasswordModalProps {
     open: boolean;
     onClose: () => void;
+    mfaEnabled?: boolean;
 }
 
-export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps) {
+export function ChangePasswordModal({ open, onClose, mfaEnabled = false }: ChangePasswordModalProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
@@ -24,9 +25,44 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
         confirmPassword: "",
     });
 
+    const [mfaCode, setMfaCode] = useState<string[]>(Array(6).fill(""));
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleMfaChange = (index: number, val: string) => {
+        if (!/^\d*$/.test(val)) return;
+        const newCode = [...mfaCode];
+        newCode[index] = val.slice(-1);
+        setMfaCode(newCode);
+
+        // Auto focus next
+        if (val && index < 5) {
+            inputRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleMfaKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace' && !mfaCode[index] && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        }
+    };
+
+    const handleMfaPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData('text/plain').replace(/\D/g, '').slice(0, 6);
+        if (pastedData) {
+            const newCode = [...mfaCode];
+            for (let i = 0; i < pastedData.length; i++) {
+                newCode[i] = pastedData[i];
+            }
+            setMfaCode(newCode);
+            const nextIndex = Math.min(pastedData.length, 5);
+            inputRefs.current[nextIndex]?.focus();
+        }
     };
 
     const handleUpdatePassword = async () => {
@@ -45,15 +81,23 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
             return;
         }
 
+        const fullMfaCode = mfaCode.join("");
+        if (mfaEnabled && fullMfaCode.length !== 6) {
+            toaster.create({ title: "Please enter a complete 6-digit MFA code", type: "error" });
+            return;
+        }
+
         setIsLoading(true);
         try {
             await userService.changePassword({
                 currentPassword: formData.currentPassword,
                 newPassword: formData.newPassword,
+                ...(mfaEnabled && { mfaCode: fullMfaCode }),
             });
             toaster.create({ title: "Password updated successfully", type: "success" });
             // Reset form
             setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+            setMfaCode(Array(6).fill(""));
             onClose();
         } catch (error: any) {
             handleApiError(error, "Update Failed");
@@ -129,7 +173,59 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
                         </div>
                     </div>
 
-                    <div className="pt-6 flex flex-col gap-2">
+                    {/* TWO-FACTOR AUTHENTICATION SECTION */}
+                    {mfaEnabled && (
+                        <div className="pt-2">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="h-px bg-gray-200 flex-1"></div>
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    Two-Factor Authentication
+                                </span>
+                                <div className="h-px bg-gray-200 flex-1"></div>
+                            </div>
+
+                            <div className="bg-[#F8FAFC] p-6 rounded-xl border border-gray-100 flex flex-col items-center">
+                                <h3 className="text-[15px] font-bold text-[#1F2937] mb-1">Verification Code</h3>
+                                <p className="text-sm text-gray-500 mb-4 text-center">
+                                    Enter the 6-digit code from your authenticator app.
+                                </p>
+                                
+                                <div className="flex items-center justify-center gap-2">
+                                    {[0, 1, 2].map((i) => (
+                                        <input
+                                            key={i}
+                                            ref={(el) => { inputRefs.current[i] = el; }}
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={1}
+                                            value={mfaCode[i]}
+                                            onChange={(e) => handleMfaChange(i, e.target.value)}
+                                            onKeyDown={(e) => handleMfaKeyDown(i, e)}
+                                            onPaste={handleMfaPaste}
+                                            className="w-12 h-14 text-center text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
+                                        />
+                                    ))}
+                                    <span className="text-gray-300 font-bold mx-1">-</span>
+                                    {[3, 4, 5].map((i) => (
+                                        <input
+                                            key={i}
+                                            ref={(el) => { inputRefs.current[i] = el; }}
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={1}
+                                            value={mfaCode[i]}
+                                            onChange={(e) => handleMfaChange(i, e.target.value)}
+                                            onKeyDown={(e) => handleMfaKeyDown(i, e)}
+                                            onPaste={handleMfaPaste}
+                                            className="w-12 h-14 text-center text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="pt-2 flex flex-col gap-2">
                         <Button
                             onClick={handleUpdatePassword}
                             disabled={isLoading}

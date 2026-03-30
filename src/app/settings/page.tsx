@@ -476,6 +476,7 @@ export default function SettingsPage() {
 
             <ChangePasswordModal
                 open={isPasswordModalOpen}
+                mfaEnabled={securitySettings?.mfaEnabled || false}
                 onClose={() => setIsPasswordModalOpen(false)}
             />
 
