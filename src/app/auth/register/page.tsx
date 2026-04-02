@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiMail, FiLock } from 'react-icons/fi';
+import { FiMail, FiLock, FiPhone } from 'react-icons/fi';
 
 import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
@@ -24,6 +24,7 @@ export default function RegisterPage() {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -50,7 +51,7 @@ export default function RegisterPage() {
     const strengthPercent = Object.values(strength).filter(Boolean).length * 20;
 
     const handleRegister = async () => {
-        if (!firstName || !lastName || !email || !password || !confirmPassword) {
+        if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
             toaster.create({ title: "Please fill all fields", type: "error" });
             return;
         }
@@ -70,6 +71,7 @@ export default function RegisterPage() {
             await authService.register({
                 email,
                 password,
+                phone,
                 first_name: firstName,
                 last_name: lastName,
                 role: accountType
@@ -158,6 +160,15 @@ export default function RegisterPage() {
                     leftIcon={FiMail}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                />
+
+                <CustomInput
+                    label="Phone Number"
+                    type="tel"
+                    placeholder="+2348012345678"
+                    leftIcon={FiPhone}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                 />
 
                 <CustomInput
