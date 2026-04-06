@@ -148,29 +148,6 @@ export default function ManageServicesPage() {
                     </div>
                 )}
 
-                {/* Pagination */}
-                {!isLoading && displayedServices.length > 0 && (
-                    <div className="flex items-center justify-center gap-2 py-8">
-                        <button className="p-2 rounded-lg border border-gray-100 text-gray-400 hover:bg-gray-50">
-                            <ChevronLeft className="h-5 w-5" />
-                        </button>
-                        {[1, 2, 3, 4].map((page) => (
-                            <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`h-10 w-10 rounded-lg border text-sm font-semibold transition-colors ${page === currentPage
-                                    ? "bg-amber-50 border-amber-200 text-amber-600"
-                                    : "border-gray-100 text-gray-400 hover:bg-gray-50"
-                                    }`}
-                            >
-                                {page}
-                            </button>
-                        ))}
-                        <button className="p-2 rounded-lg border border-gray-100 text-gray-400 hover:bg-gray-50">
-                            <ChevronRight className="h-5 w-5" />
-                        </button>
-                    </div>
-                )}
             </div>
 
             {businessId && (

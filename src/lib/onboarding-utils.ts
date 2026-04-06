@@ -124,6 +124,18 @@ export async function determineOnboardingStep(business: Business): Promise<strin
                 return '/onboarding/staff';
             }
 
+            // Check if payout info exists
+            const payoutRes = await businessService.getPayoutInfo(businessData.id);
+            console.log('Payout info check:', {
+                hasPayoutInfo: !!payoutRes?.payoutInfo,
+                payoutInfo: payoutRes?.payoutInfo
+            });
+
+            if (!payoutRes?.payoutInfo) {
+                console.log('No payout info found, redirecting to account-info step');
+                return '/onboarding/account-info';
+            }
+
             // All onboarding steps complete, go to dashboard
             console.log('✅ Onboarding complete! All steps done (manual check). Redirecting to dashboard.');
             return '/dashboard';

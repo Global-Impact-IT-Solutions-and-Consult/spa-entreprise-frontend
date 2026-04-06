@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { favoritesService } from "@/services/favorites.service";
 import { useAuthStore } from "@/store/auth.store";
+import { useFavoritesStore } from "@/store/favorites.store";
 import { useRouter } from "next/navigation";
 import { toaster } from "@/components/ui/toaster";
 
@@ -24,12 +25,13 @@ interface BusinessHeaderProps {
         coverImage?: string | null;
         startingPrice: string;
     };
+    onShareClick?: () => void;
 }
 
-export function BusinessHeader({ business }: BusinessHeaderProps) {
-    const [isSaved, setIsSaved] = useState(false);
+export function BusinessHeader({ business, onShareClick }: BusinessHeaderProps) {
     const [isLoading, setIsLoading] = useState(false);
     const { isAuthenticated } = useAuthStore();
+    const { businessIds, addBusiness, removeBusiness } = useFavoritesStore();
     const router = useRouter();
 
     const name = business.businessName ?? business.name ?? "Wellness Business";
@@ -37,14 +39,7 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
     const profileImage = business.profileImage || business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&q=80";
     const rating = typeof business.rating === 'string' ? parseFloat(business.rating) : (business.rating || 0);
 
-    // Fetch initial favorite status
-    useEffect(() => {
-        if (isAuthenticated && business.id) {
-            favoritesService.checkBusinessFavorite(business.id).then((status) => {
-                setIsSaved(status);
-            });
-        }
-    }, [isAuthenticated, business.id]);
+    const isSaved = business.id ? businessIds.includes(business.id) : false;
 
     const handleSaveToggle = async () => {
         if (!isAuthenticated) {
@@ -58,11 +53,11 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
         try {
             if (isSaved) {
                 await favoritesService.removeBusinessFavorite(business.id);
-                setIsSaved(false);
+                removeBusiness(business.id);
                 toaster.create({ title: "Removed from saved", type: "success" });
             } else {
                 await favoritesService.addFavorite({ businessId: business.id });
-                setIsSaved(true);
+                addBusiness(business.id);
                 toaster.create({ title: "Saved successfully", type: "success" });
             }
         } catch (error) {
@@ -157,7 +152,11 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
                             <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500' : ''} ${isLoading ? 'animate-pulse' : ''}`} />
                             {isSaved ? 'Saved' : 'Save'}
                         </Button>
-                        <Button variant="outline" className="h-12 px-6 rounded-md border-gray-100 text-gray-700 font-bold gap-2 hover:bg-gray-50 transition-all">
+                        <Button 
+                            variant="outline" 
+                            onClick={onShareClick}
+                            className="h-12 px-6 rounded-md border-gray-100 text-gray-700 font-bold gap-2 hover:bg-gray-50 transition-all"
+                        >
                             <Share2 className="w-4 h-4" />
                             Share
                         </Button>

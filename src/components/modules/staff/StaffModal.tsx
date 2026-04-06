@@ -104,8 +104,8 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
 
     const handleSaveStaff = async () => {
         if (!businessId) return;
-        if (!formData.name || !formData.role || !formData.experience || formData.serviceIds.length === 0) {
-            toaster.create({ title: "Validation Error", description: "Name, role, experience and at least one service are required", type: "error" });
+        if (!formData.name || !formData.role || !formData.experience || !formData.phone || formData.serviceIds.length === 0) {
+            toaster.create({ title: "Validation Error", description: "Name, role, experience, phone number and at least one service are required", type: "error" });
             return;
         }
 
@@ -266,6 +266,7 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
                                 value={formData.phone ?? ""}
                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                 className="h-12 border border-gray-200 rounded text-gray-900 px-4"
+                                required
                             />
                         </div>
 

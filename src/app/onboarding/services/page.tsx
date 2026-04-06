@@ -16,6 +16,8 @@ import { businessService, CreateServiceDto, Service } from '@/services/business.
 import { EditServiceModal } from '@/components/modules/services/EditServiceModal';
 import { cn } from '@/lib/utils';
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { GiShop } from 'react-icons/gi';
+import { Store } from 'lucide-react';
 
 interface ServiceCardProps {
     service: Service;
@@ -59,35 +61,40 @@ const ServiceCard = ({ service, categoryName, onDelete, onEdit }: ServiceCardPro
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-y-4 pt-4 border-t border-gray-50 mt-auto">
-                <div className="flex items-center gap-2 text-gray-400">
+            <div className="grid grid-cols-2 gap-y-4 gap-x-2 pt-4 border-t border-gray-50 mt-auto">
+                <div className="flex items-center gap-2 text-gray-400 border-r border-gray-300">
                     <FiClock className="h-4 w-4" />
                     <span className="text-xs font-bold text-gray-800">{service.duration}min</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-400 pl-4 border-l border-gray-50">
+                <div className="flex items-center gap-2 text-gray-400 border-l border-gray-50">
                     <span className="text-xs font-medium text-gray-400">Buffer</span>
                     <span className="text-xs font-bold text-gray-800">{service.bufferTime || 10}min</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-400">
-                    <FiHome className="h-4 w-4" />
-                    <span className="text-xs font-medium text-gray-400">{service.deliveryType === 'HOME_SERVICE' ? 'Home Service' : service.deliveryType === 'BOTH' ? 'Both' : 'On Site'}</span>
+                {(service.deliveryType === 'in_location_only' || service.deliveryType === 'both') && (
+                <div className={`text-gray-400 space-y-2 ${service.deliveryType === 'both' ? 'border-r border-gray-300' : ''}`}>
+                    <div className='flex items-center gap-1'>
+                        <Store className="h-4 w-4" />
+                        <span className="text-xs font-medium text-gray-400">On Site</span>
+                    </div>
+
+                    <div className="">
+                        <p className="text-lg font-bold text-gray-900 leading-none">₦{service.price.toLocaleString()}</p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 text-gray-400 pl-4 border-l border-gray-50">
-                    {service.deliveryType === 'BOTH' && (
+                )}
+                {(service.deliveryType === 'home_service' || service.deliveryType === 'both') && (
+                <div className="items-center space-y-2 text-gray-400">
                         <>
+                        <div className='flex items-center gap-1'>
                             <FiHome className="h-4 w-4" />
                             <span className="text-xs font-medium text-gray-400">Home Service</span>
+                        </div>
+                        <div className="border-l border-gray-50">
+                            <p className="text-lg font-bold text-gray-900 leading-none">₦{service?.homeServicePrice?.toLocaleString()}</p>
+                        </div>
                         </>
-                    )}
                 </div>
-                <div className="col-span-1">
-                    <p className="text-lg font-bold text-gray-900 leading-none">₦{service.price.toLocaleString()}</p>
-                </div>
-                <div className="col-span-1 pl-4 border-l border-gray-50">
-                    {(service.deliveryType === 'BOTH' || service.deliveryType === 'HOME_SERVICE') && service.homeServicePrice && (
-                        <p className="text-lg font-bold text-gray-900 leading-none">₦{service.homeServicePrice.toLocaleString()}</p>
-                    )}
-                </div>
+                )}
             </div>
         </div>
     );
@@ -113,7 +120,7 @@ export default function ServicesPage() {
     const [serviceDuration, setServiceDuration] = useState('');
     const [bufferTime, setBufferTime] = useState('10');
     const [selectedCategory, setSelectedCategory] = useState('');
-    const [deliveryType, setDeliveryType] = useState<'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH'>('IN_LOCATION_ONLY');
+    const [deliveryType, setDeliveryType] = useState<'in_location_only' | 'home_service' | 'both'>('in_location_only');
     const [serviceRadius, setServiceRadius] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [serviceImage, setServiceImage] = useState<File | null>(null);
@@ -185,19 +192,19 @@ export default function ServicesPage() {
         }
 
         // Validate onsite service price if delivery type includes home service
-        if ((deliveryType === 'IN_LOCATION_ONLY' || deliveryType === 'BOTH') && !servicePrice) {
+        if ((deliveryType === 'in_location_only' || deliveryType === 'both') && !servicePrice) {
             toaster.create({ title: "Validation Error", description: "Onsite service price is required", type: "error" });
             return;
         }
 
         // Validate home service price if delivery type includes home service
-        if ((deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && !homeServicePrice) {
+        if ((deliveryType === 'home_service' || deliveryType === 'both') && !homeServicePrice) {
             toaster.create({ title: "Validation Error", description: "Home service price is required", type: "error" });
             return;
         }
 
         // Validate service radius if delivery type includes home service
-        if ((deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && !serviceRadius) {
+        if ((deliveryType === 'home_service' || deliveryType === 'both') && !serviceRadius) {
             toaster.create({ title: "Validation Error", description: "Service radius is required for home service", type: "error" });
             return;
         }
@@ -235,7 +242,7 @@ export default function ServicesPage() {
             }
 
             // Add home service fields if delivery type includes home service
-            if (deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') {
+            if (deliveryType === 'home_service' || deliveryType === 'both') {
                 payload.homeServicePrice = parseFloat(homeServicePrice);
                 payload.maxServiceRadius = parseFloat(serviceRadius);
             }
@@ -290,7 +297,7 @@ export default function ServicesPage() {
             setServiceDuration('');
             setBufferTime('10');
             setSelectedCategory('');
-            setDeliveryType('IN_LOCATION_ONLY');
+            setDeliveryType('in_location_only');
             setServiceRadius('');
             setServiceRadius('');
             setServiceImage(null);
@@ -434,28 +441,6 @@ export default function ServicesPage() {
                                 <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
                             )}
                         </div>
-
-                        {/* Pagination */}
-                        <div className="mt-12 flex items-center justify-center gap-2 font-medium">
-                            <button className="w-10 h-10 border border-gray-100 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors">
-                                <FiChevronLeft className="h-5 w-5" />
-                            </button>
-                            {[1, 2, 3, 4].map((page) => (
-                                <button
-                                    key={page}
-                                    onClick={() => setCurrentPage(page)}
-                                    className={cn(
-                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
-                                        currentPage === page ? "bg-[#FEF5E7] text-[#E59622] font-bold border border-[#FBEACF]" : "border border-gray-100 text-gray-500 hover:bg-gray-50"
-                                    )}
-                                >
-                                    {page}
-                                </button>
-                            ))}
-                            <button className="w-10 h-10 border border-gray-100 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors">
-                                <FiChevronRight className="h-5 w-5" />
-                            </button>
-                        </div>
                     </>
                 )}
             </div>
@@ -490,7 +475,7 @@ export default function ServicesPage() {
                     setServiceDuration('');
                     setBufferTime('10');
                     setSelectedCategory('');
-                    setDeliveryType('IN_LOCATION_ONLY');
+                    setDeliveryType('in_location_only');
                     setServiceRadius('');
                     setServiceImage(null);
                     setImagePreview(null);
@@ -582,12 +567,12 @@ export default function ServicesPage() {
                                 <Select
                                     placeholder="On Site & Home Service"
                                     options={[
-                                        { label: 'On Site Only', value: 'IN_LOCATION_ONLY' },
-                                        { label: 'Home Service Only', value: 'HOME_SERVICE' },
-                                        { label: 'On Site & Home Service', value: 'BOTH' },
+                                        { label: 'On Site Only', value: 'in_location_only' },
+                                        { label: 'Home Service Only', value: 'home_service' },
+                                        { label: 'On Site & Home Service', value: 'both' },
                                     ]}
                                     value={deliveryType}
-                                    onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH')}
+                                    onChange={(e) => setDeliveryType(e.target.value as 'in_location_only' | 'home_service' | 'both')}
                                     className="h-[56px] rounded-lg border-gray-200"
                                 />
                             </div>
@@ -601,7 +586,7 @@ export default function ServicesPage() {
                                             type="number"
                                             placeholder="7,000"
                                             value={servicePrice}
-                                            disabled={deliveryType === 'HOME_SERVICE'}
+                                            disabled={deliveryType === 'home_service'}
                                             onChange={(e) => setServicePrice(e.target.value)}
                                             className="h-[56px] rounded-lg border-gray-200 pl-8 bg-white"
                                         />
@@ -616,14 +601,14 @@ export default function ServicesPage() {
                                             placeholder="15000"
                                             value={homeServicePrice}
                                             onChange={(e) => setHomeServicePrice(e.target.value)}
-                                            disabled={deliveryType === 'IN_LOCATION_ONLY'}
+                                            disabled={deliveryType === 'in_location_only'}
                                             className="h-[56px] rounded-lg border-gray-200 pl-8 bg-white disabled:opacity-50"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            {(deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && (
+                            {(deliveryType === 'home_service' || deliveryType === 'both') && (
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-400">Service Radius (km)</Label>
                                     <Input

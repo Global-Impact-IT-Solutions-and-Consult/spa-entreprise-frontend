@@ -22,6 +22,7 @@ export default function DashboardLayout({
   const business = user?.businesses?.[0];
   const status = business?.status?.toLowerCase();
   const isPending = status === 'pending_approval' || status === 'pending';
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
 
   const [activeTab, setActiveTab] = useState('All');
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
@@ -30,11 +31,12 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const refreshUserData = async () => {
+      if (!isAuthenticated || !business?.id) return;
       try {
         const refreshedUser = await authService.getCurrentUser();
         updateUser(refreshedUser);
       } catch (error) {
-        console.error('Failed to refresh user data', error);
+        console.error("Failed to refresh user data", error);
       }
     };
 
@@ -43,12 +45,13 @@ export default function DashboardLayout({
       if (!businessId) return;
       try {
         const images = await businessService.getImages(businessId);
-        const primary = images.find((img) => img.isPrimary) || images[0];
+        const primary = images.find(img => img.isPrimary) || images[0];
         if (primary) setAvatarUrl(primary.url);
       } catch {
         // Silently fail — fallback will show initials
       }
     };
+
 
     refreshUserData();
     fetchPrimaryImage();
@@ -226,9 +229,9 @@ export default function DashboardLayout({
                                 {notif.title}{' '}
                                 <span className="text-gray-400 font-medium">
                                   {notif.body &&
-                                  typeof notif.body === 'object' &&
-                                  'message' in notif.body &&
-                                  typeof notif.body.message === 'string'
+                                    typeof notif.body === 'object' &&
+                                    'message' in notif.body &&
+                                    typeof notif.body.message === 'string'
                                     ? notif.body.message
                                     : ''}
                                 </span>

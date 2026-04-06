@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { favoritesService } from "@/services/favorites.service";
 import { useAuthStore } from "@/store/auth.store";
+import { useFavoritesStore } from "@/store/favorites.store";
 import { useRouter } from "next/navigation";
 import { toaster } from "@/components/ui/toaster";
+import { getFallbackImage } from "@/lib/image.utils";
 
 interface BusinessDirectoryCardProps {
     business: {
@@ -27,6 +29,7 @@ interface BusinessDirectoryCardProps {
         totalReviews?: number;
         image?: string;
         primaryImageUrl?: string | null;
+        profileImage?: string | null;
         isOpen?: boolean;
         isVerified?: boolean;
         verified?: boolean;
@@ -36,15 +39,16 @@ interface BusinessDirectoryCardProps {
 }
 
 export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) {
-    const [isSaved, setIsSaved] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { isAuthenticated } = useAuthStore();
+    const { businessIds, addBusiness, removeBusiness } = useFavoritesStore();
     const router = useRouter();
+    console.log(business);
 
     const verified = business.verified ?? business.isVerified;
     const price = business.price ?? business.startingPrice;
     const name = business.businessName ?? business.name ?? "Wellness Business";
-    const image = business.primaryImageUrl || business.image || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80";
+    const image = business.profileImage || getFallbackImage(name);
     const city = business.addressDetails?.city?.name || (typeof business.city === 'string' ? business.city : business.city?.name) || business.location;
 
     // Robust rating resolution
@@ -57,7 +61,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
         ratingValue = business.rating;
     } else if (business.rating && typeof business.rating === 'object') {
         // Handle object format: { average: number, totalReviews: number }
-        const rObj = business.rating as any;
+        const rObj = business.rating as { average?: number; rating?: number; totalReviews?: number };
         ratingValue = rObj.average || rObj.rating || 0;
         if (rObj.totalReviews) reviewsCount = rObj.totalReviews;
     }
@@ -68,14 +72,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
     // For the demo, we use precision-cut as the ID if it matches our mock business
     const businessIdString = typeof business.id === 'string' && name.toLowerCase().includes("precision") ? "precision-cut" : business.id.toString();
 
-    // Fetch initial favorite status
-    useEffect(() => {
-        if (isAuthenticated && businessIdString) {
-            favoritesService.checkBusinessFavorite(businessIdString).then((status) => {
-                setIsSaved(status);
-            });
-        }
-    }, [isAuthenticated, businessIdString]);
+    const isSaved = businessIds.includes(businessIdString);
 
     const handleSaveToggle = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -92,11 +89,11 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
         try {
             if (isSaved) {
                 await favoritesService.removeBusinessFavorite(businessIdString);
-                setIsSaved(false);
+                removeBusiness(businessIdString);
                 toaster.create({ title: "Removed from saved", type: "success" });
             } else {
                 await favoritesService.addFavorite({ businessId: businessIdString });
-                setIsSaved(true);
+                addBusiness(businessIdString);
                 toaster.create({ title: "Saved successfully", type: "success" });
             }
         } catch (error) {
@@ -112,12 +109,12 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
             className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col"
         >
             {/* Image */}
-            <Link href={`/businesses/${businessIdString}`} className="relative h-48 bg-gray-200 block overflow-hidden group">
+            <Link href={`/businesses/${businessIdString}`} className="relative h-48 bg-gray-200 block overflow-hidden group rounded-t-2xl">
                 <Image
                     src={image}
                     alt={name}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-t-2xl"
                 />
                 {/* Badges */}
                 <div className="absolute top-3 left-3 right-3 flex items-center justify-between">

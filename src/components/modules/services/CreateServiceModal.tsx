@@ -27,7 +27,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
     const [serviceDuration, setServiceDuration] = useState('');
     const [bufferTime, setBufferTime] = useState('10');
     const [selectedCategory, setSelectedCategory] = useState('');
-    const [deliveryType, setDeliveryType] = useState<'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH'>('IN_LOCATION_ONLY');
+    const [deliveryType, setDeliveryType] = useState<'in_location_only' | 'home_service' | 'both'>('in_location_only');
     const [serviceRadius, setServiceRadius] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [serviceImage, setServiceImage] = useState<File | null>(null);
@@ -41,7 +41,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
         setServiceDuration('');
         setBufferTime('10');
         setSelectedCategory('');
-        setDeliveryType('IN_LOCATION_ONLY');
+        setDeliveryType('in_location_only');
         setServiceRadius('');
         setServiceImage(null);
         setImagePreview(null);
@@ -81,15 +81,15 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
             return;
         }
 
-        if ((deliveryType === 'IN_LOCATION_ONLY' || deliveryType === 'BOTH') && !servicePrice) {
+        if ((deliveryType === 'in_location_only' || deliveryType === 'both') && !servicePrice) {
             toaster.create({ title: "Validation Error", description: "On-site service price is required", type: "error" });
             return;
         }
-        if ((deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && !homeServicePrice) {
+        if ((deliveryType === 'home_service' || deliveryType === 'both') && !homeServicePrice) {
             toaster.create({ title: "Validation Error", description: "Home service price is required", type: "error" });
             return;
         }
-        if ((deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && !serviceRadius) {
+        if ((deliveryType === 'home_service' || deliveryType === 'both') && !serviceRadius) {
             toaster.create({ title: "Validation Error", description: "Service radius is required for home service", type: "error" });
             return;
         }
@@ -112,7 +112,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                 bufferTime: bufferTime ? parseInt(bufferTime) : 15,
             };
 
-            if (deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') {
+            if (deliveryType === 'home_service' || deliveryType === 'both') {
                 payload.homeServicePrice = parseFloat(homeServicePrice);
                 payload.maxServiceRadius = parseFloat(serviceRadius);
             }
@@ -240,11 +240,11 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                             <Select
                                 placeholder="On Site & Home Service"
                                 options={[
-                                    { label: 'On Site Only', value: 'IN_LOCATION_ONLY' },
-                                    { label: 'On Site & Home Service', value: 'BOTH' },
+                                    { label: 'On Site Only', value: 'in_location_only' },
+                                    { label: 'On Site & Home Service', value: 'both' },
                                 ]}
                                 value={deliveryType}
-                                onChange={(e) => setDeliveryType(e.target.value as 'IN_LOCATION_ONLY' | 'HOME_SERVICE' | 'BOTH')}
+                                onChange={(e) => setDeliveryType(e.target.value as 'in_location_only' | 'home_service' | 'both')}
                                 className="h-[56px] rounded-lg border-gray-200"
                             />
                         </div>
@@ -259,7 +259,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                                         type="number"
                                         placeholder="7,000"
                                         value={servicePrice}
-                                        disabled={deliveryType === 'HOME_SERVICE'}
+                                        disabled={deliveryType === 'home_service'}
                                         onChange={(e) => setServicePrice(e.target.value)}
                                         className="h-[56px] rounded-lg border-gray-200 pl-8 bg-white disabled:opacity-50"
                                     />
@@ -273,7 +273,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                                         type="number"
                                         placeholder="15,000"
                                         value={homeServicePrice}
-                                        disabled={deliveryType === 'IN_LOCATION_ONLY'}
+                                        disabled={deliveryType === 'in_location_only'}
                                         onChange={(e) => setHomeServicePrice(e.target.value)}
                                         className="h-[56px] rounded-lg border-gray-200 pl-8 bg-white disabled:opacity-50"
                                     />
@@ -282,7 +282,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                         </div>
 
                         {/* Service Radius — only shown for home service */}
-                        {(deliveryType === 'HOME_SERVICE' || deliveryType === 'BOTH') && (
+                        {(deliveryType === 'home_service' || deliveryType === 'both') && (
                             <div className="space-y-2">
                                 <Label className="text-sm font-medium text-gray-400">Service Radius (km)</Label>
                                 <Input
