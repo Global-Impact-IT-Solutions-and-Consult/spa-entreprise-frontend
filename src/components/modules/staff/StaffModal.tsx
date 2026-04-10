@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { businessService, Staff, Service, CreateStaffDto } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
+import PhoneNumberInput from "@/components/ui/PhoneNumberInput";
 
 const experienceLevels = [
     { label: "Select experience level", value: "" },
@@ -258,14 +259,11 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
                             />
                         </div>
 
-                        {/* Phone Number */}
                         <div className="space-y-1.5">
-                            <Label className="text-sm font-normal text-gray-500">Phone Number</Label>
-                            <Input
-                                placeholder="+234 800 0000 000"
+                            <PhoneNumberInput
+                                label="Phone Number"
                                 value={formData.phone ?? ""}
                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                className="h-12 border border-gray-200 rounded text-gray-900 px-4"
                                 required
                             />
                         </div>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/auth.store";
 import CustomInput from '@/components/ui/InputGroup';
+import PhoneNumberInput from '@/components/ui/PhoneNumberInput';
 import { userService, UpdateProfileDto } from '@/services/user.service';
 import { businessService } from '@/services/business.service';
 import { toaster } from '@/components/ui/toaster';
@@ -296,11 +297,11 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
                         className="h-[50px] rounded-xl bg-gray-50"
                         disabled
                     />
-                    <CustomInput
+                    <PhoneNumberInput
                         label="Phone Number"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+234 800 123 4567"
+                        required
                         className="h-[50px] rounded-xl"
                     />
                 </div>
