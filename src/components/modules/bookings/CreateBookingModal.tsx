@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import PhoneNumberInput from "@/components/ui/PhoneNumberInput";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { businessService, Service, Staff } from "@/services/business.service";
@@ -150,16 +151,13 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-gray-400">Phone Number</label>
-                                        <div className="relative">
-                                            <Input
-                                                placeholder="e.g. 08012345678"
-                                                value={customerPhone}
-                                                onChange={(e) => setCustomerPhone(e.target.value)}
-                                                className="h-12 pl-10 rounded-xl"
-                                            />
-                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                        </div>
+                                        <PhoneNumberInput
+                                            label="Phone Number"
+                                            value={customerPhone}
+                                            onChange={(e) => setCustomerPhone(e.target.value)}
+                                            required
+                                            className="h-12 rounded-xl"
+                                        />
                                     </div>
                                 </div>
                             </section>

@@ -16,6 +16,7 @@ import { DeleteAccountModal } from "@/components/modules/settings/delete-account
 import { MFAModal } from "@/components/modules/settings/mfa-modal";
 import { format } from "date-fns";
 import { handleApiError } from "@/lib/api";
+import PhoneNumberInput from "@/components/ui/PhoneNumberInput";
 
 export default function SettingsPage() {
     const { user, updateUser } = useAuthStore();
@@ -265,14 +266,12 @@ export default function SettingsPage() {
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-medium text-gray-400 ml-1">Phone Number</label>
-                                        <input
-                                            type="tel"
+                                        <PhoneNumberInput
+                                            label="Phone Number"
                                             name="phone"
                                             value={formData.phone}
                                             onChange={handleInputChange}
-                                            placeholder="+234 800 123 4567"
-                                            className="w-full h-12 px-4 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-gray-900 font-medium"
+                                            required
                                         />
                                     </div>
 

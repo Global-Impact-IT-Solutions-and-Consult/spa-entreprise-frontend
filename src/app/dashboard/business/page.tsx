@@ -33,6 +33,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import CustomInput from '@/components/ui/InputGroup';
+import PhoneNumberInput from '@/components/ui/PhoneNumberInput';
 import { businessService, BusinessImage } from "@/services/business.service";
 import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
@@ -711,14 +712,16 @@ export default function BusinessProfilePage() {
                                     </div>
                                 </div>
 
-                                <CustomInput
-                                    label="Contact Phone *"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    placeholder="+234 801 234 5678"
-                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
-                                />
+                                <div className="space-y-1.5">
+                                    <PhoneNumberInput
+                                        label="Contact Phone *"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        required
+                                        labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                    />
+                                </div>
 
                                 <CustomInput
                                     label="Contact Email *"

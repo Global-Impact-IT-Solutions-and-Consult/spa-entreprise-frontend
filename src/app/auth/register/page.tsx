@@ -7,6 +7,7 @@ import { FiMail, FiLock, FiPhone } from 'react-icons/fi';
 
 import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
+import PhoneNumberInput from '@/components/ui/PhoneNumberInput';
 import { toaster } from "@/components/ui/toaster";
 import { authService } from '@/services/auth.service';
 import { useOnboardingStore } from '@/store/onboarding.store';
@@ -162,13 +163,11 @@ export default function RegisterPage() {
                     onChange={(e) => setEmail(e.target.value)}
                 />
 
-                <CustomInput
+                <PhoneNumberInput
                     label="Phone Number"
-                    type="tel"
-                    placeholder="+2348012345678"
-                    leftIcon={FiPhone}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    required
                 />
 
                 <CustomInput
