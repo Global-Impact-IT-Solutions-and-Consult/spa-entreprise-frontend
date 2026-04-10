@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 interface PhoneNumberInputProps extends Omit<React.ComponentProps<typeof CustomInput>, "value" | "onChange"> {
     value?: string;
-    onChange?: (e: { target: { name?: string; value: string } }) => void;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement> | any) => void;
     onValidationChange?: (isValid: boolean) => void;
 }
 
