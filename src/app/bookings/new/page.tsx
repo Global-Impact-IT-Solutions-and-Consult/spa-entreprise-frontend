@@ -228,15 +228,12 @@ function BookingContent() {
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-8">
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-[#E89D24] rounded flex items-center justify-center">
-                                <span className="text-white font-black text-sm">WP</span>
-                            </div>
-                            <span className="text-lg font-bold tracking-tight">WellnessPro</span>
+                            <Image src="/Logo.svg" alt="iBookam Logo" width={150} height={50} />
                         </Link>
-                        <div className="hidden md:flex items-center gap-2 text-xs font-bold text-gray-400">
+                        {/* <div className="hidden md:flex items-center gap-2 text-xs font-bold text-gray-400">
                             Lagos
                             <ChevronDown className="w-3 h-3" />
-                        </div>
+                        </div> */}
                     </div>
                     <button
                         onClick={() => router.back()}
@@ -271,7 +268,7 @@ function BookingContent() {
                             <div className="text-right flex flex-col items-end">
                                 <p className="text-xl font-bold text-gray-900">₦{service.price.toLocaleString()}</p>
                                 <p className="text-xs text-gray-400 font-medium mt-1">{service.duration} minutes</p>
-                                <Link 
+                                <Link
                                     href={`/businesses/${businessId}`}
                                     className="text-[#E89D24] text-xs font-bold hover:underline mt-2 inline-block"
                                 >

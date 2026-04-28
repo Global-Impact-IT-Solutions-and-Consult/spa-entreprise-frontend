@@ -20,6 +20,7 @@ import {
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { toaster } from "@/components/ui/toaster";
+import Image from "next/image";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -66,13 +67,7 @@ export function Sidebar() {
         <div className="flex h-screen w-64 flex-col bg-[#1A1F2C] text-gray-400">
             {/* Logo Section */}
             <div className="p-6">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F59E0B] text-white font-bold text-xl">WP</div>
-                    <div>
-                        <h1 className="text-sm font-bold text-white">WellnessPro</h1>
-                        <p className="text-[10px] text-gray-400">Connecting Businesses</p>
-                    </div>
-                </div>
+                <Image src="/Logo_White.svg" alt="iBookam Logo" width={150} height={50} />
             </div>
 
             {/* Navigation Items */}

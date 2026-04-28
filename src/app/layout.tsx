@@ -14,7 +14,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "WellnessPro",
+  title: "iBookam",
   description: "Book your premium wellness services",
 };
 

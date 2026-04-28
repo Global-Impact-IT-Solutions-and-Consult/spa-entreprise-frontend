@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Facebook, Twitter, Instagram, Loader2 } from "lucide-react";
 import { miscService } from "@/services/misc.service";
 import { toaster } from "@/components/ui/toaster";
+import Image from "next/image";
 
 export function CustomerFooter() {
     const [email, setEmail] = useState("");
@@ -50,10 +51,7 @@ export function CustomerFooter() {
                     {/* Brand Column */}
                     <div>
                         <div className="flex items-center space-x-2 mb-4">
-                            <div className="bg-[#E89D24] px-2 py-1 rounded">
-                                <span className="text-white font-bold text-sm">WP</span>
-                            </div>
-                            <h3 className="font-bold text-lg">WellnessPro</h3>
+                            <Image src="/Logo_White.svg" alt="iBookam Logo" width={150} height={100} />
                         </div>
                         <p className="text-gray-300 text-sm mb-4">
                             Nigeria&apos;s leading wellness and beauty services marketplace.

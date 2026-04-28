@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getFallbackImage } from "@/lib/image.utils";
 import { businessService } from "@/services/business.service";
 import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
 
 export default function ReviewPage() {
     const params = useParams();
@@ -38,10 +39,10 @@ export default function ReviewPage() {
                 // 1. Get the booking
                 const res = await bookingService.getUserBookings({ limit: 100 });
                 const foundBooking = res.data.find((b: any) => b.id === bookingId);
-                
+
                 if (foundBooking) {
                     setBooking(foundBooking);
-                    
+
                     // 2. If it has a staffId, fetch the staff profile picture
                     if (foundBooking.staffId && foundBooking.businessId) {
                         try {
@@ -74,7 +75,7 @@ export default function ReviewPage() {
         setIsSubmitting(true);
         try {
             const parsedTip = tipAmount ? parseFloat(tipAmount) : undefined;
-            
+
             await reviewService.submitReview({
                 bookingId,
                 rating,
@@ -89,7 +90,7 @@ export default function ReviewPage() {
                         bookingId,
                         amount: parsedTip
                     });
-                    
+
                     if (paymentResponse?.paymentLink) {
                         toaster.create({ title: "Success", description: "Review saved. Redirecting to secure payment...", type: "success" });
                         window.location.href = paymentResponse.paymentLink;
@@ -104,7 +105,7 @@ export default function ReviewPage() {
                     return;
                 }
             }
-            
+
             toaster.create({ title: "Success", description: "Thank you! Your review has been submitted.", type: "success" });
             router.push("/history");
         } catch (error) {
@@ -120,17 +121,14 @@ export default function ReviewPage() {
             {/* Minimal Header */}
             <header className="bg-white px-4 md:px-8 py-4 flex items-center justify-between border-b border-gray-100 sticky top-0 z-[1000]">
                 <Link href="/" className="flex items-center gap-2">
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-[#E89D24] rounded-lg flex items-center justify-center text-white font-bold text-lg md:text-xl">
-                        WP
-                    </div>
-                    <span className="font-bold text-gray-900 text-sm md:text-base">WellnessPro</span>
+                    <Image src="/Logo.svg" alt="iBookam Logo" width={100} height={50} />
                 </Link>
-                <div className="hidden md:flex items-center gap-2 text-gray-400 font-bold text-sm ml-8 mr-auto">
+                {/* <div className="hidden md:flex items-center gap-2 text-gray-400 font-bold text-sm ml-8 mr-auto">
                     <span>Lagos</span>
                     <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                </div>
+                </div> */}
                 <button
                     onClick={() => router.back()}
                     className="text-gray-400 hover:text-gray-600 font-bold text-xs md:text-sm uppercase tracking-wider"
@@ -158,8 +156,8 @@ export default function ReviewPage() {
                             <div className="flex flex-col items-center">
                                 {/* Staff Avatar */}
                                 <Avatar className="w-28 h-28 border-4 border-white shadow-xl mb-6">
-                                    <AvatarImage 
-                                        src={staff?.profilePicture || getFallbackImage(staff?.name || booking?.staffName || "Staff")} 
+                                    <AvatarImage
+                                        src={staff?.profilePicture || getFallbackImage(staff?.name || booking?.staffName || "Staff")}
                                         className="object-cover"
                                     />
                                     <AvatarFallback className="bg-orange-50 text-[#E89D24] text-4xl font-black">
@@ -170,7 +168,7 @@ export default function ReviewPage() {
                                 <div className="space-y-1">
                                     <h2 className="text-base md:text-lg text-gray-900 flex items-center justify-center gap-2">
                                         {staff?.name || booking?.staffName || "Wellness Professional"}
-                                        <span className="font-bold">@{booking?.businessName || "WellnessPro"}</span>
+                                        <span className="font-bold">@{booking?.businessName || "iBookam"}</span>
                                     </h2>
                                     <p className="text-gray-400 text-xs md:text-sm font-medium tracking-widest leading-loose">
                                         Service - {booking?.serviceName || "Treatment"}
