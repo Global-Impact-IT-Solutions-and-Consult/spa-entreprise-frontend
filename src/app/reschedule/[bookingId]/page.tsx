@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { bookingService } from "@/services/booking.service";
 import { bookingPublicService, TimeSlot } from "@/services/booking-public.service";
+import Image from "next/image";
 
 export default function ReschedulePage() {
     const params = useParams();
@@ -65,7 +66,7 @@ export default function ReschedulePage() {
                 // Fetch user bookings and find this one
                 const res = await bookingService.getUserBookings({ limit: 100 });
                 const foundBooking = res.data.find((b: any) => b.id === bookingId);
-                
+
                 if (foundBooking) {
                     setBooking(foundBooking);
                     // Initialize selection with current
@@ -131,18 +132,18 @@ export default function ReschedulePage() {
                 startTime: selectedTime
             });
 
-            toaster.create({ 
-                title: "Booking Rescheduled", 
-                description: "Your appointment has been successfully rescheduled.", 
-                type: "success" 
+            toaster.create({
+                title: "Booking Rescheduled",
+                description: "Your appointment has been successfully rescheduled.",
+                type: "success"
             });
             router.push("/my-bookings");
         } catch (error: any) {
             console.error("Reschedule failed", error);
-            toaster.create({ 
-                title: "Action Failed", 
-                description: error?.response?.data?.message || "Could not reschedule at this time. Please try again.", 
-                type: "error" 
+            toaster.create({
+                title: "Action Failed",
+                description: error?.response?.data?.message || "Could not reschedule at this time. Please try again.",
+                type: "error"
             });
         } finally {
             setIsSubmitting(false);
@@ -174,15 +175,12 @@ export default function ReschedulePage() {
             {/* Header */}
             <header className="bg-white px-4 md:px-8 py-4 flex items-center justify-between border-b border-gray-100 sticky top-0 z-[1000]">
                 <Link href="/" className="flex items-center gap-2">
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-[#E89D24] rounded-lg flex items-center justify-center text-white font-bold text-lg md:text-xl">
-                        WP
-                    </div>
-                    <span className="font-bold text-gray-900 text-sm md:text-base">WellnessPro</span>
+                    <Image src="/Logo.svg" alt="iBookam Logo" width={100} height={50} />
                 </Link>
                 <div className="hidden md:flex items-center gap-2 text-gray-400 font-bold text-sm ml-8 mr-auto">
                     <span>Lagos</span>
                     <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 </div>
                 <button
@@ -210,7 +208,7 @@ export default function ReschedulePage() {
                             <Info className="w-5 h-5 text-[#E89D24]" />
                             <h2 className="text-xl font-bold text-gray-900 font-playfair">Current Booking Details</h2>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
                             <div>
                                 <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Service</p>
@@ -237,8 +235,8 @@ export default function ReschedulePage() {
                     <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 space-y-8">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Select New Date</label>
-                            <Input 
-                                type="date" 
+                            <Input
+                                type="date"
                                 value={selectedDate}
                                 onChange={(e) => setSelectedDate(e.target.value)}
                                 className="h-14 bg-white border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-[#E89D24] focus:border-[#E89D24]"
@@ -250,7 +248,7 @@ export default function ReschedulePage() {
                                 <span>Time</span>
                                 {isSlotsLoading && <Loader2 className="w-4 h-4 animate-spin text-[#E89D24]" />}
                             </label>
-                            
+
                             {!isSlotsLoading && availableSlots.length === 0 ? (
                                 <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
                                     No available slots found for this date.
@@ -265,8 +263,8 @@ export default function ReschedulePage() {
                                                 onClick={() => setSelectedTime(slot.startTime)}
                                                 className={cn(
                                                     "h-12 rounded-lg font-bold text-sm tracking-wide transition-all",
-                                                    isSelected 
-                                                        ? "bg-[#E89D24] text-white shadow-md shadow-orange-100" 
+                                                    isSelected
+                                                        ? "bg-[#E89D24] text-white shadow-md shadow-orange-100"
                                                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                                                 )}
                                             >
@@ -280,7 +278,7 @@ export default function ReschedulePage() {
 
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Reason for rescheduling (optional)</label>
-                            <select 
+                            <select
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 className="w-full h-14 px-4 bg-white border border-gray-200 rounded-lg text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#E89D24] focus:border-[#E89D24]"

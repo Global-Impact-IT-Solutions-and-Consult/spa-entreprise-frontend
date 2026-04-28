@@ -9,6 +9,7 @@ import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 import { toaster } from '@/components/ui/toaster';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 const steps = [
     { id: 1, path: '/onboarding/business-info', title: 'Business Information' },
@@ -53,14 +54,8 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
             {/* Left Sidebar */}
             <div className="hidden md:flex w-[320px] bg-[#111827] flex-col py-10 px-0 text-white shrink-0">
                 {/* Logo & Brand */}
-                <div className="px-8 mb-16 flex items-center gap-3">
-                    <div className="bg-[#E59622] text-white p-2 rounded-lg font-bold text-xl w-10 h-10 flex items-center justify-center shadow-lg">
-                        WP
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold leading-none">WellnessPro</h2>
-                        <p className="text-[10px] opacity-70">Connecting Businesses</p>
-                    </div>
+                <div className="px-8 mb-16 flex flex-col items-start gap-2">
+                    <Image src="/Logo_White.svg" alt="iBookam Logo" width={150} height={50} />
                 </div>
 
                 {/* Steps Navigation */}
@@ -115,9 +110,8 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 {/* Mobile Header (Simplified) */}
                 <div className="md:hidden bg-[#111827] text-white p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-[#E59622] text-white p-1.5 rounded-lg font-bold text-sm">WP</div>
-                        <span className="font-bold">WellnessPro</span>
+                    <div className="flex items-start gap-2">
+                        <Image src="/Logo.svg" alt="iBookam Logo" width={50} height={50} />
                     </div>
                     <span className="text-xs font-medium bg-[#E59622] px-2 py-1 rounded">Step {currentStepIndex} of {steps.length}</span>
                 </div>

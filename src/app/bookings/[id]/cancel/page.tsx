@@ -220,20 +220,18 @@ export default function CancellationPage() {
             <header className="bg-white px-4 md:px-8 py-4 flex items-center justify-between border-b border-gray-100 sticky top-0 z-[1000]">
                 <div className="flex items-center gap-4">
                     <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 md:w-10 md:h-10 bg-[#E89D24] rounded-lg flex items-center justify-center text-white font-bold text-lg md:text-xl">
-                            WP
-                        </div>
+                        <Image src="/Logo.svg" alt="iBookam Logo" width={100} height={50} />
                     </Link>
-                    <div className="hidden md:flex items-center gap-2 text-gray-400 font-bold text-xs ml-4">
+                    {/* <div className="hidden md:flex items-center gap-2 text-gray-400 font-bold text-xs ml-4">
                         <span>Lagos</span>
                         <ChevronLeft className="w-3 h-3 rotate-270" />
-                    </div>
+                    </div> */}
                 </div>
                 <button
                     onClick={() => router.back()}
                     className="text-gray-400 hover:text-gray-600 font-bold text-xs md:text-sm uppercase tracking-widest flex items-center gap-1"
                 >
-                    <X className="w-4 h-4" />
+                    {/* <X className="w-4 h-4" /> */}
                     <span>Cancel</span>
                 </button>
             </header>

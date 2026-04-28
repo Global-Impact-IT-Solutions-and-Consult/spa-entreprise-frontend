@@ -377,7 +377,7 @@ export default function BusinessInfoPage() {
                     {/* Business Name */}
                     <CustomInput
                         label="Business Name *"
-                        placeholder="wellnesspro"
+                        placeholder="iBookam"
                         name="businessName"
                         value={formData.businessName}
                         onChange={handleInputChange}

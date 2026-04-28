@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { notificationService } from "@/services/notification.service";
 import { toaster } from "@/components/ui/toaster";
+import Image from "next/image";
 
 export function CustomerHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -33,7 +34,7 @@ export function CustomerHeader() {
     useEffect(() => {
         if (isAuthenticated) {
             fetchUnreadCount();
-            
+
             // Optional: poll every 5 minutes
             const interval = setInterval(fetchUnreadCount, 5 * 60 * 1000);
 
@@ -99,23 +100,18 @@ export function CustomerHeader() {
                     <div className="flex gap-5">
                         {/* Logo and Brand */}
                         <Link href="/" className="flex items-center space-x-2">
-                            <div className="bg-[#E89D24] px-2 py-1 rounded">
-                                <span className="text-white font-bold text-sm">WP</span>
-                            </div>
-                            <div className="hidden sm:block">
-                                <h1 className="font-bold text-lg text-gray-900">WellnessPro</h1>
-                            </div>
+                            <Image src="/Logo.svg" alt="iBookam Logo" width={120} height={100} />
                         </Link>
 
                         {/* Desktop: City Selector */}
-                        <div className="hidden md:flex items-center space-x-2">
+                        {/* <div className="hidden md:flex items-center space-x-2">
                             <select className="px-2 py-2 text-sm">
                                 <option>Lagos</option>
                                 <option>Abuja</option>
                                 <option>Port Harcourt</option>
                                 <option>Ibadan</option>
                             </select>
-                        </div>
+                        </div> */}
                     </div>
 
                     <div className="flex gap-5">
@@ -253,10 +249,7 @@ export function CustomerHeader() {
                 {/* Drawer Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200">
                     <div className="flex items-center space-x-2">
-                        <div className="bg-[#E89D24] px-2 py-1 rounded">
-                            <span className="text-white font-bold text-sm">WP</span>
-                        </div>
-                        <h3 className="font-bold text-lg">WellnessPro</h3>
+                        <Image src="/Logo.svg" alt="iBookam Logo" width={120} height={100} />
                     </div>
                     <button
                         onClick={() => setMobileMenuOpen(false)}
@@ -306,11 +299,11 @@ export function CustomerHeader() {
                                 <Settings className="w-5 h-5" />
                                 <span>Settings</span>
                             </Link>
-                             <Link
+                            <Link
                                 href="/notifications"
                                 className="flex items-center justify-between rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
                                 onClick={() => setMobileMenuOpen(false)}
-                             >
+                            >
                                 <div className="flex items-center space-x-3">
                                     <Bell className="w-5 h-5" />
                                     <span>Notifications</span>
@@ -320,7 +313,7 @@ export function CustomerHeader() {
                                         {unreadCount > 9 ? "9+" : unreadCount}
                                     </span>
                                 )}
-                             </Link>
+                            </Link>
                         </>
                     )}
                 </nav>
