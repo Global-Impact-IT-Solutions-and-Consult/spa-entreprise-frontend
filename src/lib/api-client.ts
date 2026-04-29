@@ -61,6 +61,7 @@ apiClient.interceptors.response.use(
                     Cookies.remove('refreshToken');
                     // Clear auth store if available
                     if (typeof window !== 'undefined') {
+                        localStorage.removeItem('auth-storage');
                         // Redirect to login with a message about session expiration
                         const currentPath = window.location.pathname;
                         if (!currentPath.includes('/auth/login')) {
@@ -76,6 +77,7 @@ apiClient.interceptors.response.use(
                 Cookies.remove('refreshToken');
                 // Redirect to login only if not already there to avoid loops
                 if (typeof window !== 'undefined') {
+                    localStorage.removeItem('auth-storage');
                     const currentPath = window.location.pathname;
                     if (!currentPath.includes('/auth/login') && !currentPath.includes('/auth/register')) {
                         window.location.href = '/auth/login?expired=true';
