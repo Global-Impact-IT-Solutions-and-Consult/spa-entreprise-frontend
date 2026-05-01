@@ -21,7 +21,7 @@ export function FeaturedBusinesses() {
                 const mappedBusinesses = enrichedData.map((b) => ({
                     id: b.id,
                     name: b.businessName,
-                    location: `${b.addressDetails?.state?.name}`,
+                    location: b.addressDetails?.state?.name || (typeof b.city === 'string' ? b.city : " "),
                     description: b.description || "Premium spa and wellness services for your relaxation and beauty needs.",
                     rating: b.averageRating || 0,
                     reviews: b.totalReviews || 0,

@@ -79,7 +79,7 @@ export function CityListings() {
                     ))}
 
                     {/* Summary Card */}
-                    <Link href="/businesses" className="group">
+                    {cities.length > 3 && <Link href="/businesses" className="group">
                         <div className="bg-white border border-gray-100 rounded-2xl p-8 md:p-12 text-center shadow-sm hover:shadow-xl hover:border-[#E89D24]/30 transition-all duration-500 hover:-translate-y-1">
                             <div className="bg-gray-50 w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-500">
                                 <MapPin className="w-8 h-8 md:w-10 md:h-10 text-gray-400 group-hover:text-[#E89D24] transition-colors" />
@@ -89,7 +89,7 @@ export function CityListings() {
                             </h3>
                             <p className="text-sm md:text-base text-gray-500 font-medium">{remainingTotal} Businesses</p>
                         </div>
-                    </Link>
+                    </Link>}
                 </div>
             </div>
         </section>

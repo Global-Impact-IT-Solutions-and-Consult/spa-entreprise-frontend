@@ -15,11 +15,8 @@ import { BusinessGalleryTab } from "@/components/modules/discovery/business-gall
 import { businessService, Business, Service, Staff, BusinessImage, BusinessReview, ReviewsResponse, isBusinessOpen } from "@/services/business.service";
 import { Loader2, AlertCircle, Share2, Copy, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toaster } from "@/components/ui/toaster";
 import { getFallbackImage } from "@/lib/image.utils";
+import { ShareBusinessModal } from "@/components/modules/discovery/share-business-modal";
 
 export default function BusinessDetailsPage() {
     const params = useParams();
@@ -38,7 +35,6 @@ export default function BusinessDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-    const [isCopied, setIsCopied] = useState(false);
     const [businessUrl, setBusinessUrl] = useState("");
 
     const tabs = ["Services", "About", "Reviews", "Gallery", "Staff"];
@@ -197,13 +193,6 @@ export default function BusinessDetailsPage() {
         provider: r.staff?.name || "Team Member"
     }));
 
-    const handleCopyLink = () => {
-        navigator.clipboard.writeText(businessUrl);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-        toaster.create({ title: "Link copied to clipboard", type: "success" });
-    };
-
     return (
         <div className="min-h-screen bg-gray-50/10">
             <CustomerHeader />
@@ -298,55 +287,12 @@ export default function BusinessDetailsPage() {
             <CustomerFooter />
 
             {/* Share Modal */}
-            <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
-                <DialogContent className="sm:max-w-lg bg-white rounded-lg p-0 overflow-hidden border-none cursor-default">
-                    <div className="p-8">
-                        <DialogHeader className="mb-6">
-                            <DialogTitle className="text-2xl font-bold text-gray-900">Share Business</DialogTitle>
-                            <DialogDescription className="text-gray-500 font-medium">
-                                Share this business profile with your friends and family.
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <div className="space-y-6">
-                            <div className="flex items-center space-x-2">
-                                <div className="grid flex-1 gap-2">
-                                    <Label htmlFor="link" className="sr-only">Link</Label>
-                                    <Input
-                                        id="link"
-                                        defaultValue={businessUrl}
-                                        readOnly
-                                        className="h-12 bg-gray-50 border-gray-100 rounded-xl focus-visible:ring-[#E89D24]"
-                                    />
-                                </div>
-                                <Button
-                                    type="button"
-                                    onClick={handleCopyLink}
-                                    className="h-12 px-6 bg-[#E89D24] hover:bg-[#D48616] text-white font-bold rounded-xl flex items-center gap-2 min-w-[120px]"
-                                >
-                                    {isCopied ? (
-                                        <>
-                                            <Check className="h-4 w-4" />
-                                            Copied
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Copy className="h-4 w-4" />
-                                            Copy
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-
-                            <div className="flex justify-center gap-4 pt-4 border-t border-gray-50">
-                                <p className="text-xs text-gray-400 font-medium">
-                                    Publicly accessible at the link above
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <ShareBusinessModal
+                isOpen={isShareModalOpen}
+                onClose={setIsShareModalOpen}
+                businessUrl={businessUrl}
+                businessName={business?.businessName || "this business"}
+            />
         </div>
     );
 }

@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useFavoritesStore } from "@/store/favorites.store";
 import { useRouter } from "next/navigation";
 import { toaster } from "@/components/ui/toaster";
+import { AuthRequiredModal } from "./auth-required-modal";
 
 interface BusinessHeaderProps {
     business: {
@@ -30,6 +31,7 @@ interface BusinessHeaderProps {
 
 export function BusinessHeader({ business, onShareClick }: BusinessHeaderProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const { isAuthenticated } = useAuthStore();
     const { businessIds, addBusiness, removeBusiness } = useFavoritesStore();
     const router = useRouter();
@@ -43,7 +45,7 @@ export function BusinessHeader({ business, onShareClick }: BusinessHeaderProps) 
 
     const handleSaveToggle = async () => {
         if (!isAuthenticated) {
-            router.push('/auth/login');
+            setIsAuthModalOpen(true);
             return;
         }
 
@@ -132,10 +134,6 @@ export function BusinessHeader({ business, onShareClick }: BusinessHeaderProps) 
                                         <Scissors className="w-4 h-4" />
                                         <span className="text-sm">{business.category || "Wellness"}</span>
                                     </div>
-
-                                    <div className="text-lg font-bold text-gray-900">
-                                        ₦{business.startingPrice}
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -163,6 +161,11 @@ export function BusinessHeader({ business, onShareClick }: BusinessHeaderProps) 
                     </div>
                 </div>
             </div>
+
+            <AuthRequiredModal 
+                isOpen={isAuthModalOpen} 
+                onClose={setIsAuthModalOpen} 
+            />
         </div>
     );
 }

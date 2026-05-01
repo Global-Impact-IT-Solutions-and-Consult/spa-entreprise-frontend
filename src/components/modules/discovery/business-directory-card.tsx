@@ -11,6 +11,7 @@ import { useFavoritesStore } from "@/store/favorites.store";
 import { useRouter } from "next/navigation";
 import { toaster } from "@/components/ui/toaster";
 import { getFallbackImage } from "@/lib/image.utils";
+import { AuthRequiredModal } from "./auth-required-modal";
 
 interface BusinessDirectoryCardProps {
     business: {
@@ -40,6 +41,7 @@ interface BusinessDirectoryCardProps {
 
 export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const { isAuthenticated } = useAuthStore();
     const { businessIds, addBusiness, removeBusiness } = useFavoritesStore();
     const router = useRouter();
@@ -79,7 +81,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
         e.stopPropagation();
 
         if (!isAuthenticated) {
-            router.push('/auth/login');
+            setIsAuthModalOpen(true);
             return;
         }
 
@@ -196,6 +198,11 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                     </Link>
                 </div>
             </div>
+
+            <AuthRequiredModal 
+                isOpen={isAuthModalOpen} 
+                onClose={setIsAuthModalOpen} 
+            />
         </div>
     );
 }
