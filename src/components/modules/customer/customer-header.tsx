@@ -10,6 +10,7 @@ import { authService } from "@/services/auth.service";
 import { notificationService } from "@/services/notification.service";
 import { toaster } from "@/components/ui/toaster";
 import Image from "next/image";
+import { useUserLocation } from "@/hooks/use-user-location";
 
 export function CustomerHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,6 +19,7 @@ export function CustomerHeader() {
     const pathname = usePathname();
     const router = useRouter();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const { location, loading } = useUserLocation();
     const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
     const [unreadCount, setUnreadCount] = useState(0);
 
@@ -103,15 +105,17 @@ export function CustomerHeader() {
                             <Image src="/Logo.svg" alt="iBookam Logo" width={120} height={100} />
                         </Link>
 
-                        {/* Desktop: City Selector */}
-                        {/* <div className="hidden md:flex items-center space-x-2">
-                            <select className="px-2 py-2 text-sm">
-                                <option>Lagos</option>
-                                <option>Abuja</option>
-                                <option>Port Harcourt</option>
-                                <option>Ibadan</option>
-                            </select>
-                        </div> */}
+                        {/* Desktop: City Selector / Location */}
+                        <div className="hidden md:flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                            <MapPin className="w-4 h-4 text-[#E89D24]" />
+                            {loading ? (
+                                <span className="text-sm text-gray-500 flex items-center gap-2">
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Detecting...
+                                </span>
+                            ) : (
+                                <span className="text-sm font-medium text-gray-700">{location}</span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex gap-5">
@@ -259,15 +263,19 @@ export function CustomerHeader() {
                     </button>
                 </div>
 
-                {/* City Selector in Drawer */}
-                <div className="p-4 border-b border-gray-200">
-                    <label className="block text-xs font-medium text-gray-600 mb-2">Select City</label>
-                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E89D24]">
-                        <option>Lagos</option>
-                        <option>Abuja</option>
-                        <option>Port Harcourt</option>
-                        <option>Ibadan</option>
-                    </select>
+                {/* Location in Drawer */}
+                <div className="p-4 border-b border-gray-200 bg-gray-50/50">
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Current Location</label>
+                    <div className="flex items-center space-x-2 bg-white px-3 py-2.5 rounded-lg border border-gray-200">
+                        <MapPin className="w-4 h-4 text-[#E89D24]" />
+                        {loading ? (
+                            <span className="text-sm text-gray-500 flex items-center gap-2">
+                                <Loader2 className="w-3 h-3 animate-spin" /> Detecting...
+                            </span>
+                        ) : (
+                            <span className="text-sm font-bold text-gray-700">{location}</span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Navigation Links */}

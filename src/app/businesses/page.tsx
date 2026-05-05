@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { State, City, IState, ICity } from "country-state-city";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
@@ -402,9 +403,27 @@ function BusinessDirectoryContent() {
                                 ) : (
                                     <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
                                         <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                                        <h3 className="text-xl font-bold text-gray-900 mb-2">No businesses found</h3>
-                                        <p className="text-gray-500">Try adjusting your filters or search terms.</p>
-                                        <Button variant="outline" onClick={handleReset} className="mt-6 rounded-xl">Clear All Filters</Button>
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                            {activeFilter === "Saved" ? (
+                                                !isAuthenticated ? "Sign in to view saved businesses" : "No saved businesses yet"
+                                            ) : "No businesses found"}
+                                        </h3>
+                                        <p className="text-gray-500">
+                                            {activeFilter === "Saved" ? (
+                                                !isAuthenticated
+                                                    ? "Log in to your account so you can save and access your favorite businesses here."
+                                                    : "Start exploring and mark the businesses you love by clicking the heart icon."
+                                            ) : "Try adjusting your filters or search terms."}
+                                        </p>
+                                        {activeFilter === "Saved" && !isAuthenticated ? (
+                                            <Link href="/auth/login">
+                                                <Button className="mt-6 rounded-xl h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold shadow-lg shadow-yellow-500/20">
+                                                    Login to Account
+                                                </Button>
+                                            </Link>
+                                        ) : (
+                                            <Button variant="outline" onClick={handleReset} className="mt-6 rounded-xl">Clear All Filters</Button>
+                                        )}
                                     </div>
                                 )
                             }

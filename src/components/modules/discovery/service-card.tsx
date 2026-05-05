@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useFavoritesStore } from "@/store/favorites.store";
 import { toaster } from "@/components/ui/toaster";
 import { getFallbackImage } from "@/lib/image.utils";
+import { AuthRequiredModal } from "./auth-required-modal";
 
 interface ServiceCardProps {
     service: {
@@ -39,6 +40,7 @@ interface ServiceCardProps {
 export function ServiceCard({ service }: ServiceCardProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const { isAuthenticated } = useAuthStore();
     const { serviceIds: favoriteServiceIds, addService, removeService } = useFavoritesStore();
     
@@ -54,7 +56,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
         e.stopPropagation();
 
         if (!isAuthenticated) {
-            router.push('/auth/login');
+            setIsAuthModalOpen(true);
             return;
         }
 
@@ -131,7 +133,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                             <Store className="w-3 h-3 text-gray-400" />
                             <span className="text-[10px] font-bold uppercase tracking-wide">In Store</span>
                         </div>
-                        <p className="text-lg font-bold text-gray-900">₦{service.price?.toLocaleString() || "---"}</p>
+                        <p className="text-lg font-bold text-gray-900">{service.price ? `₦${service.price.toLocaleString()}` : <span className="text-xs font-bold uppercase tracking-wide">No In Store Service</span>}</p>
                     </div>
                     <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-gray-500">
@@ -139,7 +141,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                             <span className="text-[10px] font-bold uppercase tracking-wide">Home Service</span>
                         </div>
                         <p className="text-lg font-bold text-gray-900">
-                            {service.homeServicePrice ? `₦${service.homeServicePrice.toLocaleString()}` : "---"}
+                            {service.homeServicePrice ? `₦${service.homeServicePrice.toLocaleString()}` : <span className="text-xs font-bold uppercase tracking-wide">No Home Service</span>}
                         </p>
                     </div>
                 </div>
@@ -158,6 +160,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
                     </Button>
                 </div>
             </div>
+
+            <AuthRequiredModal 
+                isOpen={isAuthModalOpen} 
+                onClose={setIsAuthModalOpen} 
+            />
         </div>
     );
 }
