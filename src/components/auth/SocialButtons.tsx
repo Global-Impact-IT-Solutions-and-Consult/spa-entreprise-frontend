@@ -27,12 +27,12 @@ export const SocialButtons = () => {
                 >
                     <FcGoogle size={24} />
                 </button>
-                <button
+                {/* <button
                     className="w-12 h-12 rounded-full border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
                     aria-label={`Sign ${actionText} with Facebook`}
                 >
                     <FaFacebook size={24} color="#1877F2" />
-                </button>
+                </button> */}
             </div>
         </div>
     );

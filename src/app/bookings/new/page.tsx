@@ -277,6 +277,14 @@ function BookingContent() {
                             </div>
                         </div>
 
+                        {/* Service Description */}
+                        {service.description && (
+                            <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                <h2 className="text-lg font-bold mb-2">About this service</h2>
+                                <p className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">{service.description}</p>
+                            </section>
+                        )}
+
                         {/* Staff Selection */}
                         <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                             <div className="mb-6">

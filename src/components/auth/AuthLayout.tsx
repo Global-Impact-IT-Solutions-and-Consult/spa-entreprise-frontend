@@ -2,6 +2,8 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 interface AuthLayoutProps {
     children: React.ReactNode;
@@ -10,6 +12,15 @@ interface AuthLayoutProps {
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
     return (
         <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-[#D4A373]">
+            {/* Floating Back Button */}
+            <Link 
+                href="/" 
+                className="absolute top-15 left-0 px-4 md:px-32 z-20 flex items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium"
+            >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Home
+            </Link>
+
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                 <Image
@@ -33,7 +44,9 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
                     </div>
 
                     <div className="flex flex-col items-start gap-0">
-                        <Image src="/Logo_White.svg" alt="iBookam Logo" width={200} height={100} />
+                        <Link href="/" className="hover:opacity-80 transition-opacity inline-block">
+                            <Image src="/Logo_White.svg" alt="iBookam Logo" width={200} height={100} />
+                        </Link>
                     </div>
                 </div>
 
