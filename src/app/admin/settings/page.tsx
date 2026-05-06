@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,14 +8,42 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   adminService,
   type NotificationPreferences,
 } from '@/services/admin.service';
 import { userService } from '@/services/user.service';
+import { authService } from '@/services/auth.service';
 import { Camera, CheckCircle, Monitor, Smartphone } from 'lucide-react';
 import { toaster } from '@/components/ui/toaster';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+function getApiMessage(error: unknown, fallback: string) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'data' in error.response &&
+    error.response.data &&
+    typeof error.response.data === 'object' &&
+    'message' in error.response.data
+  ) {
+    const message = error.response.data.message;
+    if (Array.isArray(message)) return String(message[0] || fallback);
+    if (typeof message === 'string') return message;
+  }
+
+  return fallback;
+}
 
 export default function AdminSettingsPage() {
   const { user, updateUser } = useAuthStore();
@@ -52,6 +80,14 @@ export default function AdminSettingsPage() {
   const [loadingNotif, setLoadingNotif] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const [mfaDialogOpen, setMfaDialogOpen] = useState(false);
+  const [mfaMode, setMfaMode] = useState<'enable' | 'disable'>('enable');
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaSecret, setMfaSecret] = useState('');
+  const [mfaQrCode, setMfaQrCode] = useState('');
+  const [mfaProcessing, setMfaProcessing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -60,9 +96,9 @@ export default function AdminSettingsPage() {
         lastName: user.lastName || '',
         email: user.email || '',
         phone: user.phone || '',
-        bio: (user as any).bio || '',
+        bio: user.bio || '',
       });
-      setMfaEnabled(!!(user as any).mfaEnabled);
+      setMfaEnabled(!!user.mfaEnabled);
     }
   }, [user]);
 
@@ -124,10 +160,10 @@ export default function AdminSettingsPage() {
       toaster.create({ title: 'Session revoked', type: 'success' });
       const updated = await adminService.getSessions();
       setSessions(updated);
-    } catch (e: any) {
+    } catch (error: unknown) {
       toaster.create({
         title: 'Error',
-        description: e.response?.data?.message || 'Failed to revoke session.',
+        description: getApiMessage(error, 'Failed to revoke session.'),
         type: 'error',
       });
     }
@@ -151,14 +187,92 @@ export default function AdminSettingsPage() {
       });
       setPassword({ current: '', new: '', confirm: '' });
       toaster.create({ title: 'Password updated', type: 'success' });
-    } catch (e: any) {
-      const raw = e.response?.data?.message;
-      const msg = Array.isArray(raw)
-        ? raw[0]
-        : raw || 'Failed to update password.';
+    } catch (error: unknown) {
+      const msg = getApiMessage(error, 'Failed to update password.');
       toaster.create({ title: 'Error', description: msg, type: 'error' });
     } finally {
       setLoadingPassword(false);
+    }
+  };
+
+  const handleProfilePictureChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPicture(true);
+    try {
+      const res = await userService.uploadProfilePicture(file);
+      updateUser({ profilePicture: res.profilePicture });
+      toaster.create({
+        title: 'Profile picture updated',
+        type: 'success',
+      });
+    } catch (error: unknown) {
+      const msg = getApiMessage(error, 'Failed to upload profile picture.');
+      toaster.create({ title: 'Error', description: msg, type: 'error' });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setUploadingPicture(false);
+    }
+  };
+
+  const handleMfaToggle = async (nextValue: boolean) => {
+    if (nextValue) {
+      try {
+        const data = await authService.setupMfa();
+        setMfaMode('enable');
+        setMfaQrCode(data.qrCode);
+        setMfaSecret(data.secret);
+        setMfaCode('');
+        setMfaDialogOpen(true);
+      } catch (error: unknown) {
+        const msg = getApiMessage(error, 'Failed to start MFA setup.');
+        toaster.create({ title: 'Error', description: msg, type: 'error' });
+      }
+      return;
+    }
+
+    setMfaMode('disable');
+    setMfaCode('');
+    setMfaQrCode('');
+    setMfaSecret('');
+    setMfaDialogOpen(true);
+  };
+
+  const handleConfirmMfa = async () => {
+    if (!mfaCode.trim()) return;
+
+    setMfaProcessing(true);
+    try {
+      if (mfaMode === 'enable') {
+        await authService.enableMfa(mfaCode.trim());
+        setMfaEnabled(true);
+        updateUser({ mfaEnabled: true });
+        toaster.create({
+          title: 'Two-factor authentication enabled',
+          type: 'success',
+        });
+      } else {
+        await authService.disableMfa(mfaCode.trim());
+        setMfaEnabled(false);
+        updateUser({ mfaEnabled: false });
+        toaster.create({
+          title: 'Two-factor authentication disabled',
+          type: 'success',
+        });
+      }
+
+      setMfaDialogOpen(false);
+      setMfaCode('');
+      setMfaQrCode('');
+      setMfaSecret('');
+    } catch (error: unknown) {
+      const msg = getApiMessage(error, 'Failed to update MFA.');
+      toaster.create({ title: 'Error', description: msg, type: 'error' });
+    } finally {
+      setMfaProcessing(false);
     }
   };
 
@@ -187,14 +301,26 @@ export default function AdminSettingsPage() {
           <div className="flex items-start gap-6 mb-6">
             <div className="relative">
               <Avatar className="h-20 w-20 rounded-full bg-[#9333EA] text-white text-2xl">
+                {user?.profilePicture ? (
+                  <AvatarImage src={user.profilePicture} alt="Profile picture" />
+                ) : null}
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <button
                 type="button"
                 className="absolute bottom-0 right-0 rounded-full bg-gray-200 p-1.5 hover:bg-gray-300"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPicture}
               >
                 <Camera className="h-4 w-4 text-gray-600" />
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                className="hidden"
+                onChange={handleProfilePictureChange}
+              />
             </div>
             <form
               onSubmit={handleSaveProfile}
@@ -326,7 +452,7 @@ export default function AdminSettingsPage() {
                 Add an extra layer of security to your account.
               </p>
             </div>
-            <Switch checked={mfaEnabled} onCheckedChange={setMfaEnabled} />
+            <Switch checked={mfaEnabled} onCheckedChange={handleMfaToggle} />
           </div>
           {mfaEnabled && (
             <p className="text-sm text-green-600 flex items-center gap-1 mt-2">
@@ -446,6 +572,81 @@ export default function AdminSettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={mfaDialogOpen} onOpenChange={setMfaDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {mfaMode === 'enable'
+                ? 'Enable Two-Factor Authentication'
+                : 'Disable Two-Factor Authentication'}
+            </DialogTitle>
+            <DialogClose className="absolute right-4 top-4" />
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {mfaMode === 'enable' ? (
+              <>
+                <p className="text-sm text-gray-600">
+                  Scan this QR code with your authenticator app, then enter the
+                  6-digit verification code to finish setup.
+                </p>
+                {mfaQrCode ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={mfaQrCode}
+                    alt="MFA QR code"
+                    className="mx-auto h-48 w-48 rounded-lg border border-gray-200 p-2"
+                  />
+                ) : null}
+                {mfaSecret ? (
+                  <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                    <span className="font-medium">Manual code:</span> {mfaSecret}
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className="text-sm text-gray-600">
+                Enter a current authenticator code to confirm disabling MFA for
+                this admin account.
+              </p>
+            )}
+
+            <div>
+              <Label htmlFor="mfa-code">Authenticator code</Label>
+              <Input
+                id="mfa-code"
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value)}
+                placeholder="123456"
+                className="mt-1"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setMfaDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="bg-[#9333EA] hover:bg-[#7e22ce]"
+                disabled={!mfaCode.trim() || mfaProcessing}
+                onClick={handleConfirmMfa}
+              >
+                {mfaProcessing
+                  ? 'Saving...'
+                  : mfaMode === 'enable'
+                    ? 'Enable MFA'
+                    : 'Disable MFA'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

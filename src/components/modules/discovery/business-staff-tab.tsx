@@ -37,18 +37,27 @@ function StaffCard({ member }: { member: Staff }) {
                 <div className="pt-2">
                     <h4 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h4>
                     <p className="text-[#E89D24] font-bold text-sm mb-3">{member.role}</p>
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                                <Star
-                                    key={s}
-                                    className={`w-3.5 h-3.5 ${s <= Math.floor(member.rating) ? "fill-[#E89D24] text-[#E89D24]" : "text-gray-200"}`}
-                                />
-                            ))}
+                    {member.reviews > 0 ? (
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                    <Star
+                                        key={s}
+                                        className={`w-3.5 h-3.5 ${s <= Math.floor(member.rating) ? "fill-[#E89D24] text-[#E89D24]" : "text-gray-200"}`}
+                                    />
+                                ))}
+                            </div>
+                            <span className="text-sm font-bold text-gray-900">{member.rating}</span>
+                            <span className="text-xs text-gray-400 font-medium">({member.reviews} reviews)</span>
                         </div>
-                        <span className="text-sm font-bold text-gray-900">{member.rating}</span>
-                        <span className="text-xs text-gray-400 font-medium">({member.reviews} reviews)</span>
-                    </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                             <span className="px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold uppercase rounded-md border border-green-100">
+                                New
+                             </span>
+                             <span className="text-xs text-gray-400 font-medium">No reviews yet</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-4 mb-2">
@@ -80,12 +89,11 @@ function StaffCard({ member }: { member: Staff }) {
 export function BusinessStaffTab({ staffs }: BusinessStaffTabProps) {
     return (
         <div className="space-y-10">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Meet Our Staffs</h2>
+            {staffs.length === 0 && <p className="text-center text-gray-500 text-sm">No staff found</p>}
+            {staffs.length > 0 && <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Meet Our Staffs</h2>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {staffs.map((member) => (
-                    <StaffCard key={member.id} member={member} />
-                ))}
+                {staffs.map((member) => (<StaffCard key={member.id} member={member} />))}
             </div>
         </div>
     );

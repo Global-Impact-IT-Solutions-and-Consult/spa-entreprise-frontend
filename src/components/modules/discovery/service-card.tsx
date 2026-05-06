@@ -4,9 +4,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { Heart, Clock, MapPin, Star, Store, House } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { favoritesService } from "@/services/favorites.service";
+import { useAuthStore } from "@/store/auth.store";
+import { useFavoritesStore } from "@/store/favorites.store";
+import { toaster } from "@/components/ui/toaster";
+import { getFallbackImage } from "@/lib/image.utils";
+import { AuthRequiredModal } from "./auth-required-modal";
 
 interface ServiceCardProps {
     service: {
@@ -33,17 +39,54 @@ interface ServiceCardProps {
 
 export function ServiceCard({ service }: ServiceCardProps) {
     const router = useRouter();
-    const [isFavorite, setIsFavorite] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const { isAuthenticated } = useAuthStore();
+    const { serviceIds: favoriteServiceIds, addService, removeService } = useFavoritesStore();
+    
+    const isFavorite = favoriteServiceIds.includes(service.id);
 
     const businessId = service.businessId;
     const rating = typeof service.rating === 'string' ? parseFloat(service.rating) : service.rating;
+
+
+
+    const handleFavoriteToggle = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!isAuthenticated) {
+            setIsAuthModalOpen(true);
+            return;
+        }
+
+        if (!service.id) return;
+
+        setIsLoading(true);
+        try {
+            if (isFavorite) {
+                await favoritesService.removeServiceFavorite(service.id);
+                removeService(service.id);
+                toaster.create({ title: "Removed from favorites", type: "success" });
+            } else {
+                await favoritesService.addFavorite({ serviceId: service.id });
+                addService(service.id);
+                toaster.create({ title: "Added to favorites", type: "success" });
+            }
+        } catch (error) {
+            console.error('Failed to toggle favorite status:', error);
+            toaster.create({ title: "Failed to update favorite status", type: "error" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group">
             {/* Image Container */}
             <div className="relative h-48 md:h-52 overflow-hidden">
                 <Image
-                    src={service.imageUrl}
+                    src={service.imageUrl || getFallbackImage(service.name)}
                     alt={service.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -54,10 +97,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
                     </span>
                 </div>
                 <button
-                    onClick={() => setIsFavorite(!isFavorite)}
-                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm hover:bg-white transition-colors"
+                    onClick={handleFavoriteToggle}
+                    disabled={isLoading}
+                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm hover:bg-white transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'} ${isLoading ? 'animate-pulse' : ''}`} />
                 </button>
             </div>
 
@@ -89,7 +133,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                             <Store className="w-3 h-3 text-gray-400" />
                             <span className="text-[10px] font-bold uppercase tracking-wide">In Store</span>
                         </div>
-                        <p className="text-lg font-bold text-gray-900">₦{service.price?.toLocaleString() || "---"}</p>
+                        <p className="text-lg font-bold text-gray-900">{service.price ? `₦${service.price.toLocaleString()}` : <span className="text-xs font-bold uppercase tracking-wide">No In Store Service</span>}</p>
                     </div>
                     <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-gray-500">
@@ -97,7 +141,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                             <span className="text-[10px] font-bold uppercase tracking-wide">Home Service</span>
                         </div>
                         <p className="text-lg font-bold text-gray-900">
-                            {service.homeServicePrice ? `₦${service.homeServicePrice.toLocaleString()}` : "---"}
+                            {service.homeServicePrice ? `₦${service.homeServicePrice.toLocaleString()}` : <span className="text-xs font-bold uppercase tracking-wide">No Home Service</span>}
                         </p>
                     </div>
                 </div>
@@ -116,6 +160,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
                     </Button>
                 </div>
             </div>
+
+            <AuthRequiredModal 
+                isOpen={isAuthModalOpen} 
+                onClose={setIsAuthModalOpen} 
+            />
         </div>
     );
 }

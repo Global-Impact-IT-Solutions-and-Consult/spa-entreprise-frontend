@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarCheck, Download, Info, X } from "lucide-react";
+import { generateCalendarUrls } from "@/lib/calendar.utils";
 import {
     Dialog,
     DialogContent,
@@ -49,6 +50,38 @@ export function AddToCalendarModal({ isOpen, onClose, booking }: AddToCalendarMo
         },
     ];
 
+    const event = {
+        id: booking.id,
+        title: `${booking.serviceName} at ${booking.businessName}`,
+        description: `Booking ID: ${booking.id}\nService: ${booking.serviceName}\nBusiness: ${booking.businessName}`,
+        location: booking.location,
+        startDate: booking.date,
+        startTime: booking.time,
+        durationMinutes: 60, // Default duration
+    };
+
+    const urls = generateCalendarUrls(event);
+
+    const handleOptionClick = (optionName: string) => {
+        switch (optionName) {
+            case "Google Calendar":
+                window.open(urls.google, "_blank");
+                break;
+            case "Outlook Calendar":
+                window.open(urls.outlook, "_blank");
+                break;
+            case "Yahoo Calendar":
+                window.open(urls.yahoo, "_blank");
+                break;
+            case "Download iCal":
+                // Use the API endpoint for iCal download
+                window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/bookings/${booking.id}/calendar.ics`;
+                break;
+            default:
+                break;
+        }
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="bg-white p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
@@ -67,6 +100,7 @@ export function AddToCalendarModal({ isOpen, onClose, booking }: AddToCalendarMo
                         {calendarOptions.map((option) => (
                             <button
                                 key={option.name}
+                                onClick={() => handleOptionClick(option.name)}
                                 className="flex items-center justify-center px-6 py-2 gap-3 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors group"
                             >
                                 <div className="w-12 h-12 flex items-center justify-center">

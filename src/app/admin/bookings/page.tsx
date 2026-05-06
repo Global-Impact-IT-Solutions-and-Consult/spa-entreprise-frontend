@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, type SelectOption } from '@/components/ui/select';
@@ -14,8 +14,9 @@ import {
 } from '@/services/admin.service';
 import { BookingDetailsModal } from './modals/BookingDetailsModal';
 import { CancelBookingModal } from './modals/CancelBookingModal';
-import { Eye, RotateCcw } from 'lucide-react';
+import { Ban, Eye, RotateCcw } from 'lucide-react';
 import { toaster } from '@/components/ui/toaster';
+import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 15;
 const STATUS_OPTIONS: SelectOption[] = [
@@ -31,33 +32,62 @@ function formatAmount(n: number) {
   return '₦' + n.toLocaleString();
 }
 
-function formatDate(s: string) {
-  if (!s) return '—';
+/** Format for Date & Time column: "Oct 18, 2023 • 14:30". Handles ISO, "YYYY-MM-DD", and "YYYY-MM-DD • HH:mm" from API. */
+function formatDateTime(s: string | undefined) {
+  if (!s || !s.trim()) return '—';
+  const raw = s.trim();
   try {
-    const d = new Date(s);
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    const d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) {
+      const date = d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      const time = d.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+      return `${date} • ${time}`;
+    }
+    // Backend may send "2026-02-15 • 10:00" or "2026-02-15 10:00" – parse date and time parts
+    const bullet = raw.indexOf(' • ');
+    const space = raw.indexOf(' ');
+    const sep = bullet >= 0 ? ' • ' : space >= 0 ? ' ' : null;
+    if (sep) {
+      const [datePart, timePart] = raw.split(sep);
+      if (datePart) {
+        const d2 = new Date(timePart ? `${datePart}T${timePart}` : datePart);
+        if (!Number.isNaN(d2.getTime())) {
+          const date = d2.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          });
+          const time = timePart
+            ? d2.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+              })
+            : '—';
+          return timePart ? `${date} • ${time}` : date;
+        }
+      }
+    }
+    // Try "YYYY-MM-DD" only
+    const d3 = new Date(raw);
+    if (!Number.isNaN(d3.getTime())) {
+      return d3.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+    return raw;
   } catch {
-    return s;
-  }
-}
-
-function statusColor(status: string) {
-  switch ((status || '').toLowerCase()) {
-    case 'confirmed':
-      return 'text-green-600';
-    case 'completed':
-      return 'text-purple-600';
-    case 'cancelled':
-      return 'text-red-600';
-    case 'expired':
-    case 'no_show':
-      return 'text-gray-600';
-    default:
-      return 'text-gray-600';
+    return raw;
   }
 }
 
@@ -77,15 +107,33 @@ function statusDot(status: string) {
   }
 }
 
-function paymentColor(status: string) {
+/** Pill background + text for Status (design: rounded pill with dot) */
+function statusPillClass(status: string) {
+  switch ((status || '').toLowerCase()) {
+    case 'confirmed':
+      return 'bg-green-100 text-green-700';
+    case 'completed':
+      return 'bg-purple-100 text-purple-700';
+    case 'cancelled':
+      return 'bg-red-100 text-red-700';
+    case 'expired':
+    case 'no_show':
+      return 'bg-gray-100 text-gray-700';
+    default:
+      return 'bg-gray-100 text-gray-700';
+  }
+}
+
+/** Pill background + text for Payment (design: light green/orange/red pills) */
+function paymentPillClass(status: string) {
   switch ((status || '').toLowerCase()) {
     case 'successful':
     case 'paid':
-      return 'text-green-600';
+      return 'bg-green-100 text-green-700';
     case 'refunded':
-      return 'text-red-600';
+      return 'bg-red-100 text-red-700';
     default:
-      return 'text-amber-600';
+      return 'bg-amber-100 text-amber-700';
   }
 }
 
@@ -102,6 +150,14 @@ export default function AdminBookingsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [businessId, setBusinessId] = useState('');
+  const [customerId, setCustomerId] = useState('');
+  const [businessOptions, setBusinessOptions] = useState<SelectOption[]>([
+    { value: '', label: 'All Businesses' },
+  ]);
+  const [customerOptions, setCustomerOptions] = useState<SelectOption[]>([
+    { value: '', label: 'All Customers' },
+  ]);
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -111,16 +167,16 @@ export default function AdminBookingsPage() {
     null,
   );
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const s = await adminService.getBookingStats();
       setStats({
         total: s.total ?? 0,
         pending: s.pending ?? 0,
         completed: s.completed ?? 0,
-        confirmed: (s as any).confirmed,
-        cancelled: (s as any).cancelled,
-        expired: (s as any).expired,
+        confirmed: s.confirmed,
+        cancelled: s.cancelled,
+        expired: s.expired,
       });
     } catch {
       setStats({ total: 0, pending: 0, completed: 0 });
@@ -130,15 +186,26 @@ export default function AdminBookingsPage() {
         type: 'error',
       });
     }
-  };
+  }, []);
 
-  const loadBookings = async () => {
+  const loadBookings = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = { page, limit: PAGE_SIZE, sortBy: 'newest' };
+      const params: {
+        page: number;
+        limit: number;
+        sortBy: 'newest';
+        status?: string;
+        dateFrom?: string;
+        dateTo?: string;
+        businessId?: string;
+        customerId?: string;
+      } = { page, limit: PAGE_SIZE, sortBy: 'newest' };
       if (statusFilter) params.status = statusFilter;
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
+      if (businessId) params.businessId = businessId;
+      if (customerId) params.customerId = customerId;
       const res = await adminService.getBookings(params);
       setList(res.data || []);
       setTotal(res.pagination?.total ?? 0);
@@ -153,14 +220,48 @@ export default function AdminBookingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, statusFilter, dateFrom, dateTo, businessId, customerId]);
 
   useEffect(() => {
     loadStats();
-  }, []);
+    Promise.all([
+      adminService.getAllBusinesses({
+        page: 1,
+        limit: 100,
+        sortBy: 'name_asc',
+      }),
+      adminService.getUsers({
+        page: 1,
+        limit: 100,
+        role: 'customer',
+      }),
+    ])
+      .then(([businesses, users]) => {
+        setBusinessOptions([
+          { value: '', label: 'All Businesses' },
+          ...(businesses.data || []).map((business) => ({
+            value: business.id,
+            label: business.businessName,
+          })),
+        ]);
+        setCustomerOptions([
+          { value: '', label: 'All Customers' },
+          ...(users.data || []).map((user) => ({
+            value: user.id,
+            label:
+              `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+              user.email,
+          })),
+        ]);
+      })
+      .catch(() => {
+        setBusinessOptions([{ value: '', label: 'All Businesses' }]);
+        setCustomerOptions([{ value: '', label: 'All Customers' }]);
+      });
+  }, [loadStats]);
   useEffect(() => {
-    loadBookings();
-  }, [page, statusFilter, dateFrom, dateTo]);
+    void loadBookings();
+  }, [loadBookings]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -198,13 +299,28 @@ export default function AdminBookingsPage() {
       setSelectedBookingId(null);
       loadBookings();
       loadStats();
-    } catch (e: any) {
-      const raw = e.response?.data?.message;
-      const msg = Array.isArray(raw)
-        ? raw[0] || 'Failed to cancel booking.'
-        : raw || e.message || 'Failed to cancel booking.';
+    } catch (error: unknown) {
+      const responseMessage =
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'data' in error.response &&
+        error.response.data &&
+        typeof error.response.data === 'object' &&
+        'message' in error.response.data
+          ? error.response.data.message
+          : undefined;
+      const msg = Array.isArray(responseMessage)
+        ? String(responseMessage[0] || 'Failed to cancel booking.')
+        : typeof responseMessage === 'string'
+          ? responseMessage
+          : error instanceof Error
+            ? error.message
+            : 'Failed to cancel booking.';
       toaster.create({ title: 'Error', description: msg, type: 'error' });
-      throw e;
+      throw error;
     }
   };
 
@@ -212,51 +328,55 @@ export default function AdminBookingsPage() {
     setStatusFilter('');
     setDateFrom('');
     setDateTo('');
+    setBusinessId('');
+    setCustomerId('');
     setPage(1);
   };
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-          Bookings Management
-        </h1>
-        <p className="text-gray-600 mt-1">
-          View and manage all bookings across the platform.
-        </p>
+      {/* Title/subtitle left, stat cards top right (match User Management & Service Categories) */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Bookings Management
+          </h1>
+          <p className="text-gray-600 mt-1">
+            View and manage all bookings across the platform.
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-4 shrink-0">
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-500">Total Bookings</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.total.toLocaleString()}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-500">Pending</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.pending?.toLocaleString() ?? '0'}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-500">Completed</p>
+              <p className="text-2xl font-bold text-green-600">
+                {stats.completed?.toLocaleString() ?? '0'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-white border-gray-200">
-          <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Total Bookings</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {stats.total.toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border-gray-200">
-          <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Pending</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {stats.pending?.toLocaleString() ?? '0'}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border-gray-200">
-          <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Completed</p>
-            <p className="text-2xl font-bold text-green-600">
-              {stats.completed?.toLocaleString() ?? '0'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Status</span>
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">Status</Label>
             <Select
               options={STATUS_OPTIONS}
               value={statusFilter}
@@ -267,8 +387,8 @@ export default function AdminBookingsPage() {
               className="w-[160px]"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">
               Date From
             </Label>
             <Input
@@ -279,10 +399,8 @@ export default function AdminBookingsPage() {
               title="DD / MM / YYYY"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-              Date To
-            </Label>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">Date To</Label>
             <Input
               type="date"
               value={dateTo}
@@ -291,25 +409,40 @@ export default function AdminBookingsPage() {
               title="DD / MM / YYYY"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Business</span>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">
+              Business
+            </Label>
             <Select
-              options={[{ value: '', label: 'All Business...' }]}
-              value=""
-              onChange={() => {}}
+              options={businessOptions}
+              value={businessId}
+              onChange={(e) => {
+                setBusinessId(e.target.value);
+                setPage(1);
+              }}
               className="w-[140px]"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Customers</span>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-gray-700">
+              Customers
+            </Label>
             <Select
-              options={[{ value: '', label: 'All Custom...' }]}
-              value=""
-              onChange={() => {}}
+              options={customerOptions}
+              value={customerId}
+              onChange={(e) => {
+                setCustomerId(e.target.value);
+                setPage(1);
+              }}
               className="w-[140px]"
             />
           </div>
-          <Button variant="outline" size="sm" onClick={resetFilters}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={resetFilters}
+            className="text-[#9333EA] hover:text-[#7e22ce] hover:bg-[#9333EA]/10"
+          >
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset Filters
           </Button>
@@ -352,8 +485,14 @@ export default function AdminBookingsPage() {
                   </td>
                 </tr>
               ) : (
-                list.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
+                list.map((row, index) => (
+                  <tr
+                    key={row.id}
+                    className={cn(
+                      'hover:bg-gray-50',
+                      index % 2 === 1 && 'bg-gray-50/50',
+                    )}
+                  >
                     <td className="px-4 py-3 font-medium text-gray-900">
                       #BK-{row.id.slice(0, 8).toUpperCase()}
                     </td>
@@ -367,24 +506,33 @@ export default function AdminBookingsPage() {
                       {row.serviceName}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {row.dateTime || formatDate(row.createdAt)}
+                      {formatDateTime(row.dateTime || row.createdAt)}
                     </td>
                     <td className="px-4 py-3 text-gray-900">
                       {formatAmount(row.amount)}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center gap-1.5 text-sm font-medium capitalize ${statusColor(row.status)}`}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium capitalize',
+                          statusPillClass(row.status),
+                        )}
                       >
                         <span
-                          className={`h-2 w-2 rounded-full shrink-0 ${statusDot(row.status)}`}
+                          className={cn(
+                            'h-1.5 w-1.5 rounded-full shrink-0',
+                            statusDot(row.status),
+                          )}
                         />
                         {row.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`text-sm font-medium ${paymentColor(row.paymentStatus)}`}
+                        className={cn(
+                          'inline-flex rounded-full px-2.5 py-1 text-xs font-medium',
+                          paymentPillClass(row.paymentStatus),
+                        )}
                       >
                         {row.paymentStatus === 'successful' ||
                         row.paymentStatus === 'paid'
@@ -395,25 +543,28 @@ export default function AdminBookingsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => openDetails(row)}
-                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
-                        title="View"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      {row.status !== 'cancelled' &&
-                        row.status !== 'completed' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-amber-600 hover:text-amber-700"
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openDetails(row)}
+                          className="p-2 rounded-lg text-[#9333EA] hover:bg-[#9333EA]/10"
+                          title="View"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        {!['cancelled', 'completed', 'expired'].includes(
+                          row.status.toLowerCase(),
+                        ) && (
+                          <button
+                            type="button"
                             onClick={() => openCancel(row)}
+                            className="p-2 rounded-lg text-red-600 hover:bg-red-50"
+                            title="Cancel booking"
                           >
-                            Cancel
-                          </Button>
+                            <Ban className="h-4 w-4" />
+                          </button>
                         )}
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -148,7 +148,7 @@ function VerifyEmailContent() {
                         <div className="flex flex-col text-center mb-8">
                             <h1 className="text-3xl font-bold text-gray-900 mb-2">Verify Email Address</h1>
                             <p className="text-sm text-gray-500">
-                                A 6 digit code has been sent to your mail
+                                A 6 digit code has been sent to your mail at <span className="font-bold text-[#E59622]">{email}</span>
                             </p>
                         </div>
 

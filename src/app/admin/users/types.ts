@@ -26,7 +26,7 @@ export interface AdminUser {
 
 export const STATUS_LABELS: Record<UserStatus, string> = {
   active: 'Active',
-  suspended: 'Suspend',
+  suspended: 'Suspended',
   inactive: 'Inactive',
 };
 

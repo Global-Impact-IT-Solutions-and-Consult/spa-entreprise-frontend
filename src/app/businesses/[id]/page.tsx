@@ -12,9 +12,11 @@ import { BusinessStaffTab } from "@/components/modules/discovery/business-staff-
 import { BusinessAboutTab } from "@/components/modules/discovery/business-about-tab";
 import { BusinessReviewsTab } from "@/components/modules/discovery/business-reviews-tab";
 import { BusinessGalleryTab } from "@/components/modules/discovery/business-gallery-tab";
-import { businessService, Business, Service, Staff, BusinessImage, BusinessReview, isBusinessOpen } from "@/services/business.service";
-import { Loader2, AlertCircle } from "lucide-react";
+import { businessService, Business, Service, Staff, BusinessImage, BusinessReview, ReviewsResponse, isBusinessOpen } from "@/services/business.service";
+import { Loader2, AlertCircle, Share2, Copy, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getFallbackImage } from "@/lib/image.utils";
+import { ShareBusinessModal } from "@/components/modules/discovery/share-business-modal";
 
 export default function BusinessDetailsPage() {
     const params = useParams();
@@ -32,8 +34,14 @@ export default function BusinessDetailsPage() {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [businessUrl, setBusinessUrl] = useState("");
 
     const tabs = ["Services", "About", "Reviews", "Gallery", "Staff"];
+
+    useEffect(() => {
+        setBusinessUrl(window.location.href);
+    }, []);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -49,9 +57,12 @@ export default function BusinessDetailsPage() {
                     businessService.getBusinessReviews(id).catch(() => ({
                         data: [],
                         meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
-                        averageRating: 0,
-                        ratingDistribution: []
-                    }))
+                        statistics: {
+                            averageRating: 0,
+                            totalReviews: 0,
+                            ratingDistribution: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 }
+                        }
+                    } as ReviewsResponse))
                 ]);
 
                 setBusiness(businessData);
@@ -60,8 +71,11 @@ export default function BusinessDetailsPage() {
                 setGallery(galleryData);
                 setReviews(reviewsData.data);
                 setReviewStats({
-                    averageRating: reviewsData.averageRating,
-                    ratingDistribution: reviewsData.ratingDistribution
+                    averageRating: reviewsData.statistics.averageRating,
+                    ratingDistribution: Object.entries(reviewsData.statistics.ratingDistribution).map(([stars, count]) => ({
+                        stars: parseInt(stars),
+                        count: count as number
+                    }))
                 });
             } catch (err: any) {
                 console.error("Error fetching business profile data:", err);
@@ -132,19 +146,23 @@ export default function BusinessDetailsPage() {
         category: business?.businessType?.name || "Wellness",
         distance: "", // No placeholder — only show if API provides it
         startingPrice: services.length > 0 ? Math.min(...services.map(s => s.price)).toLocaleString() : "---",
-        bannerImage: business.coverImage || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1600&q=80",
-        profileImage: business.profileImage || "https://images.unsplash.com/photo-1512690196246-86e580db7940?w=800&q=80",
-        address: business.address || business.addressDetails?.address || "Lagos, Nigeria",
+        bannerImage: business.coverImage || getFallbackImage(business.businessName),
+        profileImage: business.profileImage || getFallbackImage(business.businessName),
+        address: business.addressRelation ? 
+            `${business.addressRelation.address}, ${business.addressRelation.city?.name}, ${business.addressRelation.state?.name}` :
+            (business.address || business.addressDetails?.address),
         phone: business.phone || "---",
         email: business.email || "---",
         status: isOpen ? "Open now" : "Closed",
         description: business.description || "No description available.",
+        facebookUrl: business.facebookUrl,
+        instagramUrl: business.instagramUrl,
+        twitterUrl: business.twitterUrl,
         gallery: gallery.map(img => img.url),
         staffs: staff.map(s => ({
             ...s,
-            rating: 4.5, // Backend doesn't provide staff ratings yet
-            reviews: 0,
-            description: "Experienced wellness professional.",
+            rating: s.rating ?? 0,
+            reviews: s.reviewCount ?? 0,
             about: s.about || "Experienced wellness professional.",
             profilePicture: s.profilePicture || undefined,
             specialties: (s.serviceIds || [])
@@ -166,20 +184,23 @@ export default function BusinessDetailsPage() {
     // Map API reviews to the component's expected format
     const mappedReviews = reviews.map(r => ({
         id: r.id,
-        userName: `${r.user.firstName} ${r.user.lastName}`,
+        userName: r.customerName || "Anonymous Customer",
         userAvatar: undefined,
         rating: r.rating,
         date: new Date(r.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-        comment: r.comment,
-        service: r.service?.name || "General",
-        provider: r.staff?.name || "---"
+        comment: r.reviewText || "No comment provided.",
+        service: r.service?.name || "General Service",
+        provider: r.staff?.name || "Team Member"
     }));
 
     return (
         <div className="min-h-screen bg-gray-50/10">
             <CustomerHeader />
 
-            <BusinessHeader business={transformedBusiness} />
+            <BusinessHeader 
+                business={transformedBusiness} 
+                onShareClick={() => setIsShareModalOpen(true)}
+            />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-20">
                 <div className="flex flex-col lg:flex-row gap-12">
@@ -217,7 +238,7 @@ export default function BusinessDetailsPage() {
                                                     businessId: business.id,
                                                     rating: transformedBusiness.rating,
                                                     reviews: transformedBusiness.reviews,
-                                                    location: transformedBusiness.address,
+                                                    location: transformedBusiness.address || "",
                                                 }}
                                             />
                                         ))}
@@ -264,6 +285,14 @@ export default function BusinessDetailsPage() {
             </main>
 
             <CustomerFooter />
+
+            {/* Share Modal */}
+            <ShareBusinessModal
+                isOpen={isShareModalOpen}
+                onClose={setIsShareModalOpen}
+                businessUrl={businessUrl}
+                businessName={business?.businessName || "this business"}
+            />
         </div>
     );
 }

@@ -4,10 +4,13 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut } from "lucide-react";
+import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2, Bookmark, History } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
+import { notificationService } from "@/services/notification.service";
 import { toaster } from "@/components/ui/toaster";
+import Image from "next/image";
+import { useUserLocation } from "@/hooks/use-user-location";
 
 export function CustomerHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,7 +18,38 @@ export function CustomerHeader() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
     const router = useRouter();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const { location, loading } = useUserLocation();
     const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Fetch unread notifications count
+    const fetchUnreadCount = async () => {
+        try {
+            const data = await notificationService.getNotifications({ limit: 1 });
+            setUnreadCount(data.unreadCount);
+        } catch (error) {
+            console.error("Failed to fetch unread count", error);
+        }
+    };
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchUnreadCount();
+
+            // Optional: poll every 5 minutes
+            const interval = setInterval(fetchUnreadCount, 5 * 60 * 1000);
+
+            // Listen for manual refresh events
+            const handleRefresh = () => fetchUnreadCount();
+            window.addEventListener('notifications:refresh', handleRefresh);
+
+            return () => {
+                clearInterval(interval);
+                window.removeEventListener('notifications:refresh', handleRefresh);
+            };
+        }
+    }, [isAuthenticated]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -41,6 +75,7 @@ export function CustomerHeader() {
     ];
 
     const handleLogout = async () => {
+        setIsLoggingOut(true);
         try {
             await authService.logout();
             logoutStore();
@@ -49,6 +84,8 @@ export function CustomerHeader() {
         } catch {
             logoutStore();
             // router.push("/");
+        } finally {
+            setIsLoggingOut(false);
         }
         setProfileDropdownOpen(false);
         setMobileMenuOpen(false);
@@ -65,22 +102,19 @@ export function CustomerHeader() {
                     <div className="flex gap-5">
                         {/* Logo and Brand */}
                         <Link href="/" className="flex items-center space-x-2">
-                            <div className="bg-[#E89D24] px-2 py-1 rounded">
-                                <span className="text-white font-bold text-sm">WP</span>
-                            </div>
-                            <div className="hidden sm:block">
-                                <h1 className="font-bold text-lg text-gray-900">WellnessPro</h1>
-                            </div>
+                            <Image src="/Logo.svg" alt="iBookam Logo" width={120} height={100} />
                         </Link>
 
-                        {/* Desktop: City Selector */}
-                        <div className="hidden md:flex items-center space-x-2">
-                            <select className="px-2 py-2 text-sm">
-                                <option>Lagos</option>
-                                <option>Abuja</option>
-                                <option>Port Harcourt</option>
-                                <option>Ibadan</option>
-                            </select>
+                        {/* Desktop: City Selector / Location */}
+                        <div className="hidden md:flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                            <MapPin className="w-4 h-4 text-[#E89D24]" />
+                            {loading ? (
+                                <span className="text-sm text-gray-500 flex items-center gap-2">
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Detecting...
+                                </span>
+                            ) : (
+                                <span className="text-sm font-medium text-gray-700">{location}</span>
+                            )}
                         </div>
                     </div>
 
@@ -108,9 +142,14 @@ export function CustomerHeader() {
                                 <div className="relative" ref={dropdownRef}>
                                     <button
                                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                                        className="flex items-center space-x-2 hover:opacity-80 transition"
+                                        className="flex items-center space-x-2 hover:opacity-80 transition relative"
                                     >
-                                        <User className="w-5 h-5 text-gray-600" />
+                                        <div className="relative">
+                                            <User className="w-5 h-5 text-gray-600" />
+                                            {unreadCount > 0 && (
+                                                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
+                                            )}
+                                        </div>
                                         <span className="text-sm font-medium text-gray-700">Profile</span>
                                     </button>
 
@@ -126,20 +165,44 @@ export function CustomerHeader() {
                                                 Settings
                                             </Link>
                                             <Link
-                                                href="/notifications"
+                                                href="/saved"
                                                 onClick={() => setProfileDropdownOpen(false)}
                                                 className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                             >
-                                                <Bell className="w-4 h-4 text-gray-500" />
-                                                Notifications
+                                                <Bookmark className="w-4 h-4 text-gray-500" />
+                                                Saved
+                                            </Link>
+                                            <Link
+                                                href="/history"
+                                                onClick={() => setProfileDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <History className="w-4 h-4 text-gray-500" />
+                                                History
+                                            </Link>
+                                            <Link
+                                                href="/notifications"
+                                                onClick={() => setProfileDropdownOpen(false)}
+                                                className="flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Bell className="w-4 h-4 text-gray-500" />
+                                                    Notifications
+                                                </div>
+                                                {unreadCount > 0 && (
+                                                    <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] text-center">
+                                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                                    </span>
+                                                )}
                                             </Link>
                                             <div className="border-t border-gray-100 my-1" />
                                             <button
                                                 onClick={handleLogout}
-                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left"
+                                                disabled={isLoggingOut}
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                <LogOut className="w-4 h-4 text-gray-500" />
-                                                Logout
+                                                {isLoggingOut ? <Loader2 className="w-4 h-4 text-gray-500 animate-spin" /> : <LogOut className="w-4 h-4 text-gray-500" />}
+                                                {isLoggingOut ? "Logging out..." : "Logout"}
                                             </button>
                                         </div>
                                     )}
@@ -158,12 +221,17 @@ export function CustomerHeader() {
                     {/* Mobile: Hamburger Menu Button */}
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="md:hidden p-2 rounded-md hover:bg-gray-100"
+                        className="md:hidden p-2 rounded-md hover:bg-gray-100 relative"
                     >
                         {mobileMenuOpen ? (
                             <X className="w-6 h-6 text-gray-700" />
                         ) : (
-                            <Menu className="w-6 h-6 text-gray-700" />
+                            <div className="relative">
+                                <Menu className="w-6 h-6 text-gray-700" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
+                                )}
+                            </div>
                         )}
                     </button>
                 </div>
@@ -185,10 +253,7 @@ export function CustomerHeader() {
                 {/* Drawer Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200">
                     <div className="flex items-center space-x-2">
-                        <div className="bg-[#E89D24] px-2 py-1 rounded">
-                            <span className="text-white font-bold text-sm">WP</span>
-                        </div>
-                        <h3 className="font-bold text-lg">WellnessPro</h3>
+                        <Image src="/Logo.svg" alt="iBookam Logo" width={120} height={100} />
                     </div>
                     <button
                         onClick={() => setMobileMenuOpen(false)}
@@ -198,15 +263,19 @@ export function CustomerHeader() {
                     </button>
                 </div>
 
-                {/* City Selector in Drawer */}
-                <div className="p-4 border-b border-gray-200">
-                    <label className="block text-xs font-medium text-gray-600 mb-2">Select City</label>
-                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E89D24]">
-                        <option>Lagos</option>
-                        <option>Abuja</option>
-                        <option>Port Harcourt</option>
-                        <option>Ibadan</option>
-                    </select>
+                {/* Location in Drawer */}
+                <div className="p-4 border-b border-gray-200 bg-gray-50/50">
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Current Location</label>
+                    <div className="flex items-center space-x-2 bg-white px-3 py-2.5 rounded-lg border border-gray-200">
+                        <MapPin className="w-4 h-4 text-[#E89D24]" />
+                        {loading ? (
+                            <span className="text-sm text-gray-500 flex items-center gap-2">
+                                <Loader2 className="w-3 h-3 animate-spin" /> Detecting...
+                            </span>
+                        ) : (
+                            <span className="text-sm font-bold text-gray-700">{location}</span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Navigation Links */}
@@ -240,11 +309,18 @@ export function CustomerHeader() {
                             </Link>
                             <Link
                                 href="/notifications"
-                                className="flex items-center space-x-3 rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
+                                className="flex items-center justify-between rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                <Bell className="w-5 h-5" />
-                                <span>Notifications</span>
+                                <div className="flex items-center space-x-3">
+                                    <Bell className="w-5 h-5" />
+                                    <span>Notifications</span>
+                                </div>
+                                {unreadCount > 0 && (
+                                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                    </span>
+                                )}
                             </Link>
                         </>
                     )}
@@ -255,11 +331,12 @@ export function CustomerHeader() {
                     {isAuthenticated && user ? (
                         <Button
                             onClick={handleLogout}
+                            disabled={isLoggingOut}
                             variant="outline"
-                            className="w-full flex items-center justify-center space-x-2 py-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                            className="w-full flex items-center justify-center space-x-2 py-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <LogOut className="w-4 h-4" />
-                            <span>Logout</span>
+                            {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                            <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
                         </Button>
                     ) : (
                         <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>

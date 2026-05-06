@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
 // Simplified Dialog for MVP - not full headless UI but functional
@@ -11,21 +12,30 @@ interface DialogProps {
 }
 
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!open) return null;
 
-  return (
+  const content = (
     <div
       className="fixed top-0 inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0 h-full p-4"
       onClick={() => onOpenChange(false)}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[90vw] flex justify-center items-center min-h-0"
-      >
+      <div className="w-full max-w-[90vw] flex justify-center items-center min-h-0">
         {children}
       </div>
     </div>
   );
+
+  if (mounted && typeof document !== 'undefined') {
+    return createPortal(content, document.body);
+  }
+
+  return content;
 }
 
 export function DialogContent({

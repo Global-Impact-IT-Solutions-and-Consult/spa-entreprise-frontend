@@ -3,7 +3,13 @@
 import Image from "next/image";
 import { Star, CheckCircle2, MapPin, Scissors, Share2, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { favoritesService } from "@/services/favorites.service";
+import { useAuthStore } from "@/store/auth.store";
+import { useFavoritesStore } from "@/store/favorites.store";
+import { useRouter } from "next/navigation";
+import { toaster } from "@/components/ui/toaster";
+import { AuthRequiredModal } from "./auth-required-modal";
 
 interface BusinessHeaderProps {
     business: {
@@ -20,14 +26,49 @@ interface BusinessHeaderProps {
         coverImage?: string | null;
         startingPrice: string;
     };
+    onShareClick?: () => void;
 }
 
-export function BusinessHeader({ business }: BusinessHeaderProps) {
-    const [isSaved, setIsSaved] = useState(false);
+export function BusinessHeader({ business, onShareClick }: BusinessHeaderProps) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const { isAuthenticated } = useAuthStore();
+    const { businessIds, addBusiness, removeBusiness } = useFavoritesStore();
+    const router = useRouter();
+
     const name = business.businessName ?? business.name ?? "Wellness Business";
     const bannerImage = business.coverImage || business.bannerImage || business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=80";
     const profileImage = business.profileImage || business.primaryImageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&q=80";
     const rating = typeof business.rating === 'string' ? parseFloat(business.rating) : (business.rating || 0);
+
+    const isSaved = business.id ? businessIds.includes(business.id) : false;
+
+    const handleSaveToggle = async () => {
+        if (!isAuthenticated) {
+            setIsAuthModalOpen(true);
+            return;
+        }
+
+        if (!business.id) return;
+
+        setIsLoading(true);
+        try {
+            if (isSaved) {
+                await favoritesService.removeBusinessFavorite(business.id);
+                removeBusiness(business.id);
+                toaster.create({ title: "Removed from saved", type: "success" });
+            } else {
+                await favoritesService.addFavorite({ businessId: business.id });
+                addBusiness(business.id);
+                toaster.create({ title: "Saved successfully", type: "success" });
+            }
+        } catch (error) {
+            console.error('Failed to toggle favorite status:', error);
+            toaster.create({ title: "Failed to update saved status", type: "error" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="relative mb-8">
@@ -93,10 +134,6 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
                                         <Scissors className="w-4 h-4" />
                                         <span className="text-sm">{business.category || "Wellness"}</span>
                                     </div>
-
-                                    <div className="text-lg font-bold text-gray-900">
-                                        ₦{business.startingPrice}
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -105,20 +142,30 @@ export function BusinessHeader({ business }: BusinessHeaderProps) {
                     {/* Action Buttons */}
                     <div className="flex gap-3 md:pb-6">
                         <Button
-                            onClick={() => setIsSaved(!isSaved)}
+                            onClick={handleSaveToggle}
+                            disabled={isLoading}
                             variant="outline"
                             className={`h-12 px-6 rounded-md border-gray-100 font-bold gap-2 transition-all ${isSaved ? 'bg-red-50 text-red-500 border-red-100' : 'text-gray-700 hover:bg-gray-50'}`}
                         >
-                            <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500' : ''}`} />
-                            Save
+                            <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500' : ''} ${isLoading ? 'animate-pulse' : ''}`} />
+                            {isSaved ? 'Saved' : 'Save'}
                         </Button>
-                        <Button variant="outline" className="h-12 px-6 rounded-md border-gray-100 text-gray-700 font-bold gap-2 hover:bg-gray-50 transition-all">
+                        <Button 
+                            variant="outline" 
+                            onClick={onShareClick}
+                            className="h-12 px-6 rounded-md border-gray-100 text-gray-700 font-bold gap-2 hover:bg-gray-50 transition-all"
+                        >
                             <Share2 className="w-4 h-4" />
                             Share
                         </Button>
                     </div>
                 </div>
             </div>
+
+            <AuthRequiredModal 
+                isOpen={isAuthModalOpen} 
+                onClose={setIsAuthModalOpen} 
+            />
         </div>
     );
 }

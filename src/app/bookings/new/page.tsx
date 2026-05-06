@@ -3,9 +3,8 @@
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
-    X, User, Check, Loader2, Calendar as CalendarIcon, Clock, MapPin,
-    ChevronLeft, ChevronRight, Info, AlertCircle, ShoppingBag,
-    Home, Store, Star, CalendarDays, Search, ChevronDown
+    User, Loader2, Calendar as CalendarIcon, MapPin,
+    ChevronDown, Store, Home, Star
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,10 +12,19 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { bookingPublicService } from "@/services/booking-public.service";
 import { bookingService } from "@/services/booking.service";
+import { paymentService } from "@/services/payment.service";
 import { Business, Service, Staff } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
 import { useAuthStore } from "@/store/auth.store";
-import { generateTimeSlots } from "@/lib/booking-utils";
+
+const formatTime12h = (time24: string) => {
+    if (!time24) return "";
+    const [hours, minutes] = time24.split(":");
+    const h = parseInt(hours, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+};
 
 function BookingContent() {
     const searchParams = useSearchParams();
@@ -26,8 +34,11 @@ function BookingContent() {
     const serviceId = searchParams.get("serviceId");
     const businessId = searchParams.get("businessId");
 
+    // UI State
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false);
+    const [paymentStatusText, setPaymentStatusText] = useState("");
 
     // Data state
     const [business, setBusiness] = useState<Business | null>(null);
@@ -37,7 +48,6 @@ function BookingContent() {
     // Selection state
     const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null); // null means "Any"
     const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-    const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false);
     const [availableSlots, setAvailableSlots] = useState<any[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<any | null>(null);
     const [deliveryType, setDeliveryType] = useState<"in_location" | "home_service">("in_location");
@@ -66,7 +76,7 @@ function BookingContent() {
 
                 // Set initial delivery type based on service support
                 if (currentService) {
-                    if (currentService.deliveryType === 'home_service_only') {
+                    if (currentService.deliveryType === 'home_service') {
                         setDeliveryType("home_service");
                     } else {
                         setDeliveryType("in_location");
@@ -85,18 +95,46 @@ function BookingContent() {
 
     // Fetch availability
     useEffect(() => {
-        if (businessId && serviceId && selectedDate && selectedStaff) {
+        if (businessId && serviceId && selectedDate) {
             const fetchAvailability = async () => {
                 setIsAvailabilityLoading(true);
                 try {
-                    const data = await bookingPublicService.getStaffAvailability({
-                        businessId,
-                        serviceId,
-                        staffId: selectedStaff.id,
-                        date: selectedDate
-                    });
-                    console.log(data.availableSlots);
-                    setAvailableSlots(data.availableSlots || []);
+                    let data;
+                    if (selectedStaff) {
+                        data = await bookingPublicService.getStaffAvailability({
+                            businessId,
+                            serviceId,
+                            staffId: selectedStaff.id,
+                            date: selectedDate
+                        });
+                    } else {
+                        data = await bookingPublicService.getGeneralAvailability({
+                            businessId,
+                            serviceId,
+                            date: selectedDate
+                        });
+                    }
+                    const allSlots = [...(data.availableSlots || []), ...(data.unavailableSlots || [])];
+                    allSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+                    // Filter out past slots if today is selected
+                    const now = new Date();
+                    const todayStr = now.toISOString().split('T')[0];
+                    let filteredSlots = allSlots;
+
+                    if (selectedDate === todayStr) {
+                        const currentHour = now.getHours();
+                        const currentMinute = now.getMinutes();
+
+                        filteredSlots = allSlots.filter(slot => {
+                            const [slotHour, slotMinute] = slot.startTime.split(':').map(Number);
+                            if (slotHour > currentHour) return true;
+                            if (slotHour === currentHour && slotMinute > currentMinute) return true;
+                            return false;
+                        });
+                    }
+
+                    setAvailableSlots(filteredSlots);
                 } catch (error) {
                     console.error("Error fetching availability:", error);
                     setAvailableSlots([]);
@@ -118,18 +156,7 @@ function BookingContent() {
             : service.price;
     }, [deliveryType, service]);
 
-    const slotsFromOperatingHours = useMemo(() => {
-        if (!business?.operatingHours || !selectedDate) return [];
-
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const weekday = days[new Date(selectedDate).getDay()];
-        const dayHours = (business.operatingHours as any)[weekday];
-
-        if (!dayHours || dayHours.closed) return [];
-
-        const totalInterval = (service?.duration || 60) + (service?.bufferTime || 0);
-        return generateTimeSlots(dayHours.open, dayHours.close, totalInterval);
-    }, [business, selectedDate, service, selectedStaff]);
+    // Removed client-side slot generation since API handles all availability
 
     const taxAmount = price * 0.075;
     const totalAmount = price + taxAmount;
@@ -146,6 +173,7 @@ function BookingContent() {
         }
 
         setIsSubmitting(true);
+        setPaymentStatusText("Booking your appointment...");
         try {
             const res = await bookingService.createBooking({
                 businessId: businessId!,
@@ -156,16 +184,27 @@ function BookingContent() {
                 userId: user.id,
             });
 
-            toaster.create({ title: "Success!", description: "Your appointment has been booked.", type: "success" });
-            router.push("/my-bookings");
+            // Initialize Payment
+            setPaymentStatusText("Redirecting to secure payment...");
+            const paymentRes = await paymentService.initializePayment({
+                bookingId: res.id
+            });
+
+            if (paymentRes.paymentLink) {
+                window.location.href = paymentRes.paymentLink; // Redirect to Flutterwave
+            } else {
+                toaster.create({ title: "Success!", description: "Your appointment has been booked. Payment link missing.", type: "warning" });
+                router.push("/my-bookings");
+            }
+
         } catch (error: any) {
             toaster.create({
                 title: "Booking Failed",
                 description: error.response?.data?.message || "An unexpected error occurred.",
                 type: "error"
             });
-        } finally {
             setIsSubmitting(false);
+            setPaymentStatusText("");
         }
     };
 
@@ -189,15 +228,12 @@ function BookingContent() {
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-8">
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-[#E89D24] rounded flex items-center justify-center">
-                                <span className="text-white font-black text-sm">WP</span>
-                            </div>
-                            <span className="text-lg font-bold tracking-tight">WellnessPro</span>
+                            <Image src="/Logo.svg" alt="iBookam Logo" width={150} height={50} />
                         </Link>
-                        <div className="hidden md:flex items-center gap-2 text-xs font-bold text-gray-400">
+                        {/* <div className="hidden md:flex items-center gap-2 text-xs font-bold text-gray-400">
                             Lagos
                             <ChevronDown className="w-3 h-3" />
-                        </div>
+                        </div> */}
                     </div>
                     <button
                         onClick={() => router.back()}
@@ -232,9 +268,22 @@ function BookingContent() {
                             <div className="text-right flex flex-col items-end">
                                 <p className="text-xl font-bold text-gray-900">₦{service.price.toLocaleString()}</p>
                                 <p className="text-xs text-gray-400 font-medium mt-1">{service.duration} minutes</p>
-                                <button className="text-[#E89D24] text-xs font-bold hover:underline mt-2">Change service</button>
+                                <Link
+                                    href={`/businesses/${businessId}`}
+                                    className="text-[#E89D24] text-xs font-bold hover:underline mt-2 inline-block"
+                                >
+                                    Change service
+                                </Link>
                             </div>
                         </div>
+
+                        {/* Service Description */}
+                        {service.description && (
+                            <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                <h2 className="text-lg font-bold mb-2">About this service</h2>
+                                <p className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">{service.description}</p>
+                            </section>
+                        )}
 
                         {/* Staff Selection */}
                         <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
@@ -336,7 +385,7 @@ function BookingContent() {
                                                 <Loader2 className="w-6 h-6 text-[#E89D24] animate-spin mb-2" />
                                                 <p className="text-gray-400 text-xs font-medium">Checking availability...</p>
                                             </div>
-                                        ) : selectedStaff && availableSlots.length > 0 ? (
+                                        ) : availableSlots.length > 0 ? (
                                             availableSlots.map((slot, idx) => (
                                                 <button
                                                     key={idx}
@@ -350,34 +399,13 @@ function BookingContent() {
                                                                 : "border-gray-50 bg-gray-100 hover:bg-white hover:border-gray-200 text-gray-700"
                                                     )}
                                                 >
-                                                    {slot.startTime}
+                                                    {formatTime12h(slot.startTime)}
                                                 </button>
                                             ))
-                                        ) : selectedStaff && availableSlots.length === 0 ? (
-                                            <div className="col-span-full py-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                                <p className="text-gray-400 text-xs font-medium">No slots available for this staff on this day</p>
-                                            </div>
                                         ) : (
-                                            slotsFromOperatingHours.length > 0 ? (
-                                                slotsFromOperatingHours.map((time, idx) => (
-                                                    <button
-                                                        key={idx}
-                                                        onClick={() => setSelectedSlot({ startTime: time, endTime: '' })}
-                                                        className={cn(
-                                                            "h-12 rounded-lg text-xs font-bold transition-all border",
-                                                            selectedSlot?.startTime === time
-                                                                ? "border-[#E89D24] bg-[#E89D24] text-white"
-                                                                : "border-gray-50 bg-gray-100 hover:bg-white hover:border-gray-200 text-gray-700"
-                                                        )}
-                                                    >
-                                                        {time}
-                                                    </button>
-                                                ))
-                                            ) : (
-                                                <div className="col-span-full py-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                                    <p className="text-gray-400 text-xs font-medium">No slots available for this day</p>
-                                                </div>
-                                            )
+                                            <div className="col-span-full py-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                                <p className="text-gray-400 text-xs font-medium">No slots available on this day</p>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -390,7 +418,7 @@ function BookingContent() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div
                                     onClick={() => {
-                                        if (service.deliveryType !== 'home_service_only') {
+                                        if (service.deliveryType !== 'home_service') {
                                             setDeliveryType("in_location");
                                         }
                                     }}
@@ -403,7 +431,7 @@ function BookingContent() {
                                                 : "border-gray-50 bg-white text-gray-400 hover:border-gray-100 cursor-pointer"
                                     )}
                                 >
-                                    <Store className={cn("w-5 h-5", service.deliveryType === 'home_service_only' ? "text-gray-300" : "text-[#E89D24]")} />
+                                    <Store className={cn("w-5 h-5", service.deliveryType === 'home_service' ? "text-gray-300" : "text-[#E89D24]")} />
                                     In Store
                                 </div>
                                 <div
@@ -461,7 +489,7 @@ function BookingContent() {
                                     <div className="space-y-1">
                                         <p className="text-[10px] font-bold text-gray-900 uppercase tracking-widest">Date & Time</p>
                                         <p className="text-xs font-medium text-gray-500">
-                                            {selectedSlot ? `${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at ${selectedSlot.startTime}` : "Not selected"}
+                                            {selectedSlot ? `${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at ${formatTime12h(selectedSlot.startTime)}` : "Not selected"}
                                         </p>
                                     </div>
 
@@ -497,7 +525,14 @@ function BookingContent() {
                                     disabled={isSubmitting || !selectedSlot}
                                     className="w-full h-12 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold text-sm rounded-lg transition-all active:scale-[0.98]"
                                 >
-                                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Book Now"}
+                                    {isSubmitting ? (
+                                        <div className="flex items-center gap-2">
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            {paymentStatusText || "Book Now"}
+                                        </div>
+                                    ) : (
+                                        "Book Now"
+                                    )}
                                 </Button>
                                 <p className="text-[8px] text-gray-400 text-center font-bold mt-3">You'll confirm payment on the next screen</p>
                             </div>

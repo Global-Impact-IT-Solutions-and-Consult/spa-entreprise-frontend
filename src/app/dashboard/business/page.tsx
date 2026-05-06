@@ -33,10 +33,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import CustomInput from '@/components/ui/InputGroup';
+import PhoneNumberInput from '@/components/ui/PhoneNumberInput';
 import { businessService, BusinessImage } from "@/services/business.service";
 import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { ShareBusinessModal } from "@/components/modules/discovery/share-business-modal";
 import { FaInfoCircle } from "react-icons/fa";
 import { GoNumber } from "react-icons/go";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -85,7 +87,6 @@ export default function BusinessProfilePage() {
     const [showCaptionModal, setShowCaptionModal] = useState(false);
     const [imageToDelete, setImageToDelete] = useState<string | null>(null);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-    const [isCopied, setIsCopied] = useState(false);
     // Dedicated profile & cover image state
     const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
     const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
@@ -104,6 +105,9 @@ export default function BusinessProfilePage() {
         email: "",
         address: "",
         addressNote: "",
+        facebookUrl: "",
+        instagramUrl: "",
+        twitterUrl: "",
     });
 
     // Address selection state
@@ -143,6 +147,9 @@ export default function BusinessProfilePage() {
                 email: (business as any).email || "",
                 address: addressData?.address || "",
                 addressNote: addressData?.note || "",
+                facebookUrl: business.facebookUrl || "",
+                instagramUrl: business.instagramUrl || "",
+                twitterUrl: business.twitterUrl || "",
             });
 
             // Set address selections from database
@@ -188,14 +195,6 @@ export default function BusinessProfilePage() {
         setSelectedCityName(cityName);
         const city = cities.find(c => c.name === cityName);
         setSelectedCity(city || null);
-    };
-
-    const handleCopyLink = () => {
-        const businessLink = `${window.location.origin}/businesses/${businessId}`;
-        navigator.clipboard.writeText(businessLink);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-        toaster.create({ title: "Link copied to clipboard", type: "success" });
     };
 
     const handleOpenLive = () => {
@@ -416,7 +415,10 @@ export default function BusinessProfilePage() {
                 state: stateObject,
                 city: cityObject,
                 address: formData.address,
-                addressNote: formData.addressNote
+                addressNote: formData.addressNote,
+                facebookUrl: formData.facebookUrl,
+                instagramUrl: formData.instagramUrl,
+                twitterUrl: formData.twitterUrl
             });
 
             // Refresh user data in store after profile update
@@ -599,7 +601,7 @@ export default function BusinessProfilePage() {
                 </div>
 
                 <div className="flex items-center gap-3 flex-shrink-0">
-                    <Tooltip content="Available after verification is complete">
+                    <Tooltip content={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL' ? "Available after verification is complete" : "View Public Profile"}>
                         <Button
                             variant="outline"
                             onClick={handleOpenLive}
@@ -616,7 +618,7 @@ export default function BusinessProfilePage() {
                         </Button>
                     </Tooltip>
 
-                    <Tooltip content="Available after verification is complete">
+                    <Tooltip content={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL' ? "Available after verification is complete" : "Share Business Profile"}>
                         <Button
                             variant="outline"
                             disabled={business?.status?.toLocaleUpperCase() === 'PENDING_APPROVAL'}
@@ -702,14 +704,16 @@ export default function BusinessProfilePage() {
                                     </div>
                                 </div>
 
-                                <CustomInput
-                                    label="Contact Phone *"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    placeholder="+234 801 234 5678"
-                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
-                                />
+                                <div className="space-y-1.5">
+                                    <PhoneNumberInput
+                                        label="Contact Phone *"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        required
+                                        labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                    />
+                                </div>
 
                                 <CustomInput
                                     label="Contact Email *"
@@ -774,6 +778,36 @@ export default function BusinessProfilePage() {
                                         labelClassName="uppercase tracking-widest text-[11px] font-bold"
                                     />
                                 </div>
+                            </div>
+                        </section>
+
+                        <section className="space-y-6">
+                            <h3 className="text-xl font-bold text-gray-900">Business Socials</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <CustomInput
+                                    label="Facebook URL"
+                                    name="facebookUrl"
+                                    value={formData.facebookUrl}
+                                    onChange={handleInputChange}
+                                    placeholder="https://facebook.com/..."
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
+                                <CustomInput
+                                    label="Instagram URL"
+                                    name="instagramUrl"
+                                    value={formData.instagramUrl}
+                                    onChange={handleInputChange}
+                                    placeholder="https://instagram.com/..."
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
+                                <CustomInput
+                                    label="X(Twitter) URL"
+                                    name="twitterUrl"
+                                    value={formData.twitterUrl}
+                                    onChange={handleInputChange}
+                                    placeholder="https://x.com/..."
+                                    labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                />
                             </div>
                         </section>
 
@@ -968,56 +1002,13 @@ export default function BusinessProfilePage() {
             )}
 
             {/* Share Modal */}
-            <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
-                <DialogContent className="sm:max-w-md bg-white rounded-2xl p-0 overflow-hidden border-none">
-                    <div className="p-8">
-                        <DialogHeader className="mb-6">
-                            <DialogTitle className="text-2xl font-bold text-gray-900">Share Business</DialogTitle>
-                            <DialogDescription className="text-gray-500 font-medium">
-                                Share your business profile with customers and partners.
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <div className="space-y-6">
-                            <div className="flex items-center space-x-2">
-                                <div className="grid flex-1 gap-2">
-                                    <Label htmlFor="link" className="sr-only">Link</Label>
-                                    <Input
-                                        id="link"
-                                        defaultValue={businessUrl}
-                                        readOnly
-                                        className="h-12 bg-gray-50 border-gray-100 rounded-xl focus-visible:ring-[#F59E0B]"
-                                    />
-                                </div>
-                                <Button
-                                    type="button"
-                                    onClick={handleCopyLink}
-                                    className="h-12 px-6 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl flex items-center gap-2 min-w-[120px]"
-                                >
-                                    {isCopied ? (
-                                        <>
-                                            <Check className="h-4 w-4" />
-                                            Copied
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Copy className="h-4 w-4" />
-                                            Copy
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-
-                            <div className="flex justify-center gap-4 pt-4 border-t border-gray-50">
-                                {/* You could add social share icons here if needed */}
-                                <p className="text-xs text-gray-400 font-medium">
-                                    Publicly accessible at the link above
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <ShareBusinessModal
+                isOpen={isShareModalOpen}
+                onClose={setIsShareModalOpen}
+                businessUrl={businessUrl}
+                businessName={formData.businessName || "this business"}
+                description="Share your business profile with customers and partners."
+            />
         </div>
     );
 }

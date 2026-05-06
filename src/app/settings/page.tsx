@@ -1,21 +1,33 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { User, Camera, Lock, Shield, AlertTriangle, Trash2, ChevronRight, Loader2 } from "lucide-react";
+import { User, Camera, Lock, Shield, AlertTriangle, Trash2, ChevronRight, Loader2, Bell, Calendar, CreditCard, Info } from "lucide-react";
 import Image from "next/image";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/auth.store";
-import { userService, UpdateProfileDto } from "@/services/user.service";
+import { userService, UpdateProfileDto, SecuritySettings } from "@/services/user.service";
+import { notificationService, NotificationPreferences } from "@/services/notification.service";
 import { toaster } from "@/components/ui/toaster";
+import { ChangePasswordModal } from "@/components/modules/settings/change-password-modal";
+import { DeleteAccountModal } from "@/components/modules/settings/delete-account-modal";
+import { MFAModal } from "@/components/modules/settings/mfa-modal";
+import { format } from "date-fns";
+import { handleApiError } from "@/lib/api";
+import PhoneNumberInput from "@/components/ui/PhoneNumberInput";
 
 export default function SettingsPage() {
     const { user, updateUser } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isMfaModalOpen, setIsMfaModalOpen] = useState(false);
+    const [mfaMode, setMfaMode] = useState<"enable" | "disable">("enable");
+    const [securitySettings, setSecuritySettings] = useState<SecuritySettings | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState<UpdateProfileDto>({
@@ -24,6 +36,9 @@ export default function SettingsPage() {
         email: "",
         phone: "",
     });
+
+    const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
+    const [updating, setUpdating] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -36,6 +51,48 @@ export default function SettingsPage() {
             setAvatarPreview(user.profilePicture || null);
         }
     }, [user]);
+
+    useEffect(() => {
+        fetchPreferences();
+        fetchSecuritySettings();
+    }, []);
+
+    const fetchSecuritySettings = async () => {
+        try {
+            const data = await userService.getSecuritySettings();
+            setSecuritySettings(data);
+        } catch (error) {
+            console.error("Failed to load security settings", error);
+        }
+    };
+
+    const fetchPreferences = async () => {
+        try {
+            const data = await notificationService.getPreferences();
+            setPreferences(data);
+        } catch (error) {
+            console.error("Failed to load notification preferences", error);
+        }
+    };
+
+    const handleToggle = async (key: keyof NotificationPreferences, value: boolean) => {
+        if (!preferences) return;
+
+        try {
+            setUpdating(key);
+            const updated = await notificationService.updatePreferences({ [key]: value });
+            setPreferences(updated);
+            toaster.create({
+                title: "Success",
+                description: "Notification preferences updated successfully",
+                type: "success",
+            });
+        } catch (error) {
+            handleApiError(error, "Update Failed");
+        } finally {
+            setUpdating(null);
+        }
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -53,11 +110,7 @@ export default function SettingsPage() {
             updateUser(updatedUser);
             toaster.create({ title: "Profile updated successfully", type: "success" });
         } catch (error) {
-            toaster.create({
-                title: "Failed to update profile",
-                description: "Something went wrong. Please try again.",
-                type: "error",
-            });
+            handleApiError(error, "Update Failed");
         } finally {
             setIsLoading(false);
         }
@@ -66,6 +119,28 @@ export default function SettingsPage() {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Validation
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+        if (file.size > maxSize) {
+            toaster.create({
+                title: "File too large",
+                description: "Profile picture must be less than 5MB",
+                type: "error"
+            });
+            return;
+        }
+
+        if (!allowedTypes.includes(file.type)) {
+            toaster.create({
+                title: "Invalid file type",
+                description: "Please upload a JPG, PNG, or WEBP image",
+                type: "error"
+            });
+            return;
+        }
 
         // Preview
         const reader = new FileReader();
@@ -81,11 +156,7 @@ export default function SettingsPage() {
             updateUser({ ...user!, profilePicture: res.profilePicture });
             toaster.create({ title: "Profile picture updated", type: "success" });
         } catch (error) {
-            toaster.create({
-                title: "Upload failed",
-                description: "Could not upload profile picture.",
-                type: "error",
-            });
+            handleApiError(error, "Upload Failed");
         } finally {
             setIsUploading(false);
         }
@@ -195,14 +266,12 @@ export default function SettingsPage() {
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-medium text-gray-400 ml-1">Phone Number</label>
-                                        <input
-                                            type="tel"
+                                        <PhoneNumberInput
+                                            label="Phone Number"
                                             name="phone"
                                             value={formData.phone}
                                             onChange={handleInputChange}
-                                            placeholder="+234 800 123 4567"
-                                            className="w-full h-12 px-4 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-gray-900 font-medium"
+                                            required
                                         />
                                     </div>
 
@@ -239,10 +308,18 @@ export default function SettingsPage() {
                                         </div>
                                         <div>
                                             <p className="font-bold text-gray-900">Password</p>
-                                            <p className="text-sm text-gray-400">Last changed 3 months ago</p>
+                                            <p className="text-sm text-gray-400">
+                                                {securitySettings?.lastLoginAt 
+                                                    ? `Last login: ${format(new Date(securitySettings.lastLoginAt), "MMM d, yyyy")}`
+                                                    : "Password secured"}
+                                            </p>
                                         </div>
                                     </div>
-                                    <Button variant="outline" className="rounded-lg h-10 px-6 font-bold border-gray-200 hover:bg-white hover:border-amber-500 hover:text-amber-600 transition-all">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setIsPasswordModalOpen(true)}
+                                        className="rounded-lg h-10 px-6 font-bold border-gray-200 hover:bg-white hover:border-amber-500 hover:text-amber-600 transition-all"
+                                    >
                                         Change
                                     </Button>
                                 </div>
@@ -255,14 +332,112 @@ export default function SettingsPage() {
                                         </div>
                                         <div>
                                             <p className="font-bold text-gray-900">Two-Factor Authentication</p>
-                                            <p className="text-sm text-gray-400">Add extra security to your account</p>
+                                            <p className="text-sm text-gray-400">
+                                                {securitySettings?.mfaEnabled ? "MFA is currently enabled" : "Add extra security to your account"}
+                                            </p>
                                         </div>
                                     </div>
-                                    <Switch />
+                                    <Switch 
+                                        checked={securitySettings?.mfaEnabled || false} 
+                                        onCheckedChange={(checked) => {
+                                            setMfaMode(checked ? "enable" : "disable");
+                                            setIsMfaModalOpen(true);
+                                        }}
+                                    />
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Notifications Section */}
+                    {preferences && (
+                        <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-8 space-y-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-amber-50 rounded-lg">
+                                        <Bell className="w-5 h-5 text-amber-600" />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-gray-900 font-serif">Notifications</h2>
+                                </div>
+                                <p className="text-sm text-gray-500">Configure how and when you receive notifications</p>
+
+                                <div className="space-y-6 pt-2">
+                                    <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                                        <div>
+                                            <p className="font-bold text-gray-900">Email Notifications</p>
+                                            <p className="text-sm text-gray-400">Receive updates and alerts via email</p>
+                                        </div>
+                                        <Switch
+                                            checked={preferences.emailNotifications}
+                                            onCheckedChange={(val) => handleToggle("emailNotifications", val)}
+                                            disabled={updating === "emailNotifications"}
+                                            className="data-[state=checked]:bg-emerald-500"
+                                        />
+                                    </div>
+
+                                    {/* Granular Settings */}
+                                    <div className="space-y-4">
+                                        {/* Up Coming Booking */}
+                                        <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-100 shadow-sm">
+                                                    <Calendar className="w-5 h-5 text-gray-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900">Up Coming Booking</p>
+                                                    <p className="text-sm text-gray-400">Let you know your next boking</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences.upcomingBooking}
+                                                onCheckedChange={(val) => handleToggle("upcomingBooking", val)}
+                                                disabled={updating === "upcomingBooking"}
+                                                className="data-[state=checked]:bg-emerald-500"
+                                            />
+                                        </div>
+
+                                        {/* Payment Notifications */}
+                                        <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-100 shadow-sm">
+                                                    <CreditCard className="w-5 h-5 text-gray-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900">Payment Notifications</p>
+                                                    <p className="text-sm text-gray-400">When payments are received or released</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences.paymentNotifications}
+                                                onCheckedChange={(val) => handleToggle("paymentNotifications", val)}
+                                                disabled={updating === "paymentNotifications"}
+                                                className="data-[state=checked]:bg-emerald-500"
+                                            />
+                                        </div>
+
+                                        {/* System Alerts */}
+                                        <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-100 shadow-sm">
+                                                    <Info className="w-5 h-5 text-gray-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900">System Alerts</p>
+                                                    <p className="text-sm text-gray-400">Important platform updates and maintenance</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences.systemAlerts}
+                                                onCheckedChange={(val) => handleToggle("systemAlerts", val)}
+                                                disabled={updating === "systemAlerts"}
+                                                className="data-[state=checked]:bg-emerald-500"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Danger Zone Section */}
                     <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
@@ -284,7 +459,10 @@ export default function SettingsPage() {
                                         <p className="text-sm text-red-400">Permanently remove your account and all data</p>
                                     </div>
                                 </div>
-                                <Button className="bg-[#E74C3C] hover:bg-[#C0392B] text-white px-8 h-10 rounded-lg font-bold">
+                                <Button 
+                                    onClick={() => setIsDeleteModalOpen(true)}
+                                    className="bg-[#E74C3C] hover:bg-[#C0392B] text-white px-8 h-10 rounded-lg font-bold"
+                                >
                                     Delete
                                 </Button>
                             </div>
@@ -294,6 +472,24 @@ export default function SettingsPage() {
             </main>
 
             <CustomerFooter />
+
+            <ChangePasswordModal
+                open={isPasswordModalOpen}
+                mfaEnabled={securitySettings?.mfaEnabled || false}
+                onClose={() => setIsPasswordModalOpen(false)}
+            />
+
+            <DeleteAccountModal
+                open={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+            />
+
+            <MFAModal
+                open={isMfaModalOpen}
+                mode={mfaMode}
+                onClose={() => setIsMfaModalOpen(false)}
+                onSuccess={fetchSecuritySettings}
+            />
         </div>
     );
 }

@@ -1,5 +1,21 @@
 import apiClient from '@/lib/api-client';
 
+function getErrorStatus(error: unknown) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'status' in error.response &&
+    typeof error.response.status === 'number'
+  ) {
+    return error.response.status;
+  }
+
+  return undefined;
+}
+
 export interface BusinessType {
   code: string;
   name: string;
@@ -136,6 +152,22 @@ export interface AdminUserDetail {
 export interface AdminUsersResponse {
   data: AdminUserListItem[];
   pagination: PaginationInfo;
+}
+
+export interface CreateAdminUserDto {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  role: 'customer' | 'business' | 'admin';
+}
+
+export interface UpdateAdminUserDto {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  password?: string;
 }
 
 // --- Dashboard (ADMIN_API.md §4) ---
@@ -299,6 +331,53 @@ export interface PaymentsResponse {
   pagination: PaginationInfo;
 }
 
+export interface AdminPaymentDetail {
+  id: string;
+  transactionId: string | null;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  businessId: string;
+  businessName: string;
+  bookingId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  paymentMethod: string | null;
+  flwTransactionId: string | null;
+  createdAt: string;
+  errorMessage: string | null;
+}
+
+export interface PendingServiceApproval {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  duration: number;
+  isActive: boolean;
+  createdAt: string;
+  category: { id: string; name: string } | null;
+  business: {
+    id: string;
+    businessName: string;
+    status: string;
+    city: string;
+  };
+  owner: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+  } | null;
+}
+
+export interface PendingServiceApprovalsResponse {
+  data: PendingServiceApproval[];
+  pagination: PaginationInfo;
+}
+
 // --- Activity logs ---
 export interface ActivityLogItem {
   timestamp: string;
@@ -332,6 +411,13 @@ export interface AdminSession {
   canRevoke: boolean;
 }
 
+export interface HealthCheckResponse {
+  status: string;
+  info?: Record<string, unknown>;
+  error?: Record<string, unknown>;
+  details?: Record<string, unknown>;
+}
+
 export const adminService = {
   // Dashboard (GET /admin/dashboard). Optional period for platformGrowth: 7d | 30d | 90d.
   getDashboard: async (params?: { period?: '7d' | '30d' | '90d' }) => {
@@ -362,11 +448,11 @@ export const adminService = {
       }
 
       return { ...response.data, endpointAvailable: true };
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 404) {
         console.warn(
           'Admin business stats endpoint not available yet:',
-          error.response?.status,
+          getErrorStatus(error),
         );
         return {
           pendingApprovals: 0,
@@ -433,11 +519,11 @@ export const adminService = {
           endpointAvailable: false,
         };
       }
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 404) {
         console.warn(
           'Admin businesses endpoint not available yet:',
-          error.response?.status,
+          getErrorStatus(error),
         );
         return {
           data: [],
@@ -456,8 +542,8 @@ export const adminService = {
         `/admin/spas/${businessId}`,
       );
       return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 404) {
         throw new Error(
           'Business not found or admin endpoint not available yet.',
         );
@@ -474,8 +560,8 @@ export const adminService = {
         { notes },
       );
       return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 404) {
         throw new Error(
           'Admin approve endpoint not available yet. Please contact the backend team.',
         );
@@ -496,8 +582,8 @@ export const adminService = {
         { reason, sendEmail },
       );
       return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 404) {
         throw new Error(
           'Admin reject endpoint not available yet. Please contact the backend team.',
         );
@@ -520,8 +606,8 @@ export const adminService = {
         pagination: response.data.pagination,
         endpointAvailable: true,
       };
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 404) {
         console.warn('Admin pending businesses endpoint not available yet');
         return {
           data: [],
@@ -554,6 +640,33 @@ export const adminService = {
     const res = await apiClient.get<AdminUserDetail>(`/admin/users/${id}`);
     return res.data;
   },
+  createUser: async (body: CreateAdminUserDto) => {
+    const res = await apiClient.post<AdminUserDetail>('/users', body);
+    return res.data;
+  },
+  updateUser: async (id: string, body: UpdateAdminUserDto) => {
+    const res = await apiClient.patch<AdminUserDetail>(`/users/${id}`, body);
+    return res.data;
+  },
+  deleteUser: async (id: string) => {
+    const res = await apiClient.delete<{ message: string }>(`/users/${id}`);
+    return res.data;
+  },
+  hardDeleteUser: async (id: string) => {
+    const res = await apiClient.delete<{ message: string }>(`/users/${id}/hard`);
+    return res.data;
+  },
+  exportUsers: async (params?: {
+    search?: string;
+    role?: string;
+    status?: string;
+  }) => {
+    const res = await apiClient.get<Blob>('/admin/users/export', {
+      params,
+      responseType: 'blob',
+    });
+    return res.data;
+  },
   suspendUser: async (id: string, reason: string) => {
     const res = await apiClient.post(`/admin/users/${id}/suspend`, { reason });
     return res.data;
@@ -572,10 +685,10 @@ export const adminService = {
         '/admin/bookings/statistics',
       );
       return { ...res.data, endpointAvailable: true };
-    } catch (e: any) {
-      if (e.response?.status === 404)
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 404)
         return { total: 0, pending: 0, completed: 0, endpointAvailable: false };
-      throw e;
+      throw error;
     }
   },
   getBookings: async (params?: {
@@ -678,6 +791,10 @@ export const adminService = {
     });
     return res.data;
   },
+  getPaymentDetail: async (id: string) => {
+    const res = await apiClient.get<AdminPaymentDetail>(`/admin/payments/${id}`);
+    return res.data;
+  },
 
   // --- Activity logs ---
   getActivityLogs: async (params?: {
@@ -721,5 +838,20 @@ export const adminService = {
     } catch {
       await apiClient.delete(`/admin/settings/sessions/${sessionId}`);
     }
+  },
+  getPendingServiceApprovals: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) => {
+    const res = await apiClient.get<PendingServiceApprovalsResponse>(
+      '/admin/services/pending',
+      { params },
+    );
+    return res.data;
+  },
+  getSystemHealth: async () => {
+    const res = await apiClient.get<HealthCheckResponse>('/health');
+    return res.data;
   },
 };

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { businessService, CityWithCount } from "@/services/business.service";
 
 export function CityListings() {
@@ -26,9 +27,19 @@ export function CityListings() {
 
     if (loading) {
         return (
-            <div className="py-20 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#E89D24]" />
-            </div>
+            <section className="py-12 md:py-16 bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1,2,3].map(i => (
+                            <div key={i} className="bg-white rounded-2xl p-8 shadow-sm">
+                                <Skeleton className="h-20 w-20 rounded-full mb-4 mx-auto bg-gray-100" />
+                                <Skeleton className="h-6 w-3/4 mx-auto mb-2 bg-gray-100" />
+                                <Skeleton className="h-4 w-1/2 mx-auto bg-gray-100" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
         );
     }
 
@@ -68,7 +79,7 @@ export function CityListings() {
                     ))}
 
                     {/* Summary Card */}
-                    <Link href="/businesses" className="group">
+                    {cities.length > 3 && <Link href="/businesses" className="group">
                         <div className="bg-white border border-gray-100 rounded-2xl p-8 md:p-12 text-center shadow-sm hover:shadow-xl hover:border-[#E89D24]/30 transition-all duration-500 hover:-translate-y-1">
                             <div className="bg-gray-50 w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-500">
                                 <MapPin className="w-8 h-8 md:w-10 md:h-10 text-gray-400 group-hover:text-[#E89D24] transition-colors" />
@@ -78,7 +89,7 @@ export function CityListings() {
                             </h3>
                             <p className="text-sm md:text-base text-gray-500 font-medium">{remainingTotal} Businesses</p>
                         </div>
-                    </Link>
+                    </Link>}
                 </div>
             </div>
         </section>

@@ -7,6 +7,7 @@ import { Country, State, City, ICountry, IState, ICity } from 'country-state-cit
 
 import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
+import PhoneNumberInput from '@/components/ui/PhoneNumberInput';
 import { Select } from '@/components/ui/select';
 import { toaster } from "@/components/ui/toaster";
 import { Label } from "@/components/ui/label";
@@ -376,19 +377,19 @@ export default function BusinessInfoPage() {
                     {/* Business Name */}
                     <CustomInput
                         label="Business Name *"
-                        placeholder="wellnesspro"
+                        placeholder="iBookam"
                         name="businessName"
                         value={formData.businessName}
                         onChange={handleInputChange}
                     />
 
                     {/* Phone Number */}
-                    <CustomInput
-                        label="Phone Number *"
-                        placeholder="000 000 000"
+                    <PhoneNumberInput
+                        label="Phone Number "
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
+                        required
                     />
 
                     {/* CAC Number - Optional */}

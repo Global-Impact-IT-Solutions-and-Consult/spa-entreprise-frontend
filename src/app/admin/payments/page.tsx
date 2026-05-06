@@ -10,11 +10,19 @@ import {
   adminService,
   type PaymentStats,
   type AdminPaymentListItem,
+  type AdminPaymentDetail,
   type RevenueTrend,
   type PaymentMethodsDistribution,
 } from '@/services/admin.service';
 import { Eye, RotateCcw, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import { toaster } from '@/components/ui/toaster';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const PAGE_SIZE = 15;
 const STATUS_OPTIONS: SelectOption[] = [
@@ -58,6 +66,20 @@ function escrowColor(s: string) {
   }
 }
 
+function formatDateTime(value: string) {
+  try {
+    return new Date(value).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return value;
+  }
+}
+
 export default function AdminPaymentsPage() {
   const [stats, setStats] = useState<PaymentStats | null>(null);
   const [trend, setTrend] = useState<RevenueTrend | null>(null);
@@ -72,6 +94,11 @@ export default function AdminPaymentsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState<AdminPaymentDetail | null>(
+    null,
+  );
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -128,6 +155,24 @@ export default function AdminPaymentsPage() {
   };
 
   const maxRevenue = trend?.revenue?.length ? Math.max(...trend.revenue) : 1;
+
+  const openPaymentDetails = async (paymentId: string) => {
+    setDetailsLoading(true);
+    setDetailsOpen(true);
+    try {
+      const detail = await adminService.getPaymentDetail(paymentId);
+      setSelectedPayment(detail);
+    } catch {
+      setDetailsOpen(false);
+      toaster.create({
+        title: 'Error',
+        description: 'Failed to load payment details.',
+        type: 'error',
+      });
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   return (
     <div className="p-6 md:p-8">
@@ -361,6 +406,7 @@ export default function AdminPaymentsPage() {
                     <td className="px-4 py-3 text-right">
                       <button
                         type="button"
+                        onClick={() => openPaymentDetails(row.id)}
                         className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
                         title="View"
                       >
@@ -415,18 +461,92 @@ export default function AdminPaymentsPage() {
         </div>
       </Card>
 
-      <div className="mt-6 rounded-lg bg-blue-50 border border-blue-200 p-4 flex gap-3 items-start">
-        <span className="text-blue-600 mt-0.5">ℹ</span>
-        <div>
-          <p className="font-semibold text-blue-900">
-            Advanced Payment Features Coming Soon
-          </p>
-          <p className="text-sm text-blue-800">
-            We&apos;re working on adding manual payment release, dispute
-            resolution tools, and more detailed financial reports.
-          </p>
-        </div>
-      </div>
+      <Dialog
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setSelectedPayment(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Payment Details</DialogTitle>
+            <DialogClose className="absolute right-4 top-4" />
+          </DialogHeader>
+
+          {detailsLoading ? (
+            <div className="py-8 text-center text-gray-500">Loading payment…</div>
+          ) : selectedPayment ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-gray-200 p-4 space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Transaction
+                </h4>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Transaction ID:</span>{' '}
+                  {selectedPayment.transactionId || selectedPayment.id}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Status:</span>{' '}
+                  {selectedPayment.status}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Method:</span>{' '}
+                  {selectedPayment.paymentMethod || '—'}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Amount:</span>{' '}
+                  {formatAmount(selectedPayment.amount)} {selectedPayment.currency}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Created:</span>{' '}
+                  {formatDateTime(selectedPayment.createdAt)}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 p-4 space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900">Customer</h4>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Name:</span>{' '}
+                  {selectedPayment.customerName}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Email:</span>{' '}
+                  {selectedPayment.customerEmail || '—'}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Phone:</span>{' '}
+                  {selectedPayment.customerPhone || '—'}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 p-4 space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Related Booking
+                </h4>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Business:</span>{' '}
+                  {selectedPayment.businessName}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Booking ID:</span>{' '}
+                  {selectedPayment.bookingId || '—'}
+                </p>
+                {selectedPayment.errorMessage && (
+                  <p className="text-sm text-red-600">
+                    <span className="font-medium">Error:</span>{' '}
+                    {selectedPayment.errorMessage}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-gray-500">
+              No payment details available.
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

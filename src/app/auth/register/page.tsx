@@ -3,16 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiMail, FiLock } from 'react-icons/fi';
+import { FiMail, FiLock, FiPhone } from 'react-icons/fi';
 
 import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
+import PhoneNumberInput from '@/components/ui/PhoneNumberInput';
 import { toaster } from "@/components/ui/toaster";
 import { authService } from '@/services/auth.service';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { cn } from '@/lib/utils';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { SocialButtons } from '@/components/auth/SocialButtons';
+import { handleApiError } from '@/lib/api';
 
 type AccountType = 'customer' | 'business';
 
@@ -23,6 +25,7 @@ export default function RegisterPage() {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -32,6 +35,8 @@ export default function RegisterPage() {
         length: false,
         number: false,
         special: false,
+        uppercase: false,
+        lowercase: false,
     });
 
     useEffect(() => {
@@ -39,13 +44,15 @@ export default function RegisterPage() {
             length: password.length >= 8,
             number: /\d/.test(password),
             special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
         });
     }, [password]);
 
-    const strengthPercent = Object.values(strength).filter(Boolean).length * 33.33;
+    const strengthPercent = Object.values(strength).filter(Boolean).length * 20;
 
     const handleRegister = async () => {
-        if (!firstName || !lastName || !email || !password || !confirmPassword) {
+        if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
             toaster.create({ title: "Please fill all fields", type: "error" });
             return;
         }
@@ -65,6 +72,7 @@ export default function RegisterPage() {
             await authService.register({
                 email,
                 password,
+                phone,
                 first_name: firstName,
                 last_name: lastName,
                 role: accountType
@@ -80,9 +88,7 @@ export default function RegisterPage() {
             router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&role=${accountType}`);
 
         } catch (error) {
-            const err = error as { response?: { data?: { message?: string } } };
-            const message = err.response?.data?.message || "Registration failed. Please try again.";
-            toaster.create({ title: "Error", description: message, type: "error" });
+            handleApiError(error, "Registration Failed");
         } finally {
             setIsLoading(false);
         }
@@ -157,6 +163,13 @@ export default function RegisterPage() {
                     onChange={(e) => setEmail(e.target.value)}
                 />
 
+                <PhoneNumberInput
+                    label="Phone Number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                />
+
                 <CustomInput
                     label="Password"
                     type="password"
@@ -179,11 +192,11 @@ export default function RegisterPage() {
                         />
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                        <div className={cn("w-4 h-4 rounded-full flex items-center justify-center border", strength.length && strength.number && strength.special ? "bg-green-500 border-green-500" : "border-gray-200")}>
-                            {(strength.length && strength.number && strength.special) && <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                        <div className={cn("w-4 h-4 rounded-full flex items-center justify-center border", Object.values(strength).every(Boolean) ? "bg-green-500 border-green-500" : "border-gray-200")}>
+                            {Object.values(strength).every(Boolean) && <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                         </div>
                         <span className="text-xs text-gray-500">
-                            At least 8 characters, Contains a number and a special charachter
+                            At least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
                         </span>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -13,11 +14,13 @@ import {
     Clock,
     Settings,
     Headset,
-    LogOut
+    LogOut,
+    Loader2
 } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { toaster } from "@/components/ui/toaster";
+import Image from "next/image";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -33,11 +36,14 @@ export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { logout: logoutStore, user } = useAuthStore();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const business = user?.businesses?.[0];
 
     const handleLogout = async () => {
+        setIsLoggingOut(true);
         try {
             await authService.logout();
+            console.log("Server Logout")
             logoutStore();
             toaster.create({
                 title: "Logged out",
@@ -49,6 +55,8 @@ export function Sidebar() {
             console.error("Logout error:", error);
             logoutStore();
             router.push('/auth/login');
+        } finally {
+            setIsLoggingOut(false);
         }
     };
 
@@ -59,13 +67,7 @@ export function Sidebar() {
         <div className="flex h-screen w-64 flex-col bg-[#1A1F2C] text-gray-400">
             {/* Logo Section */}
             <div className="p-6">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F59E0B] text-white font-bold text-xl">WP</div>
-                    <div>
-                        <h1 className="text-sm font-bold text-white">WellnessPro</h1>
-                        <p className="text-[10px] text-gray-400">Connecting Businesses</p>
-                    </div>
-                </div>
+                <Image src="/Logo_White.svg" alt="iBookam Logo" width={150} height={50} />
             </div>
 
             {/* Navigation Items */}
@@ -132,10 +134,11 @@ export function Sidebar() {
                 </div>
                 <button
                     onClick={handleLogout}
-                    className="w-fit flex items-center gap-3 text-sm font-medium text-[#F59E0B] hover:text-[#fbbf24] transition-colors"
+                    disabled={isLoggingOut}
+                    className="w-fit flex items-center gap-3 text-sm font-medium text-[#F59E0B] hover:text-[#fbbf24] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <LogOut className="h-5 w-5" />
-                    Sign Out
+                    {isLoggingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
+                    {isLoggingOut ? "Signing Out..." : "Sign Out"}
                 </button>
             </div>
         </div>

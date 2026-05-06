@@ -5,11 +5,13 @@ export interface TimeSlot {
     startTime: string;
     endTime: string;
     isAvailable: boolean;
+    reason?: string;
 }
 
 export interface AvailabilityCheckResponse {
     date: string;
     availableSlots: TimeSlot[];
+    unavailableSlots?: TimeSlot[];
 }
 
 export const bookingPublicService = {
@@ -25,6 +27,22 @@ export const bookingPublicService = {
         const { businessId, ...queryParams } = params;
         const response = await apiClient.get<AvailabilityCheckResponse>(
             `/bookings/business/${businessId}/staff-availability`,
+            { params: queryParams }
+        );
+        return response.data;
+    },
+
+    /**
+     * Fetch available time slots for a specific service on a given date (any staff).
+     */
+    getGeneralAvailability: async (params: {
+        businessId: string;
+        serviceId: string;
+        date: string;
+    }): Promise<AvailabilityCheckResponse> => {
+        const { businessId, ...queryParams } = params;
+        const response = await apiClient.get<AvailabilityCheckResponse>(
+            `/bookings/business/${businessId}/availability`,
             { params: queryParams }
         );
         return response.data;
