@@ -81,6 +81,18 @@ export function ServiceCard({ service }: ServiceCardProps) {
         }
     };
 
+    const handleBooking = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!isAuthenticated) {
+            setIsAuthModalOpen(true);
+            return;
+        }
+
+        router.push(`/bookings/new?serviceId=${service.id}&businessId=${businessId}`);
+    };
+
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group">
             {/* Image Container */}
@@ -153,7 +165,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                         <span className="text-xs font-medium">{service.location}{service.distance ? ` • ${service.distance}` : ''}</span>
                     </div>
                     <Button
-                        onClick={() => router.push(`/bookings/new?serviceId=${service.id}&businessId=${businessId}`)}
+                        onClick={handleBooking}
                         className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs font-bold px-4 h-9 rounded transition-transform active:scale-95 shadow-sm"
                     >
                         Book Service
@@ -164,6 +176,8 @@ export function ServiceCard({ service }: ServiceCardProps) {
             <AuthRequiredModal 
                 isOpen={isAuthModalOpen} 
                 onClose={setIsAuthModalOpen} 
+                title="Sign In to Book"
+                description="Sign in or create an account to book this service. Managing your appointments is easier with an account!"
             />
         </div>
     );
