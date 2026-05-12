@@ -16,6 +16,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { determineOnboardingStep } from '@/lib/onboarding-utils';
 import { handleApiError } from '@/lib/api';
+import Image from 'next/image';
 
 function LoginContent() {
     const router = useRouter();
@@ -179,6 +180,11 @@ function LoginContent() {
         <AuthLayout>
             {!isMfaStep ? (
                 <>
+                    <div className="md:hidden flex items-center justify-center mb-8">
+                        <Link href="/" className="hover:opacity-80 transition-opacity inline-block">
+                            <Image src="/Logo.svg" alt="iBookam Logo" width={200} height={100} />
+                        </Link>
+                    </div>
                     <div className="flex flex-col text-center mb-8">
                         <h1 className="text-3xl font-bold text-gray-900 mb-2 font-inter">Welcome Back</h1>
                         <p className="text-sm text-gray-500">
@@ -274,7 +280,7 @@ function LoginContent() {
                                     onChange={(e) => handleMfaChange(i, e.target.value)}
                                     onKeyDown={(e) => handleMfaKeyDown(i, e)}
                                     onPaste={handleMfaPaste}
-                                    className="w-12 h-14 text-center text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
+                                    className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
                                 />
                             ))}
                             <span className="text-gray-300 font-bold mx-1">-</span>
@@ -289,7 +295,7 @@ function LoginContent() {
                                     onChange={(e) => handleMfaChange(i, e.target.value)}
                                     onKeyDown={(e) => handleMfaKeyDown(i, e)}
                                     onPaste={handleMfaPaste}
-                                    className="w-12 h-14 text-center text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
+                                    className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
                                 />
                             ))}
                         </div>

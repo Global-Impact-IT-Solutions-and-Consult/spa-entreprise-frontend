@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { handleApiError } from '@/lib/api';
+import Image from 'next/image';
 
 type AccountType = 'customer' | 'business';
 
@@ -96,34 +97,11 @@ export default function RegisterPage() {
 
     return (
         <AuthLayout>
-            {/* Role Picker */}
-            <div className="flex justify-center mb-6">
-                <div className="bg-gray-100 p-1 rounded-full inline-flex">
-                    <button
-                        type="button"
-                        onClick={() => setAccountType('customer')}
-                        className={cn(
-                            "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200",
-                            accountType === 'customer'
-                                ? "bg-[#6C5CE7] text-white shadow-sm"
-                                : "text-gray-500 hover:text-gray-700"
-                        )}
-                    >
-                        User
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setAccountType('business')}
-                        className={cn(
-                            "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200",
-                            accountType === 'business'
-                                ? "bg-[#6C5CE7] text-white shadow-sm"
-                                : "text-gray-500 hover:text-gray-700"
-                        )}
-                    >
-                        Businesses
-                    </button>
-                </div>
+
+            <div className="md:hidden flex items-center justify-center mb-8">
+                <Link href="/" className="hover:opacity-80 transition-opacity inline-block">
+                    <Image src="/Logo.svg" alt="iBookam Logo" width={200} height={100} />
+                </Link>
             </div>
 
             <div className="flex flex-col text-center mb-8">
@@ -137,6 +115,37 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col gap-5">
+
+                {/* Role Picker */}
+                <div className="flex justify-center">
+                    <div className="bg-gray-100 p-1 rounded-full inline-flex">
+                        <button
+                            type="button"
+                            onClick={() => setAccountType('customer')}
+                            className={cn(
+                                "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200",
+                                accountType === 'customer'
+                                    ? "bg-[#E59622] text-white shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                            )}
+                        >
+                            User
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAccountType('business')}
+                            className={cn(
+                                "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200",
+                                accountType === 'business'
+                                    ? "bg-[#E59622] text-white shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                            )}
+                        >
+                            Businesses
+                        </button>
+                    </div>
+                </div>
+                
                 <div className="flex flex-col md:flex-row gap-4">
                     <CustomInput
                         label="First Name"
