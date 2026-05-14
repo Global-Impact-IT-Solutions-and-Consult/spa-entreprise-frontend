@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -9,7 +10,7 @@ const inter = Inter({
 });
 
 const playfair = Playfair_Display({
-  variable: "--font-playfair-display",
+  variable: "--font-playfair",
   subsets: ["latin"],
 });
 
@@ -17,8 +18,6 @@ export const metadata: Metadata = {
   title: "iBookam",
   description: "Book your premium wellness services",
 };
-
-import { Toaster } from "@/components/ui/toaster";
 
 export default function RootLayout({
   children,
