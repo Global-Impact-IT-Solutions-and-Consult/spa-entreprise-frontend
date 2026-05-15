@@ -45,7 +45,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
     const { isAuthenticated } = useAuthStore();
     const { businessIds, addBusiness, removeBusiness } = useFavoritesStore();
     const router = useRouter();
-    console.log(business);
+    // console.log(business);
 
     const verified = business.verified ?? business.isVerified;
     const price = business.price ?? business.startingPrice;

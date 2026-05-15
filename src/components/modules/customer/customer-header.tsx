@@ -4,13 +4,22 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2, Bookmark, History } from "lucide-react";
+import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2, Bookmark, History, ChevronDown } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { notificationService } from "@/services/notification.service";
 import { toaster } from "@/components/ui/toaster";
 import Image from "next/image";
 import { useUserLocation } from "@/hooks/use-user-location";
+import { Select } from "@/components/ui/select";
+
+const NIGERIAN_STATES = [
+    "Abia", "Abuja", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", 
+    "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Gombe", 
+    "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", 
+    "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", 
+    "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"
+];
 
 export function CustomerHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -19,9 +28,46 @@ export function CustomerHeader() {
     const pathname = usePathname();
     const router = useRouter();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const { location, loading } = useUserLocation();
+    const { state: detectedState, loading, error } = useUserLocation();
     const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
     const [unreadCount, setUnreadCount] = useState(0);
+    const [selectedState, setSelectedState] = useState("");
+
+    useEffect(() => {
+        if (!loading) {
+            setSelectedState(detectedState || "Undetected");
+        }
+    }, [detectedState, loading]);
+
+    const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newState = e.target.value;
+        if (!newState || newState === "Undetected") return;
+
+        setSelectedState(newState);
+
+        // Update localStorage cache for API client
+        try {
+            const cached = localStorage.getItem('user_location_cache');
+            let parsed = cached ? JSON.parse(cached) : { timestamp: Date.now() };
+            
+            parsed.state = newState;
+            parsed.city = newState; // Default city to state for simplicity in manual override
+            parsed.timestamp = Date.now();
+            
+            localStorage.setItem('user_location_cache', JSON.stringify(parsed));
+            
+            toaster.create({
+                title: "Location Updated",
+                description: `Location set to ${newState} State`,
+                type: "success"
+            });
+            
+            // Dispatch custom event to trigger refetch in components without full reload
+            window.dispatchEvent(new CustomEvent('location:changed', { detail: { state: newState } }));
+        } catch (err) {
+            console.error("Failed to update location cache", err);
+        }
+    };
 
     // Fetch unread notifications count
     const fetchUnreadCount = async () => {
@@ -106,14 +152,26 @@ export function CustomerHeader() {
                         </Link>
 
                         {/* Desktop: City Selector / Location */}
-                        <div className="hidden md:flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                            <MapPin className="w-4 h-4 text-[#E89D24]" />
+                        <div className="hidden md:flex items-center space-x-2 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100 min-w-[160px]">
+                            <MapPin className="w-4 h-4 text-[#E89D24] shrink-0" />
                             {loading ? (
                                 <span className="text-sm text-gray-500 flex items-center gap-2">
                                     <Loader2 className="w-3 h-3 animate-spin" /> Detecting...
                                 </span>
                             ) : (
-                                <span className="text-sm font-medium text-gray-700">{location}</span>
+                                <div className="relative flex items-center w-full">
+                                    <select 
+                                        value={selectedState}
+                                        onChange={handleStateChange}
+                                        className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer w-full appearance-none pr-5"
+                                    >
+                                        <option value="Undetected" disabled>Undetected</option>
+                                        {NIGERIAN_STATES.map(s => (
+                                            <option key={s} value={s}>{s} State</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-0 pointer-events-none" />
+                                </div>
                             )}
                         </div>
                     </div>
@@ -266,14 +324,26 @@ export function CustomerHeader() {
                 {/* Location in Drawer */}
                 <div className="p-4 border-b border-gray-200 bg-gray-50/50">
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Current Location</label>
-                    <div className="flex items-center space-x-2 bg-white px-3 py-2.5 rounded-lg border border-gray-200">
-                        <MapPin className="w-4 h-4 text-[#E89D24]" />
+                    <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
+                        <MapPin className="w-4 h-4 text-[#E89D24] shrink-0" />
                         {loading ? (
                             <span className="text-sm text-gray-500 flex items-center gap-2">
                                 <Loader2 className="w-3 h-3 animate-spin" /> Detecting...
                             </span>
                         ) : (
-                            <span className="text-sm font-bold text-gray-700">{location}</span>
+                            <div className="relative flex items-center w-full">
+                                <select 
+                                    value={selectedState}
+                                    onChange={handleStateChange}
+                                    className="bg-transparent text-sm font-bold text-gray-700 outline-none cursor-pointer w-full appearance-none pr-5"
+                                >
+                                    <option value="Undetected" disabled>Undetected</option>
+                                    {NIGERIAN_STATES.map(s => (
+                                        <option key={s} value={s}>{s} State</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-0 pointer-events-none" />
+                            </div>
                         )}
                     </div>
                 </div>

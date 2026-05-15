@@ -43,7 +43,7 @@ export function Sidebar() {
         setIsLoggingOut(true);
         try {
             await authService.logout();
-            console.log("Server Logout")
+            // console.log("Server Logout")
             logoutStore();
             toaster.create({
                 title: "Logged out",

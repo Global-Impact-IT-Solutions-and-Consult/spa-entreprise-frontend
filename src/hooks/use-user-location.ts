@@ -5,11 +5,18 @@ const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
 interface LocationCache {
   city: string;
+  state: string;
+  latitude: number | null;
+  longitude: number | null;
   timestamp: number;
 }
 
 export function useUserLocation() {
   const [location, setLocation] = useState<string>("Detecting...");
+  const [address, setAddress] = useState<any>(null);
+  const [state, setState] = useState<string>("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,11 +25,26 @@ export function useUserLocation() {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
-        const parsed: LocationCache = JSON.parse(cached);
-        if (Date.now() - parsed.timestamp < CACHE_EXPIRY) {
-          setLocation(parsed.city);
-          setLoading(false);
-          return;
+        try {
+          const parsed: LocationCache = JSON.parse(cached);
+          const isExpired = Date.now() - parsed.timestamp > CACHE_EXPIRY;
+          
+          // CRITICAL: Ensure we have valid coordinates in the cache
+          const hasCoords = typeof parsed.latitude === 'number' && typeof parsed.longitude === 'number';
+
+          if (!isExpired && hasCoords) {
+            setLocation(parsed.city);
+            setState(parsed.state || "");
+            setLatitude(parsed.latitude);
+            setLongitude(parsed.longitude);
+            setLoading(false);
+            return;
+          } else {
+            localStorage.removeItem(CACHE_KEY);
+          }
+        } catch (parseError) {
+          console.error("Failed to parse location cache", parseError);
+          localStorage.removeItem(CACHE_KEY);
         }
       }
     } catch (e) {
@@ -42,14 +64,9 @@ export function useUserLocation() {
         try {
           const { latitude, longitude } = position.coords;
           
-          // 3. Reverse Geocoding via Nominatim
+          // 3. Reverse Geocoding via BigDataCloud (more accurate for administrative boundaries)
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-            {
-                headers: {
-                    'Accept-Language': 'en'
-                }
-            }
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
           );
           
           if (!response.ok) {
@@ -57,16 +74,24 @@ export function useUserLocation() {
           }
           
           const data = await response.json();
-          const address = data.address;
           
-          // Try to get the most relevant city/town name
-          const city = address.city || address.town || address.village || address.state || "Unknown Location";
+          // BigDataCloud provides 'locality' (e.g. Ibadan) and 'city' (e.g. Akinyele)
+          // 'principalSubdivision' is the State (e.g. Oyo)
+          const city = data.locality || data.city || data.principalSubdivision || "Unknown Location";
+          const userState = data.principalSubdivision || "";
           
           setLocation(city);
+          setAddress(data);
+          setState(userState);
+          setLatitude(latitude);
+          setLongitude(longitude);
           
           // Update cache
           localStorage.setItem(CACHE_KEY, JSON.stringify({
             city,
+            state: userState,
+            latitude,
+            longitude,
             timestamp: Date.now()
           }));
           
@@ -98,5 +123,26 @@ export function useUserLocation() {
     );
   }, []);
 
-  return { location, loading, error };
+  // Listen for manual location overrides
+  useEffect(() => {
+    const handleLocationChange = () => {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const parsed: LocationCache = JSON.parse(cached);
+          setLocation(parsed.city);
+          setState(parsed.state || "");
+          setLatitude(parsed.latitude);
+          setLongitude(parsed.longitude);
+        }
+      } catch (e) {
+        console.error("Failed to sync location change", e);
+      }
+    };
+
+    window.addEventListener('location:changed' as any, handleLocationChange);
+    return () => window.removeEventListener('location:changed' as any, handleLocationChange);
+  }, []);
+
+  return { location, address, state, latitude, longitude, loading, error };
 }

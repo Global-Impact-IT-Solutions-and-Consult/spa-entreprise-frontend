@@ -257,6 +257,12 @@ function LoginContent() {
                 </>
             ) : (
                 <>
+                    <div className="md:hidden flex items-center justify-center mb-8">
+                        <Link href="/" className="hover:opacity-80 transition-opacity inline-block">
+                            <Image src="/Logo.svg" alt="iBookam Logo" width={200} height={100} />
+                        </Link>
+                    </div>
+
                     <div className="flex flex-col text-center mb-8">
                         <div className="mx-auto w-12 h-12 bg-[#FFF6ED] rounded-full flex items-center justify-center mb-4">
                             <FiLock className="w-6 h-6 text-[#E89D24]" />

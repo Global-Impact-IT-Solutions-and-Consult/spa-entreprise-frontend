@@ -17,6 +17,24 @@ apiClient.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Add location headers if available (Client-side only)
+        if (typeof window !== 'undefined') {
+            try {
+                const cachedLocation = localStorage.getItem('user_location_cache');
+                if (cachedLocation) {
+                    const parsed = JSON.parse(cachedLocation);
+                    if (parsed.latitude) config.headers['X-User-Latitude'] = parsed.latitude.toString();
+                    if (parsed.longitude) config.headers['X-User-Longitude'] = parsed.longitude.toString();
+                    if (parsed.city) config.headers['X-User-City'] = parsed.city;
+                    if (parsed.state) config.headers['X-User-State'] = parsed.state;
+                    config.headers['X-User-Max-Distance'] = '15'; // Default distance
+                }
+            } catch (e) {
+                // Ignore silent errors for location headers
+            }
+        }
+
         return config;
     },
     (error) => {
