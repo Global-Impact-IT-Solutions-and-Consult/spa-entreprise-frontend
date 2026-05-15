@@ -5,46 +5,60 @@ import Link from "next/link";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { businessService } from "@/services/business.service";
+import { useUserLocation } from "@/hooks/use-user-location";
 
-export function FeaturedBusinesses() {
+export function BusinessesNearYou() {
+    const { state, loading: locationLoading } = useUserLocation();
     const [businesses, setBusinesses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchFeatured = async () => {
-            try {
-                // Fetch top rated businesses with starting prices enriched in service
-                const enrichedData = await businessService.getFeaturedBusinesses(3);
-                // console.log("enrichedData", enrichedData);
+        const fetchBusinesses = async () => {
+            if (locationLoading) return;
 
-                // Map to UI format
-                const mappedBusinesses = enrichedData.map((b) => ({
+            // If state is invalid or not available, stop loading and return
+            if (!state || state === "Detecting..." || state === "Location unavailable" || state === "Nigeria") {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                // Fetch spas in the user's city
+                const response = await businessService.searchSpasWithEnrichment({ 
+                    state: state,
+                    limit: 3
+                });
+
+                const enrichedData = response.data || [];
+                
+                const mappedBusinesses = enrichedData.map((b: any) => ({
                     id: b.id,
                     name: b.businessName,
-                    location: b.addressDetails?.state?.name || (typeof b.city === 'string' ? b.city : " "),
+                    location: b.addressDetails?.city?.name || (typeof b.city === 'string' ? b.city : " "),
                     description: b.description || "Premium spa and wellness services for your relaxation and beauty needs.",
                     rating: b.averageRating || 0,
                     reviews: b.totalReviews || 0,
-                    price: b.startingPrice,
-                    profileImage: (b as any).profileImage,
+                    price: b.startingPrice || "---",
+                    profileImage: b.profileImage,
+                    primaryImageUrl: b.primaryImageUrl,
                     isOpen: true,
                     verified: true,
                 }));
 
                 setBusinesses(mappedBusinesses);
             } catch (error) {
-                console.error("Failed to fetch featured businesses:", error);
+                console.error("Failed to fetch businesses near you:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchFeatured();
-    }, []);
+        fetchBusinesses();
+    }, [state, locationLoading]);
 
-    if (loading) {
+    if (locationLoading || loading) {
         return (
-            <section className="py-12 md:py-16 bg-gray-50">
+            <section className="py-12 md:py-16 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between mb-8 md:mb-10">
                         <Skeleton className="h-10 w-64" />
@@ -75,11 +89,13 @@ export function FeaturedBusinesses() {
     if (businesses.length === 0) return null;
 
     return (
-        <section className="py-12 md:py-16 bg-gray-50">
+        <section className="py-12 md:py-16 bg-white border-t border-gray-100">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between mb-8 md:mb-10">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair">Featured Businesses</h2>
-                    <Link href="/businesses" className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair">
+                        Businesses in {state} State
+                    </h2>
+                    <Link href={`/businesses?city=${encodeURIComponent(state)}`} className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">
                         View All
                     </Link>
                 </div>
@@ -93,5 +109,3 @@ export function FeaturedBusinesses() {
         </section>
     );
 }
-
-// Building2 icon removed as it's now in BusinessDirectoryCard

@@ -248,17 +248,17 @@ export default function ServicesPage() {
             }
 
             // Log the payload being sent
-            console.log('=== SERVICE CREATION REQUEST ===');
-            console.log('Endpoint:', `/spas/${businessId}/services`);
-            console.log('Payload:', JSON.stringify(payload, null, 2));
-            console.log('Payload (raw):', payload);
+            // console.log('=== SERVICE CREATION REQUEST ===');
+            // console.log('Endpoint:', `/spas/${businessId}/services`);
+            // console.log('Payload:', JSON.stringify(payload, null, 2));
+            // console.log('Payload (raw):', payload);
 
             const newService = await businessService.createService(businessId, payload);
 
             // Log the response from backend
-            console.log('=== SERVICE CREATION RESPONSE ===');
-            console.log('Response:', JSON.stringify(newService, null, 2));
-            console.log('Response (raw):', newService);
+            // console.log('=== SERVICE CREATION RESPONSE ===');
+            // console.log('Response:', JSON.stringify(newService, null, 2));
+            // console.log('Response (raw):', newService);
 
             if (serviceImage && newService.id) {
                 try {
@@ -270,7 +270,7 @@ export default function ServicesPage() {
                         'services',
                         newService.id // Associate image with this specific service
                     );
-                    console.log('Service image uploaded successfully');
+                    // console.log('Service image uploaded successfully');
                 } catch (imageError) {
                     const imgErr = imageError as { response?: { data?: { message?: string } } };
                     console.error('Failed to upload service image:', imgErr);

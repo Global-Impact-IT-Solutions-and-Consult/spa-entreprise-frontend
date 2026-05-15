@@ -302,14 +302,14 @@ export default function BusinessInfoPage() {
         }
 
         // Log the payload for debugging
-        console.log('=== PAYLOAD DEBUG ===');
-        console.log('Country object (raw from package):', JSON.stringify(selectedCountry, null, 2));
-        console.log('Country object (sending):', JSON.stringify(countryObject, null, 2));
-        console.log('State object (raw from package):', JSON.stringify(selectedState, null, 2));
-        console.log('State object (sending):', JSON.stringify(stateObject, null, 2));
-        console.log('City object (raw from package):', JSON.stringify(selectedCity, null, 2));
-        console.log('City object (sending):', JSON.stringify(cityObject, null, 2));
-        console.log('Full payload:', JSON.stringify(payload, null, 2));
+        // console.log('=== PAYLOAD DEBUG ===');
+        // console.log('Country object (raw from package):', JSON.stringify(selectedCountry, null, 2));
+        // console.log('Country object (sending):', JSON.stringify(countryObject, null, 2));
+        // console.log('State object (raw from package):', JSON.stringify(selectedState, null, 2));
+        // console.log('State object (sending):', JSON.stringify(stateObject, null, 2));
+        // console.log('City object (raw from package):', JSON.stringify(selectedCity, null, 2));
+        // console.log('City object (sending):', JSON.stringify(cityObject, null, 2));
+        // console.log('Full payload:', JSON.stringify(payload, null, 2));
 
         try {
             // Use PUT /spas/:id/profile endpoint with complete address objects
