@@ -1,10 +1,15 @@
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { HeroSearch } from "@/components/modules/customer/hero-search";
 import { CategoryBrowser } from "@/components/modules/customer/category-browser";
-import { FeaturedBusinesses } from "@/components/modules/customer/featured-businesses";
+import { BusinessesNearYou } from "@/components/modules/customer/businesses-near-you";
+import { ServicesNearYou } from "@/components/modules/customer/services-near-you";
+import { TrendingTreatments } from "@/components/modules/customer/trending-treatments";
+import { RecentlyJoined } from "@/components/modules/customer/recently-joined";
+import { PremiumWellness } from "@/components/modules/customer/premium-wellness";
 import { TrustFeatures } from "@/components/modules/customer/trust-features";
 import { CityListings } from "@/components/modules/customer/city-listings";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { FeaturedBusinesses } from "@/components/modules/customer/featured-businesses";
 
 export default function Home() {
   return (
@@ -18,6 +23,9 @@ export default function Home() {
         </div>
         <HeroSearch />
         <CategoryBrowser />
+        <ServicesNearYou />
+        <BusinessesNearYou />
+        {/* <TrendingTreatments /> */}
         <FeaturedBusinesses />
         <TrustFeatures />
         <CityListings />

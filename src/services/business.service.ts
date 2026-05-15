@@ -204,6 +204,7 @@ export interface Staff {
 }
 
 export interface SearchSpasParams {
+    state?: string;
     city?: string;
     page?: number;
     limit?: number;
@@ -283,6 +284,7 @@ interface RawService extends Partial<Service> {
 export interface SearchServicesParams {
     latitude?: number;
     longitude?: number;
+    state?: string;
     maxDistance?: number;
     distanceUnit?: 'km' | 'mi';
     categoryIds?: string[];
@@ -479,7 +481,7 @@ export const businessService = {
     searchSpasWithEnrichment: async (params: SearchSpasParams) => {
         // 1. Get search results
         // Use /spas/search ONLY if city is provided, otherwise fallback to /spas
-        const endpoint = params.city || params.serviceTypes || params.minRating ? '/spas/search' : '/spas';
+        const endpoint = params.state || params.city || params.serviceTypes || params.minRating ? '/spas/search' : '/spas';
         const searchResponse = await apiClient.get<SearchSpasResponse>(endpoint, { params });
         const businesses = searchResponse.data.data;
         const meta = searchResponse.data.meta;

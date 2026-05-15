@@ -12,23 +12,23 @@ import { Business } from '@/services/business.service';
  * @returns The path to redirect to
  */
 export async function determineOnboardingStep(business: Business): Promise<string> {
-    console.log('=== DETERMINING ONBOARDING STEP ===');
-    console.log('Business from getMyBusinesses:', business);
-    console.log('Business summary:', {
-        id: business.id,
-        businessName: business.businessName,
-        phone: business.phone,
-        description: business.description,
-        hasAddressRelation: !!business.addressRelation,
-        onboardingCompleted: business.onboardingCompleted,
-        onboardingCompletedAt: business.onboardingCompletedAt
-    });
+    // console.log('=== DETERMINING ONBOARDING STEP ===');
+    // console.log('Business from getMyBusinesses:', business);
+    // console.log('Business summary:', {
+    //     id: business.id,
+    //     businessName: business.businessName,
+    //     phone: business.phone,
+    //     description: business.description,
+    //     hasAddressRelation: !!business.addressRelation,
+    //     onboardingCompleted: business.onboardingCompleted,
+    //     onboardingCompletedAt: business.onboardingCompletedAt
+    // });
 
     try {
         // OPTION 1: Use onboardingCompleted flag (recommended - fastest)
         // Backend automatically maintains this flag based on profile/services/staff completion
         if (business.onboardingCompleted === true) {
-            console.log('✅ Onboarding completed (using backend flag). Redirecting to dashboard.');
+            // console.log('✅ Onboarding completed (using backend flag). Redirecting to dashboard.');
             return '/dashboard';
         }
 
@@ -39,14 +39,14 @@ export async function determineOnboardingStep(business: Business): Promise<strin
         // (This should rarely happen now since backend includes addressRelation)
         let businessData = business;
         if (!business.addressRelation && !business.address && !business.country) {
-            console.log('Address data missing from getMyBusinesses, fetching full business details...');
+            // console.log('Address data missing from getMyBusinesses, fetching full business details...');
             try {
                 businessData = await businessService.getBusiness(business.id);
-                console.log('Full business data fetched:', businessData);
+                // console.log('Full business data fetched:', businessData);
 
                 // Check onboardingCompleted flag again after fetching full details
                 if (businessData.onboardingCompleted === true) {
-                    console.log('✅ Onboarding completed (using backend flag from full fetch). Redirecting to dashboard.');
+                    // console.log('✅ Onboarding completed (using backend flag from full fetch). Redirecting to dashboard.');
                     return '/dashboard';
                 }
             } catch (error) {
@@ -81,70 +81,70 @@ export async function determineOnboardingStep(business: Business): Promise<strin
             hasCity &&
             hasAddress;
 
-        console.log('Profile check:', {
-            hasProfile,
-            businessName: hasBusinessName,
-            phone: hasPhone,
-            description: hasDescription,
-            country: hasCountry,
-            state: hasState,
-            city: hasCity,
-            address: hasAddress,
-            addressInfo: addressInfo,
-            addressRelation: businessData.addressRelation
-        });
+        // console.log('Profile check:', {
+        //     hasProfile,
+        //     businessName: hasBusinessName,
+        //     phone: hasPhone,
+        //     description: hasDescription,
+        //     country: hasCountry,
+        //     state: hasState,
+        //     city: hasCity,
+        //     address: hasAddress,
+        //     addressInfo: addressInfo,
+        //     addressRelation: businessData.addressRelation
+        // });
 
         if (!hasProfile) {
-            console.log('Profile incomplete, redirecting to business-info');
+            // console.log('Profile incomplete, redirecting to business-info');
             return '/onboarding/business-info';
         }
 
         // Check if services exist
         try {
             const services = await businessService.getServices(businessData.id);
-            console.log('Services check:', {
-                servicesCount: services?.length || 0,
-                services: services
-            });
+            // console.log('Services check:', {
+            //     servicesCount: services?.length || 0,
+            //     services: services
+            // });
 
             if (!services || services.length === 0) {
-                console.log('No services found, redirecting to services step');
+                // console.log('No services found, redirecting to services step');
                 return '/onboarding/services';
             }
 
             // Check if staff exist
             const staff = await businessService.getAllStaff(businessData.id);
-            console.log('Staff check:', {
-                staffCount: staff?.length || 0,
-                staff: staff
-            });
+            // console.log('Staff check:', {
+            //     staffCount: staff?.length || 0,
+            //     staff: staff
+            // });
 
             if (!staff || staff.length === 0) {
-                console.log('No staff found, redirecting to staff step');
+                // console.log('No staff found, redirecting to staff step');
                 return '/onboarding/staff';
             }
 
             // Check if payout info exists
             const payoutRes = await businessService.getPayoutInfo(businessData.id);
-            console.log('Payout info check:', {
-                hasPayoutInfo: !!payoutRes?.payoutInfo,
-                payoutInfo: payoutRes?.payoutInfo
-            });
+            // console.log('Payout info check:', {
+            //     hasPayoutInfo: !!payoutRes?.payoutInfo,
+            //     payoutInfo: payoutRes?.payoutInfo
+            // });
 
             if (!payoutRes?.payoutInfo) {
-                console.log('No payout info found, redirecting to account-info step');
+                // console.log('No payout info found, redirecting to account-info step');
                 return '/onboarding/account-info';
             }
 
             // All onboarding steps complete, go to dashboard
-            console.log('✅ Onboarding complete! All steps done (manual check). Redirecting to dashboard.');
+            // console.log('✅ Onboarding complete! All steps done (manual check). Redirecting to dashboard.');
             return '/dashboard';
         } catch (error) {
             const err = error as { response?: { status?: number; data?: unknown } };
             // If services/staff endpoints fail, log the error but check if it's a 404
-            console.error('Error checking services/staff:', err);
-            console.error('Error status:', err.response?.status);
-            console.error('Error data:', err.response?.data);
+            // console.error('Error checking services/staff:', err);
+            // console.error('Error status:', err.response?.status);
+            // console.error('Error data:', err.response?.data);
 
             // If it's a 404, it might mean the endpoints don't exist or business doesn't have them
             // In that case, if profile is complete, we might allow going to dashboard
