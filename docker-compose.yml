@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://spa-entreprise-api.onrender.com/api/v1}
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-G-DR4RG9TBZZ}
     ports:
       - '3000:3000'
     environment:
