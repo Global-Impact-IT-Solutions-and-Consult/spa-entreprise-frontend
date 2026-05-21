@@ -91,8 +91,8 @@ export function BusinessesNearYou() {
     return (
         <section className="py-12 md:py-16 bg-white border-t border-gray-100">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between mb-8 md:mb-10">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 md:mb-10">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair mb-2 md:mb-0">
                         Businesses in {state && state !== "Location unavailable" && state !== "Nigeria" ? `${state} State` : "your location"}
                     </h2>
                     <Link href={state && state !== "Location unavailable" && state !== "Nigeria" ? `/businesses?city=${encodeURIComponent(state)}` : "/businesses"} className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">

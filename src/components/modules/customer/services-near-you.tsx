@@ -63,8 +63,8 @@ export function ServicesNearYou() {
     return (
         <section className="py-12 md:py-16 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between mb-8 md:mb-10">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 md:mb-10">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair mb-2 md:mb-0">
                         Services near you
                     </h2>
                     <Link href="/discover" className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">
