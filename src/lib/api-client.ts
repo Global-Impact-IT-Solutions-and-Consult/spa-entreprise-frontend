@@ -8,6 +8,9 @@ const apiClient = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    paramsSerializer: {
+        indexes: null, // serializes query arrays as categoryIds=val instead of categoryIds[]=val
+    },
 });
 
 // Request interceptor for API calls
