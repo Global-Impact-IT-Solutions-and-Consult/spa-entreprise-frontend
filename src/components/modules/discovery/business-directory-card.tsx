@@ -106,12 +106,21 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
         }
     };
 
+    const handleCardClick = () => {
+        router.push(`/businesses/${businessIdString}`);
+    };
+
     return (
         <div
-            className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col"
+            onClick={handleCardClick}
+            className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col cursor-pointer"
         >
             {/* Image */}
-            <Link href={`/businesses/${businessIdString}`} className="relative h-48 bg-gray-200 block overflow-hidden group rounded-t-2xl">
+            <Link 
+                href={`/businesses/${businessIdString}`} 
+                className="relative h-48 bg-gray-200 block overflow-hidden group rounded-t-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <Image
                     src={image}
                     alt={name}
@@ -139,7 +148,11 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
             <div className="p-4 flex flex-col flex-1">
                 {/* Business Name */}
                 <div className="flex items-center justify-between mb-2">
-                    <Link href={`/businesses/${businessIdString}`} className="flex items-center gap-2 group/title">
+                    <Link 
+                        href={`/businesses/${businessIdString}`} 
+                        className="flex items-center gap-2 group/title"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <Building2 className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover/title:text-[#E89D24] transition-colors" />
                         <h3 className="font-bold text-gray-900 text-xs md:text-sm line-clamp-1 group-hover/title:text-[#E89D24] transition-colors">{name}</h3>
                     </Link>
@@ -191,7 +204,10 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                         <p className="text-[10px] font-bold text-gray-400 tracking-wider">From</p>
                         <p className="font-bold text-gray-900 text-sm md:text-base">₦{price}</p>
                     </div>
-                    <Link href={`/businesses/${businessIdString}`}>
+                    <Link 
+                        href={`/businesses/${businessIdString}`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs md:text-sm font-bold h-10 px-4 md:px-6 rounded-lg transition-all active:scale-95 shadow-lg shadow-yellow-500/10">
                             View More
                         </Button>

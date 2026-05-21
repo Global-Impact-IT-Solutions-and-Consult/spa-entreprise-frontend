@@ -93,8 +93,15 @@ export function ServiceCard({ service }: ServiceCardProps) {
         router.push(`/bookings/new?serviceId=${service.id}&businessId=${businessId}`);
     };
 
+    const handleCardClick = () => {
+        router.push(`/businesses/${businessId}`);
+    };
+
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group">
+        <div 
+            onClick={handleCardClick}
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group cursor-pointer"
+        >
             {/* Image Container */}
             <div className="relative h-48 md:h-52 overflow-hidden">
                 <Image
@@ -123,7 +130,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
                     <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1 group-hover:text-[#E89D24] transition-colors line-clamp-1">
                         {service.name}
                     </h3>
-                    <Link href={`/businesses/${businessId}`} className="text-sm text-gray-500 font-medium hover:text-[#E89D24] transition-colors">
+                    <Link 
+                        href={`/businesses/${businessId}`} 
+                        className="text-sm text-gray-500 font-medium hover:text-[#E89D24] transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {service.businessName}
                     </Link>
                 </div>

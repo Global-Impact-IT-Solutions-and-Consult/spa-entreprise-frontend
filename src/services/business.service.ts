@@ -507,7 +507,7 @@ export const businessService = {
                         startingPrice = minPrice.toLocaleString();
                         availableDeliveryTypes = Array.from(new Set(services.map(s => s.deliveryType)));
                     }
-    
+
                     return {
                         ...business,
                         ...fullBusiness,
@@ -560,7 +560,7 @@ export const businessService = {
     discoverServicesFilter: async (params: SearchServicesParams): Promise<SearchServicesResponse> => {
         const response = await apiClient.get<SearchServicesResponse>('/spas/services/filter', { params });
         const rawData = response.data;
-        
+
         // Ensure data follows EnrichedService format
         const services: EnrichedService[] = (rawData.data || []).map((service: RawService) => ({
             id: service.id,
@@ -589,9 +589,44 @@ export const businessService = {
 
     // Get Featured Businesses with starting prices (Parallel enrichment)
     getFeaturedBusinesses: async (limit: number = 4) => {
+        const params: Record<string, any> = { 
+            limit, 
+            sortBy: 'rating', 
+            sortOrder: 'desc' 
+        };
+
+        if (typeof window !== 'undefined') {
+            try {
+                const cachedLocation = localStorage.getItem('user_location_cache');
+                if (cachedLocation) {
+                    const parsed = JSON.parse(cachedLocation);
+                    const isInvalid = (val: any) => 
+                        !val || 
+                        typeof val !== 'string' ||
+                        val === "Detecting..." || 
+                        val === "Location unavailable" || 
+                        val === "Nigeria" || 
+                        val === "Unknown Location";
+
+                    if (!isInvalid(parsed.state)) {
+                        params.state = parsed.state;
+                    }
+                    if (!isInvalid(parsed.city)) {
+                        params.city = parsed.city;
+                    }
+                    if (parsed.latitude != null && parsed.longitude != null) {
+                        params.latitude = Number(parsed.latitude);
+                        params.longitude = Number(parsed.longitude);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to parse user_location_cache from localStorage:", error);
+            }
+        }
+
         // 1. Get businesses
-        const businessesResponse = await apiClient.get<SearchSpasResponse>('/spas', {
-            params: { limit, sortBy: 'rating', sortOrder: 'desc' }
+        const businessesResponse = await apiClient.get<SearchSpasResponse>('/spas/featured', {
+            params
         });
         const businesses = businessesResponse.data.data;
 
