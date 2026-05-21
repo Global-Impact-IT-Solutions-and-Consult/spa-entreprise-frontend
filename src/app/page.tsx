@@ -26,7 +26,7 @@ export default function Home() {
         <ServicesNearYou />
         <BusinessesNearYou />
         {/* <TrendingTreatments /> */}
-        <FeaturedBusinesses />
+        {/* <FeaturedBusinesses /> */}
         <TrustFeatures />
         <CityListings />
       </main>
