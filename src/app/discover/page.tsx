@@ -43,6 +43,7 @@ function DiscoverContent() {
         city: searchParams.get("city") || "",
         category: searchParams.get("category") || "All Categories",
     });
+    const [isLocationLoaded, setIsLocationLoaded] = useState(false);
     const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>({
         maxPrice: 100000,
         distance: "any",
@@ -93,6 +94,31 @@ function DiscoverContent() {
             }
         };
         fetchData();
+    }, []);
+
+    // Load default location filter from localStorage if not present in URL on mount
+    useEffect(() => {
+        if (!searchParams.get("state")) {
+            try {
+                const cached = localStorage.getItem("user_location_cache");
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (parsed.state) {
+                        setFilters(prev => ({
+                            ...prev,
+                            state: parsed.state
+                        }));
+                        setTempFilters(prev => ({
+                            ...prev,
+                            state: parsed.state
+                        }));
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to parse cached location on mount:", e);
+            }
+        }
+        setIsLocationLoaded(true);
     }, []);
 
     // Fetch Cities when State changes (in temp filters)
@@ -159,6 +185,18 @@ function DiscoverContent() {
             result = result.filter(s => s.location?.toLowerCase().includes(cityTerm));
         }
 
+        // Filter by state
+        if (filters.state) {
+            const stateObj = states.find(s => s.name === filters.state);
+            if (stateObj) {
+                const stateCities = City.getCitiesOfState(countryCode, stateObj.isoCode).map(c => c.name.toLowerCase());
+                result = result.filter(s => {
+                    const loc = s.location?.toLowerCase();
+                    return loc && (loc === filters.state.toLowerCase() || stateCities.includes(loc));
+                });
+            }
+        }
+
         // Filter by category
         if (filters.category !== "All Categories") {
             result = result.filter(s => s.category?.id === filters.category);
@@ -187,7 +225,7 @@ function DiscoverContent() {
         }
 
         return result;
-    }, [allServices, filters, activeFilter, favoriteServiceIdsSet, advancedFilters]);
+    }, [allServices, filters, activeFilter, favoriteServiceIdsSet, advancedFilters, states]);
 
     // Combined visible services
     const visibleServices = useMemo(() => {
@@ -217,6 +255,7 @@ function DiscoverContent() {
 
     // Sync URL with filters
     useEffect(() => {
+        if (!isLocationLoaded) return;
         const params = new URLSearchParams();
         if (filters.search) params.set("search", filters.search);
         if (filters.state) params.set("state", filters.state);
@@ -225,7 +264,7 @@ function DiscoverContent() {
         if (activeFilter !== "All Services") params.set("type", activeFilter);
 
         router.push(`/discover?${params.toString()}`, { scroll: false });
-    }, [filters, activeFilter, router]);
+    }, [filters, activeFilter, router, isLocationLoaded]);
 
     const fetchBackendServices = async (page = 1, append = false) => {
         setIsSearching(true);
@@ -234,6 +273,10 @@ function DiscoverContent() {
                 page,
                 limit: PAGE_SIZE,
             };
+
+            if (filters.state) {
+                params.state = filters.state;
+            }
 
             // Map frontend filters to backend params
             if (filters.category !== "All Categories") {
@@ -297,6 +340,10 @@ function DiscoverContent() {
             try {
                 const params: any = { page: 1, limit: PAGE_SIZE };
                 
+                if (targetFilters.state) {
+                    params.state = targetFilters.state;
+                }
+
                 // Categories
                 if (targetFilters.category !== "All Categories") {
                     params.categoryIds = [targetFilters.category];

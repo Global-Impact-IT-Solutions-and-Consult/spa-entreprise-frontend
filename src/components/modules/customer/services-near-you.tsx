@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ServiceCard, ServiceSkeleton } from "@/components/modules/discovery/service-card";
 import { businessService, EnrichedService } from "@/services/business.service";
 import { useUserLocation } from "@/hooks/use-user-location";
+import { MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function ServicesNearYou() {
     const { state, loading: locationLoading } = useUserLocation();
@@ -58,13 +60,11 @@ export function ServicesNearYou() {
         );
     }
 
-    if (services.length === 0) return null;
-
     return (
         <section className="py-12 md:py-16 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between mb-8 md:mb-10">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 md:mb-10">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair mb-2 md:mb-0">
                         Services near you
                     </h2>
                     <Link href="/discover" className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">
@@ -72,11 +72,28 @@ export function ServicesNearYou() {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {services.map((service) => (
-                        <ServiceCard key={service.id} service={service} />
-                    ))}
-                </div>
+                {services.length === 0 ? (
+                    <div className="bg-white rounded-2xl border border-gray-100 p-8 md:p-12 text-center shadow-sm max-w-2xl mx-auto">
+                        <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-[#E89D24]">
+                            <MapPin className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">No services found in {state || "your location"}</h3>
+                        <p className="text-gray-500 text-sm mb-6">
+                            We couldn't find any services matching your location. You can view all services available or search in other areas.
+                        </p>
+                        <Link href="/discover">
+                            <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold px-6 py-2 h-10 rounded-lg">
+                                Explore All Services
+                            </Button>
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {services.map((service) => (
+                            <ServiceCard key={service.id} service={service} />
+                        ))}
+                    </div>
+                )}
             </div>
         </section>
     );

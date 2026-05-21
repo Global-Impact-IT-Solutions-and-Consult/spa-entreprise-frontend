@@ -56,6 +56,7 @@ function BusinessDirectoryContent() {
 
     const [filters, setFilters] = useState(initialFilters);
     const [pendingFilters, setPendingFilters] = useState(initialFilters);
+    const [isLocationLoaded, setIsLocationLoaded] = useState(false);
 
     const [tempSearch, setTempSearch] = useState(initialFilters.search);
 
@@ -71,6 +72,31 @@ function BusinessDirectoryContent() {
             }
         };
         fetchData();
+    }, []);
+
+    // Load default location filter from localStorage if not present in URL on mount
+    useEffect(() => {
+        if (!searchParams.get("state")) {
+            try {
+                const cached = localStorage.getItem("user_location_cache");
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (parsed.state) {
+                        setFilters(prev => ({
+                            ...prev,
+                            state: parsed.state
+                        }));
+                        setPendingFilters(prev => ({
+                            ...prev,
+                            state: parsed.state
+                        }));
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to parse cached location on mount:", e);
+            }
+        }
+        setIsLocationLoaded(true);
     }, []);
 
     // Fetch cities when State changes
@@ -126,7 +152,7 @@ function BusinessDirectoryContent() {
         try {
             const params: any = {};
 
-
+            if (currentFilters.state) params.state = currentFilters.state;
             if (currentFilters.city) params.city = currentFilters.city;
             if (currentFilters.category !== "All Businesses") params.serviceTypes = currentFilters.category;
             if (currentFilters.minRating !== "All Rating") params.minRating = parseFloat(currentFilters.minRating);
@@ -148,6 +174,7 @@ function BusinessDirectoryContent() {
 
     // Trigger fetch on filter/limit change
     useEffect(() => {
+        if (!isLocationLoaded) return;
         fetchBusinesses(filters);
 
         // Update URL
@@ -160,7 +187,7 @@ function BusinessDirectoryContent() {
         if (filters.limit > 12) params.set("limit", filters.limit.toString());
 
         router.push(`/businesses?${params.toString()}`, { scroll: false });
-    }, [filters, fetchBusinesses, router]);
+    }, [filters, fetchBusinesses, router, isLocationLoaded]);
 
     // Derived filtered businesses
     const filteredBusinesses = useMemo(() => {
