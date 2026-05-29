@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { favoritesService } from "@/services/favorites.service";
 import { useAuthStore } from "@/store/auth.store";
 import { useFavoritesStore } from "@/store/favorites.store";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { toaster } from "@/components/ui/toaster";
 import { getFallbackImage } from "@/lib/image.utils";
 import { AuthRequiredModal } from "./auth-required-modal";
@@ -45,6 +45,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
     const { isAuthenticated } = useAuthStore();
     const { businessIds, addBusiness, removeBusiness } = useFavoritesStore();
     const router = useRouter();
+    const pathname = usePathname();
     // console.log(business);
 
     const verified = business.verified ?? business.isVerified;
@@ -106,56 +107,92 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
         }
     };
 
+    const isAtDestination = pathname === `/businesses/${businessIdString}`;
+
     const handleCardClick = () => {
+        if (isAtDestination) return;
         router.push(`/businesses/${businessIdString}`);
     };
 
     return (
         <div
             onClick={handleCardClick}
-            className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col cursor-pointer"
+            className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col ${isAtDestination ? 'cursor-default' : 'cursor-pointer'}`}
         >
             {/* Image */}
-            <Link 
-                href={`/businesses/${businessIdString}`} 
-                className="relative h-48 bg-gray-200 block overflow-hidden group rounded-t-2xl"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <Image
-                    src={image}
-                    alt={name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-t-2xl"
-                />
-                {/* Badges */}
-                <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                    {verified && (
-                        <div className="bg-blue-500 rounded-full p-1.5 shadow-sm">
-                            <BadgeCheck className="w-4 h-4 text-white" />
-                        </div>
-                    )}
-                    <button
-                        onClick={handleSaveToggle}
-                        disabled={isLoading}
-                        className="ml-auto bg-white/90 backdrop-blur-sm rounded-full p-1.5 hover:bg-gray-100 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                        <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-600'} ${isLoading ? 'animate-pulse' : ''}`} />
-                    </button>
+            {isAtDestination ? (
+                <div className="relative h-48 bg-gray-200 block overflow-hidden group rounded-t-2xl">
+                    <Image
+                        src={image}
+                        alt={name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-t-2xl"
+                    />
+                    {/* Badges */}
+                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                        {verified && (
+                            <div className="bg-blue-500 rounded-full p-1.5 shadow-sm">
+                                <BadgeCheck className="w-4 h-4 text-white" />
+                            </div>
+                        )}
+                        <button
+                            onClick={handleSaveToggle}
+                            disabled={isLoading}
+                            className="ml-auto bg-white/90 backdrop-blur-sm rounded-full p-1.5 hover:bg-gray-100 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-600'} ${isLoading ? 'animate-pulse' : ''}`} />
+                        </button>
+                    </div>
                 </div>
-            </Link>
+            ) : (
+                <Link 
+                    href={`/businesses/${businessIdString}`} 
+                    className="relative h-48 bg-gray-200 block overflow-hidden group rounded-t-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <Image
+                        src={image}
+                        alt={name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-t-2xl"
+                    />
+                    {/* Badges */}
+                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                        {verified && (
+                            <div className="bg-blue-500 rounded-full p-1.5 shadow-sm">
+                                <BadgeCheck className="w-4 h-4 text-white" />
+                            </div>
+                        )}
+                        <button
+                            onClick={handleSaveToggle}
+                            disabled={isLoading}
+                            className="ml-auto bg-white/90 backdrop-blur-sm rounded-full p-1.5 hover:bg-gray-100 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-600'} ${isLoading ? 'animate-pulse' : ''}`} />
+                        </button>
+                    </div>
+                </Link>
+            )}
 
             {/* Content */}
             <div className="p-4 flex flex-col flex-1">
                 {/* Business Name */}
                 <div className="flex items-center justify-between mb-2">
-                    <Link 
-                        href={`/businesses/${businessIdString}`} 
-                        className="flex items-center gap-2 group/title"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <Building2 className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover/title:text-[#E89D24] transition-colors" />
-                        <h3 className="font-bold text-gray-900 text-xs md:text-sm line-clamp-1 group-hover/title:text-[#E89D24] transition-colors">{name}</h3>
-                    </Link>
+                    {isAtDestination ? (
+                        <div className="flex items-center gap-2 group/title">
+                            <Building2 className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover/title:text-[#E89D24] transition-colors" />
+                            <h3 className="font-bold text-gray-900 text-xs md:text-sm line-clamp-1 group-hover/title:text-[#E89D24] transition-colors">{name}</h3>
+                        </div>
+                    ) : (
+                        <Link 
+                            href={`/businesses/${businessIdString}`} 
+                            className="flex items-center gap-2 group/title"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Building2 className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover/title:text-[#E89D24] transition-colors" />
+                            <h3 className="font-bold text-gray-900 text-xs md:text-sm line-clamp-1 group-hover/title:text-[#E89D24] transition-colors">{name}</h3>
+                        </Link>
+                    )}
                     <div className={`rounded px-2 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wider ${business.isOpen ? "bg-[#63C68B1A] text-[#63C68B]" : "bg-red-50 text-red-500"}`}>
                         {business.isOpen ? "Open" : "Closed"}
                     </div>
@@ -204,14 +241,20 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                         <p className="text-[10px] font-bold text-gray-400 tracking-wider">From</p>
                         <p className="font-bold text-gray-900 text-sm md:text-base">₦{price}</p>
                     </div>
-                    <Link 
-                        href={`/businesses/${businessIdString}`}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs md:text-sm font-bold h-10 px-4 md:px-6 rounded-lg transition-all active:scale-95 shadow-lg shadow-yellow-500/10">
-                            View More
+                    {isAtDestination ? (
+                        <Button disabled className="bg-gray-100 text-gray-400 text-xs md:text-sm font-bold h-10 px-4 md:px-6 rounded-lg cursor-not-allowed">
+                            Currently Viewing
                         </Button>
-                    </Link>
+                    ) : (
+                        <Link 
+                            href={`/businesses/${businessIdString}`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs md:text-sm font-bold h-10 px-4 md:px-6 rounded-lg transition-all active:scale-95 shadow-lg shadow-yellow-500/10">
+                                View More
+                            </Button>
+                        </Link>
+                    )}
                 </div>
             </div>
 
