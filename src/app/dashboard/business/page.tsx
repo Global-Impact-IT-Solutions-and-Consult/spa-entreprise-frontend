@@ -246,6 +246,7 @@ export default function BusinessProfilePage() {
         try {
             const res = await businessService.uploadProfileImage(businessId, file);
             setProfileImageUrl(res.profileImage);
+            updateUser({ profileImage: res.profileImage });
             toaster.create({ title: 'Profile image updated', type: 'success' });
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
