@@ -196,6 +196,7 @@ export interface Staff {
     phone?: string | null;
     about?: string | null;
     serviceIds?: string[];
+    services?: Service[];
     profilePicture?: string | null;
     createdAt?: string;
     updatedAt?: string;

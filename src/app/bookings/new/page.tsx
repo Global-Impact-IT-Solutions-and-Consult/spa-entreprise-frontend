@@ -337,17 +337,23 @@ function BookingContent() {
                                                 <h4 className="font-bold text-gray-900 text-sm">{staff.name}</h4>
                                             </div>
                                             <p className="text-[10px] text-[#E89D24] font-bold">{staff.role}</p>
-                                            <p className="text-[9px] text-gray-400 mt-1 line-clamp-2 leading-relaxed">Specializes in skin fades, traditional straight razor shaves, and beard artistry.</p>
-                                            <div className="flex items-center gap-6 mt-2">
-                                                <div className="flex items-center gap-1">
-                                                    <Star className="w-3 h-3 text-gray-900 fill-gray-900" />
-                                                    <span className="text-[11px] font-bold text-gray-900">4.6</span>
+                                            <p className="text-[9px] text-gray-400 line-clamp-2 leading-relaxed">{staff.about}</p>
+                                            {staff.rating ? (
+                                                <div className="flex items-center gap-6">
+                                                    <div className="flex items-center gap-1">
+                                                        <Star className="w-3 h-3 text-gray-900 fill-gray-900" />
+                                                        <span className="text-[11px] font-bold text-gray-900">{staff.rating}</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-gray-400 font-medium">{staff.reviewCount} reviews</span>
+                                                </div>)
+                                                :
+                                                (<div className="">
+                                                    <span className="text-[10px] text-gray-400 font-medium">No reviews yet</span>
                                                 </div>
-                                                <span className="text-[10px] text-gray-400 font-medium">184 reviews</span>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1 mt-2">
-                                                {["Skin Fades", "Straight Razor", "Beard Work"].map(tag => (
-                                                    <span key={tag} className="text-[8px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">{tag}</span>
+                                            )}
+                                            <div className="flex flex-wrap gap-1">
+                                                {staff.services?.map(service => (
+                                                    <span key={service.id} className="text-[8px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">{service.name}</span>
                                                 ))}
                                             </div>
                                         </div>
