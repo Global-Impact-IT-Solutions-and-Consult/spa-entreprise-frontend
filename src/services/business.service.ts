@@ -116,6 +116,7 @@ export interface BusinessOwner {
 export interface Business {
     id: string;
     businessName: string;
+    slug?: string;
     status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
     userId?: string;
     businessTypeCode?: string;
@@ -140,8 +141,10 @@ export interface Business {
     // Onboarding completion tracking (from backend)
     onboardingCompleted?: boolean;
     onboardingCompletedAt?: string | null;
-    averageRating?: string | number;
-    totalReviews?: number;
+    rating: {
+        average: number;
+        totalReviews: number
+    }
     primaryImageUrl?: string | null;
     profileImage?: string | null;
     coverImage?: string | null;
@@ -209,7 +212,7 @@ export interface SearchSpasParams {
     city?: string;
     page?: number;
     limit?: number;
-    serviceTypes?: string[];
+    businessTypeCode?: string[];
     minPrice?: number;
     maxPrice?: number;
     minRating?: number;
@@ -220,6 +223,7 @@ export interface SearchSpasParams {
 export interface SpaSearchResult {
     id: string;
     businessName: string;
+    slug?: string;
     description: string;
     city: string;
     address: string;
@@ -251,6 +255,7 @@ export interface EnrichedService extends Omit<Service, 'id'> {
     id: string;
     businessName: string;
     businessId: string;
+    businessSlug?: string;
     rating: number | string;
     reviews: number;
     location: string;
@@ -263,15 +268,18 @@ interface RawService extends Partial<Service> {
     name: string;
     businessName?: string;
     businessId?: string;
+    businessSlug?: string;
     business?: {
         id: string;
         city?: string;
+        slug?: string;
     };
     spa?: {
         businessName?: string;
         averageRating?: string | number;
         totalReviews?: number;
         city?: string;
+        slug?: string;
         addressDetails?: {
             city?: { name: string } | string;
         };
@@ -436,9 +444,15 @@ export const businessService = {
         return response.data;
     },
 
-    // Get Business profile b   y ID
+    // Get Business profile by ID
     getBusinessProfile: async (id: string) => {
         const response = await apiClient.get<Business>(`/spas/${id}/profile`);
+        return response.data;
+    },
+
+    // Get Business profile by Slug
+    getBusinessProfileBySlug: async (slug: string) => {
+        const response = await apiClient.get<Business>(`/spas/slug/${slug}`);
         return response.data;
     },
 
@@ -482,7 +496,7 @@ export const businessService = {
     searchSpasWithEnrichment: async (params: SearchSpasParams) => {
         // 1. Get search results
         // Use /spas/search ONLY if city is provided, otherwise fallback to /spas
-        const endpoint = params.state || params.city || params.serviceTypes || params.minRating ? '/spas/search' : '/spas';
+        const endpoint = params.state || params.city || params.businessTypeCode || params.minRating ? '/spas/search' : '/spas';
         const searchResponse = await apiClient.get<SearchSpasResponse>(endpoint, { params });
         const businesses = searchResponse.data.data;
         const meta = searchResponse.data.meta;
@@ -550,6 +564,7 @@ export const businessService = {
             isActive: service.isActive ?? true,
             businessName: service.businessName || service.spa?.businessName || 'Wellness Business',
             businessId: service.business?.id || service.businessId || '',
+            businessSlug: service.business?.slug || service.spa?.slug || service.businessSlug || '',
             rating: service.spa?.averageRating || service.rating || 0,
             reviews: service.spa?.totalReviews || service.reviews || 0,
             location: service.business?.city || service.spa?.addressDetails?.city || service.spa?.city || 'Nigeria',
@@ -576,6 +591,7 @@ export const businessService = {
             isActive: service.isActive ?? true,
             businessName: service.businessName || service.spa?.businessName || 'Wellness Business',
             businessId: service.business?.id || service.businessId || '',
+            businessSlug: service.business?.slug || service.spa?.slug || service.businessSlug || '',
             rating: service.spa?.averageRating || service.rating || 0,
             reviews: service.spa?.totalReviews || service.reviews || 0,
             location: (typeof service.spa?.addressDetails?.city === 'object' ? service.spa?.addressDetails?.city?.name : service.spa?.addressDetails?.city) || service.business?.city || service.spa?.city || 'Nigeria',

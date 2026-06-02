@@ -27,6 +27,7 @@ export function PremiumWellness() {
                 
                 const mappedBusinesses = enrichedData.map((b: any) => ({
                     id: b.id,
+                    slug: b.slug,
                     name: b.businessName,
                     location: b.addressDetails?.city?.name || (typeof b.city === 'string' ? b.city : " "),
                     description: b.description || "Top-tier wellness experience as rated by our community.",

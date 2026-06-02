@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 export interface SelectOption {
     label: string
     value: string
+    key?: string
 }
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
@@ -35,8 +36,8 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                             </option>
                         )}
                         {options ? (
-                            options.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            options.map((opt, index) => (
+                                <option key={opt.key || `${opt.value}-${index}`} value={opt.value}>{opt.label}</option>
                             ))
                         ) : children}
                     </select>

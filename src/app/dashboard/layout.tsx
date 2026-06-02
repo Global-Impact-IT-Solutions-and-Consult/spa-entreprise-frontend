@@ -104,7 +104,7 @@ export default function DashboardLayout({
                 )}
               </button>
               <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#192131]">
-                <AvatarImage src={user?.profileImage || undefined} />
+                <AvatarImage src={business?.profileImage || undefined} className='object-cover'/>
                 <AvatarFallback className="bg-[#F59E0B] text-white font-bold">
                   {user?.firstName?.charAt(0) || 'D'}
                 </AvatarFallback>

@@ -20,7 +20,7 @@ import { ShareBusinessModal } from "@/components/modules/discovery/share-busines
 
 export default function BusinessDetailsPage() {
     const params = useParams();
-    const id = params.id as string;
+    const slug = params.slug as string;
 
     const [activeTab, setActiveTab] = useState("Services");
     const [business, setBusiness] = useState<Business | null>(null);
@@ -36,6 +36,8 @@ export default function BusinessDetailsPage() {
     const [error, setError] = useState<string | null>(null);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [businessUrl, setBusinessUrl] = useState("");
+    const [fetchedProfileImage, setFetchedProfileImage] = useState<string | null>(null);
+    const [fetchedCoverImage, setFetchedCoverImage] = useState<string | null>(null);
 
     const tabs = ["Services", "About", "Reviews", "Gallery", "Staff"];
 
@@ -45,16 +47,20 @@ export default function BusinessDetailsPage() {
 
     useEffect(() => {
         const fetchAllData = async () => {
-            if (!id) return;
+            if (!slug) return;
             setLoading(true);
             setError(null);
             try {
-                const [businessData, servicesData, staffData, galleryData, reviewsData] = await Promise.all([
-                    businessService.getBusinessProfile(id),
-                    businessService.getServices(id),
-                    businessService.getAllStaffPublic(id),
-                    businessService.getGalleryImages(id),
-                    businessService.getBusinessReviews(id).catch(() => ({
+                // Fetch the business profile by its slug first
+                const businessData = await businessService.getBusinessProfileBySlug(slug);
+                const businessId = businessData.id;
+
+                // Then fetch all other details using the resolved businessId
+                const [servicesData, staffData, galleryData, reviewsData, profileRes, coverRes] = await Promise.all([
+                    businessService.getServices(businessId),
+                    businessService.getAllStaffPublic(businessId),
+                    businessService.getGalleryImages(businessId),
+                    businessService.getBusinessReviews(businessId).catch(() => ({
                         data: [],
                         meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
                         statistics: {
@@ -62,10 +68,14 @@ export default function BusinessDetailsPage() {
                             totalReviews: 0,
                             ratingDistribution: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 }
                         }
-                    } as ReviewsResponse))
+                    } as ReviewsResponse)),
+                    businessService.getProfileImage(businessId).catch(() => ({ profileImage: null })),
+                    businessService.getCoverImage(businessId).catch(() => ({ coverImage: null }))
                 ]);
 
                 setBusiness(businessData);
+                setFetchedProfileImage(profileRes.profileImage);
+                setFetchedCoverImage(coverRes.coverImage);
                 setServices(servicesData);
                 setStaff(staffData);
                 setGallery(galleryData);
@@ -86,7 +96,7 @@ export default function BusinessDetailsPage() {
         };
 
         fetchAllData();
-    }, [id]);
+    }, [slug]);
 
     if (loading) {
         return (
@@ -141,13 +151,13 @@ export default function BusinessDetailsPage() {
     const transformedBusiness = {
         ...business,
         name: business.businessName,
-        rating: typeof business.averageRating === 'string' ? parseFloat(business.averageRating) : (business.averageRating || 0),
-        reviews: business.totalReviews || 0,
+        rating: typeof business.rating.average === 'string' ? parseFloat(business.rating.average) : (business.rating.average || 0),
+        reviews: business.rating.totalReviews || 0,
         category: business?.businessType?.name || "Wellness",
         distance: "", // No placeholder — only show if API provides it
         startingPrice: services.length > 0 ? Math.min(...services.map(s => s.price)).toLocaleString() : "---",
-        bannerImage: business.coverImage || getFallbackImage(business.businessName),
-        profileImage: business.profileImage || getFallbackImage(business.businessName),
+        bannerImage: fetchedCoverImage || business.coverImage || getFallbackImage(business.businessName),
+        profileImage: fetchedProfileImage || business.profileImage || getFallbackImage(business.businessName),
         address: business.addressRelation ? 
             `${business.addressRelation.address}, ${business.addressRelation.city?.name}, ${business.addressRelation.state?.name}` :
             (business.address || business.addressDetails?.address),
@@ -236,6 +246,7 @@ export default function BusinessDetailsPage() {
                                                     ...service,
                                                     businessName: business.businessName,
                                                     businessId: business.id,
+                                                    businessSlug: business.slug,
                                                     rating: transformedBusiness.rating,
                                                     reviews: transformedBusiness.reviews,
                                                     location: transformedBusiness.address || "",

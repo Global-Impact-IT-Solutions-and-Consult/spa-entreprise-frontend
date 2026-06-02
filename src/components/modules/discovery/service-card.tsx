@@ -20,6 +20,7 @@ interface ServiceCardProps {
         name: string;
         businessName: string;
         businessId: string;
+        businessSlug?: string;
         imageUrl: string;
         category: {
             id: string;
@@ -94,11 +95,12 @@ export function ServiceCard({ service }: ServiceCardProps) {
         router.push(`/bookings/new?serviceId=${service.id}&businessId=${businessId}`);
     };
 
-    const isAtDestination = pathname === `/businesses/${businessId}`;
+    const businessSlug = service.businessSlug || service.businessId;
+    const isAtDestination = pathname === `/businesses/${businessSlug}` || pathname === `/businesses/${service.businessId}`;
 
     const handleCardClick = () => {
         if (isAtDestination) return;
-        router.push(`/businesses/${businessId}`);
+        router.push(`/businesses/${businessSlug}`);
     };
 
     return (
@@ -140,7 +142,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                         </span>
                     ) : (
                         <Link 
-                            href={`/businesses/${businessId}`} 
+                            href={`/businesses/${businessSlug}`} 
                             className="text-sm text-gray-500 font-medium hover:text-[#E89D24] transition-colors"
                             onClick={(e) => e.stopPropagation()}
                         >

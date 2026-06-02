@@ -18,6 +18,7 @@ interface BusinessDirectoryCardProps {
         id: string | number;
         name?: string;
         businessName?: string;
+        slug?: string;
         location?: string;
         city?: string | { name: string };
         addressDetails?: {
@@ -107,11 +108,12 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
         }
     };
 
-    const isAtDestination = pathname === `/businesses/${businessIdString}`;
+    const businessSlug = business.slug || businessIdString;
+    const isAtDestination = pathname === `/businesses/${businessSlug}` || pathname === `/businesses/${businessIdString}`;
 
     const handleCardClick = () => {
         if (isAtDestination) return;
-        router.push(`/businesses/${businessIdString}`);
+        router.push(`/businesses/${businessSlug}`);
     };
 
     return (
@@ -146,7 +148,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                 </div>
             ) : (
                 <Link 
-                    href={`/businesses/${businessIdString}`} 
+                    href={`/businesses/${businessSlug}`} 
                     className="relative h-48 bg-gray-200 block overflow-hidden group rounded-t-2xl"
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -185,7 +187,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                         </div>
                     ) : (
                         <Link 
-                            href={`/businesses/${businessIdString}`} 
+                            href={`/businesses/${businessSlug}`} 
                             className="flex items-center gap-2 group/title"
                             onClick={(e) => e.stopPropagation()}
                         >
@@ -247,7 +249,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
                         </Button>
                     ) : (
                         <Link 
-                            href={`/businesses/${businessIdString}`}
+                            href={`/businesses/${businessSlug}`}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white text-xs md:text-sm font-bold h-10 px-4 md:px-6 rounded-lg transition-all active:scale-95 shadow-lg shadow-yellow-500/10">
