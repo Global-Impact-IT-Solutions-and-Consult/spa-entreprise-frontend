@@ -154,7 +154,7 @@ function BusinessDirectoryContent() {
 
             if (currentFilters.state) params.state = currentFilters.state;
             if (currentFilters.city) params.city = currentFilters.city;
-            if (currentFilters.category !== "All Businesses") params.serviceTypes = currentFilters.category;
+            if (currentFilters.category !== "All Businesses") params.businessTypeCode = currentFilters.category;
             if (currentFilters.minRating !== "All Rating") params.minRating = parseFloat(currentFilters.minRating);
 
             params.limit = currentFilters.limit;
@@ -319,7 +319,7 @@ function BusinessDirectoryContent() {
                             >
                                 <option>All Businesses</option>
                                 {businessTypes.map(type => (
-                                    <option key={type.id} value={type.id}>{type.name}</option>
+                                    <option key={type.id} value={type.code}>{type.name}</option>
                                 ))}
                             </select>
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />

@@ -34,6 +34,7 @@ export interface User {
     mfaEnabled?: boolean;
     phone?: string;
     profilePicture?: string;
+    profileImage?: string;
     bio?: string;
 }
 

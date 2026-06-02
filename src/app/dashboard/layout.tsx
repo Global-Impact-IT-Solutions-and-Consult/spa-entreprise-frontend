@@ -18,7 +18,6 @@ export default function DashboardLayout({
 }) {
   const { user, updateUser } = useAuthStore();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const business = user?.businesses?.[0];
   const status = business?.status?.toLowerCase();
   const isPending = status === 'pending_approval' || status === 'pending';
@@ -40,35 +39,8 @@ export default function DashboardLayout({
       }
     };
 
-    const fetchPrimaryImage = async () => {
-      const businessId = business?.id;
-      if (!businessId) return;
-      try {
-        const images = await businessService.getImages(businessId);
-        const primary = images.find(img => img.isPrimary) || images[0];
-        if (primary) setAvatarUrl(primary.url);
-      } catch {
-        // Silently fail — fallback will show initials
-      }
-    };
-
-
     refreshUserData();
-    fetchPrimaryImage();
   }, [business?.id]);
-
-  // Listen for primary image changes from the business page
-  useEffect(() => {
-    const handlePrimaryChange = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.url !== undefined) {
-        setAvatarUrl(detail.url);
-      }
-    };
-    window.addEventListener('primary-image-changed', handlePrimaryChange);
-    return () =>
-      window.removeEventListener('primary-image-changed', handlePrimaryChange);
-  }, []);
 
   const fetchNotifications = async () => {
     try {
@@ -132,7 +104,7 @@ export default function DashboardLayout({
                 )}
               </button>
               <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#192131]">
-                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarImage src={business?.profileImage || undefined} className='object-cover'/>
                 <AvatarFallback className="bg-[#F59E0B] text-white font-bold">
                   {user?.firstName?.charAt(0) || 'D'}
                 </AvatarFallback>

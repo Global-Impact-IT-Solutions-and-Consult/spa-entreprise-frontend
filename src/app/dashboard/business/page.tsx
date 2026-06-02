@@ -132,9 +132,9 @@ export default function BusinessProfilePage() {
     // Set the business URL client-side only to avoid SSR window access
     useEffect(() => {
         if (businessId) {
-            setBusinessUrl(`${window.location.origin}/businesses/${businessId}`);
+            setBusinessUrl(`${window.location.origin}/businesses/${business?.slug || businessId}`);
         }
-    }, [businessId]);
+    }, [businessId, business?.slug]);
 
     useEffect(() => {
         if (business) {
@@ -198,7 +198,7 @@ export default function BusinessProfilePage() {
     };
 
     const handleOpenLive = () => {
-        const businessLink = `${window.location.origin}/businesses/${businessId}`;
+        const businessLink = `${window.location.origin}/businesses/${business?.slug || businessId}`;
         window.open(businessLink, '_blank');
     };
 
@@ -213,7 +213,7 @@ export default function BusinessProfilePage() {
             .then(res => setCoverImageUrl(res.coverImage))
             .catch(() => { })
             .finally(() => setIsLoadingCoverImage(false));
-    }, [businessId]);
+    }, [businessId, business?.slug]);
 
     // Single fetch for ALL gallery images
     const fetchAllImages = useCallback(async (showLoading = true) => {
@@ -246,6 +246,7 @@ export default function BusinessProfilePage() {
         try {
             const res = await businessService.uploadProfileImage(businessId, file);
             setProfileImageUrl(res.profileImage);
+            updateUser({ ...(user as any), businesses: [{ ...(user?.businesses || []), profileImage: res.profileImage }] as any });
             toaster.create({ title: 'Profile image updated', type: 'success' });
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
@@ -580,15 +581,15 @@ export default function BusinessProfilePage() {
                                 {[1, 2, 3, 4, 5].map((i) => (
                                     <Star
                                         key={i}
-                                        className={`h-4 w-4 ${i <= Math.floor(Number(business?.averageRating) || 0)
+                                        className={`h-4 w-4 ${i <= Math.floor(Number(business?.rating?.average) || 0)
                                             ? "fill-[#F59E0B] text-[#F59E0B]"
                                             : "text-gray-200"
                                             }`}
                                     />
                                 ))}
                             </div>
-                            <span className="text-gray-900 font-bold ml-1">{business?.averageRating || "0.0"}</span>
-                            <span className="text-gray-400 font-medium">({business?.totalReviews} reviews)</span>
+                            <span className="text-gray-900 font-bold ml-1">{business?.rating?.average || "0.0"}</span>
+                            <span className="text-gray-400 font-medium">({business?.rating?.totalReviews || 0} reviews)</span>
                         </div>
 
                         <div className="h-1 w-1 rounded-full bg-gray-300" />
@@ -706,12 +707,12 @@ export default function BusinessProfilePage() {
 
                                 <div className="space-y-1.5">
                                     <PhoneNumberInput
-                                        label="Contact Phone *"
+                                        label="Contact Phone"
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleInputChange}
                                         required
-                                        labelClassName="uppercase tracking-widest text-[11px] font-bold"
+                                        labelClassName="uppercase tracking-widest text-[11px] text-gray-400 font-bold"
                                     />
                                 </div>
 

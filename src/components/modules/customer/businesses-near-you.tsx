@@ -35,6 +35,7 @@ export function BusinessesNearYou() {
                 
                 const mappedBusinesses = enrichedData.map((b: any) => ({
                     id: b.id,
+                    slug: b.slug,
                     name: b.businessName,
                     location: b.addressDetails?.city?.name || (typeof b.city === 'string' ? b.city : " "),
                     description: b.description || "Premium spa and wellness services for your relaxation and beauty needs.",
