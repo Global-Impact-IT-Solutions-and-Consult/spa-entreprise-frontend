@@ -545,10 +545,10 @@ function CompanySettingTab() {
             <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-5">
                     <CustomInput
-                        label="Account Name"
-                        value={paymentData.accountName}
-                        onChange={(e) => setPaymentData({ ...paymentData, accountName: e.target.value })}
-                        placeholder="Enter account holder name"
+                        label="Bank Name"
+                        value={paymentData.bankName}
+                        onChange={(e) => setPaymentData({ ...paymentData, bankName: e.target.value })}
+                        placeholder="e.g. GTBank"
                         className="h-[50px] rounded"
                         disabled={disabled}
                     />
@@ -561,20 +561,12 @@ function CompanySettingTab() {
                         disabled={disabled}
                     />
                 </div>
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 gap-5">
                     <CustomInput
-                        label="Bank Name"
-                        value={paymentData.bankName}
-                        onChange={(e) => setPaymentData({ ...paymentData, bankName: e.target.value })}
-                        placeholder="e.g. GTBank"
-                        className="h-[50px] rounded"
-                        disabled={disabled}
-                    />
-                    <CustomInput
-                        label="Sort Code (optional)"
-                        value={paymentData.sortCode}
-                        onChange={(e) => setPaymentData({ ...paymentData, sortCode: e.target.value })}
-                        placeholder="e.g. 058"
+                        label="Account Name"
+                        value={paymentData.accountName}
+                        onChange={(e) => setPaymentData({ ...paymentData, accountName: e.target.value })}
+                        placeholder="Enter account holder name"
                         className="h-[50px] rounded"
                         disabled={disabled}
                     />

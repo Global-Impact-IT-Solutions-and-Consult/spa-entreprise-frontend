@@ -27,6 +27,7 @@ export function RecentlyJoined() {
                 
                 const mappedBusinesses = enrichedData.map((b: any) => ({
                     id: b.id,
+                    slug: b.slug,
                     name: b.businessName,
                     location: b.addressDetails?.city?.name || (typeof b.city === 'string' ? b.city : " "),
                     description: b.description || "Freshly added premium wellness provider on iBookam.",

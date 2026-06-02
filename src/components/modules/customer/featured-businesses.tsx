@@ -20,6 +20,7 @@ export function FeaturedBusinesses() {
                 // Map to UI format
                 const mappedBusinesses = enrichedData.map((b) => ({
                     id: b.id,
+                    slug: b.slug,
                     name: b.businessName,
                     location: b.addressDetails?.state?.name || (typeof b.city === 'string' ? b.city : " "),
                     description: b.description || "Premium spa and wellness services for your relaxation and beauty needs.",

@@ -75,7 +75,7 @@ export function CategoryBrowser() {
                         return (
                             <Link
                                 key={type.id}
-                                href={`/businesses?category=${type.id}`}
+                                href={`/businesses?category=${type.code}`}
                                 className="group"
                             >
                                 <div className="bg-white rounded-2xl p-6 md:p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">

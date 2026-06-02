@@ -30,9 +30,6 @@ export function BusinessReviewsTab({ rating, totalReviews, ratingDistribution, r
         <div className="space-y-10">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10">
                 <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Customer Review</h2>
-                <Button className="bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold h-12 px-10 rounded-xl shadow-lg shadow-yellow-500/10">
-                    Write a Review
-                </Button>
             </div>
 
             {/* Summary Box */}

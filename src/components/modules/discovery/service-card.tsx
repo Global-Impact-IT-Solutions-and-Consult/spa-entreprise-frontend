@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Heart, Clock, MapPin, Star, Store, House } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { favoritesService } from "@/services/favorites.service";
 import { useAuthStore } from "@/store/auth.store";
@@ -20,6 +20,7 @@ interface ServiceCardProps {
         name: string;
         businessName: string;
         businessId: string;
+        businessSlug?: string;
         imageUrl: string;
         category: {
             id: string;
@@ -39,6 +40,7 @@ interface ServiceCardProps {
 
 export function ServiceCard({ service }: ServiceCardProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const [isLoading, setIsLoading] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const { isAuthenticated } = useAuthStore();
@@ -93,14 +95,18 @@ export function ServiceCard({ service }: ServiceCardProps) {
         router.push(`/bookings/new?serviceId=${service.id}&businessId=${businessId}`);
     };
 
+    const businessSlug = service.businessSlug || service.businessId;
+    const isAtDestination = pathname === `/businesses/${businessSlug}` || pathname === `/businesses/${service.businessId}`;
+
     const handleCardClick = () => {
-        router.push(`/businesses/${businessId}`);
+        if (isAtDestination) return;
+        router.push(`/businesses/${businessSlug}`);
     };
 
     return (
         <div 
             onClick={handleCardClick}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group cursor-pointer"
+            className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group ${isAtDestination ? 'cursor-default' : 'cursor-pointer'}`}
         >
             {/* Image Container */}
             <div className="relative h-48 md:h-52 overflow-hidden">
@@ -130,13 +136,19 @@ export function ServiceCard({ service }: ServiceCardProps) {
                     <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1 group-hover:text-[#E89D24] transition-colors line-clamp-1">
                         {service.name}
                     </h3>
-                    <Link 
-                        href={`/businesses/${businessId}`} 
-                        className="text-sm text-gray-500 font-medium hover:text-[#E89D24] transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {service.businessName}
-                    </Link>
+                    {isAtDestination ? (
+                        <span className="text-sm text-gray-500 font-medium">
+                            {service.businessName}
+                        </span>
+                    ) : (
+                        <Link 
+                            href={`/businesses/${businessSlug}`} 
+                            className="text-sm text-gray-500 font-medium hover:text-[#E89D24] transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {service.businessName}
+                        </Link>
+                    )}
                 </div>
                 <hr className="my-3" />
                 {/* Time & Buffer */}

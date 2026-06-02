@@ -27,7 +27,7 @@ interface StaffCardProps {
 const StaffCard = ({ staff, onEdit, onDelete }: StaffCardProps) => {
     const [expanded, setExpanded] = useState(false);
     return (
-        <div className={`bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex flex-col gap-4 ${expanded ? 'min-h-[300px]' : 'h-[300px]'}`}>
+        <div className={`bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex flex-col gap-4 ${expanded ? 'min-h-[300px]' : 'h-fit'}`}>
             {/* Top row: avatar + action buttons */}
             <div className='shadow-md p-2 rounded'>
                 <div className="flex justify-between items-start">

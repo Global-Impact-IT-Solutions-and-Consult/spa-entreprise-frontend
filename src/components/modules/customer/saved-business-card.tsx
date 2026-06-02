@@ -12,6 +12,7 @@ interface SavedBusinessCardProps {
     business: {
         id: string;
         businessName: string;
+        slug?: string;
         city: string;
         address: string;
         description: string;
@@ -121,7 +122,7 @@ export function SavedBusinessCard({ business, onRemove }: SavedBusinessCardProps
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">From</span>
                         <p className="font-black text-gray-900 text-sm">₦{business.startingPrice?.toLocaleString() || "---"}</p>
                     </div>
-                    <Link href={`/businesses/${business.id}`} className="flex-1 max-w-[140px]">
+                    <Link href={`/businesses/${business.slug || business.id}`} className="flex-1 max-w-[140px]">
                         <Button className="w-full bg-[#E89D24] hover:bg-[#D97706] text-white text-xs font-bold h-10 rounded-lg shadow-sm shadow-orange-100 transition-all active:scale-[0.98]">
                             View More
                         </Button>

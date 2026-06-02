@@ -120,7 +120,7 @@ export function HeroSearch() {
                             >
                                 <option value="">Services</option>
                                 {businessTypes.map((type) => (
-                                    <option key={type.id} value={type.id}>{type.name}</option>
+                                    <option key={type.id} value={type.code}>{type.name}</option>
                                 ))}
                             </select>
                             <ChevronDown className="w-4 h-4 text-gray-400 pointer-events-none absolute right-4" />

@@ -25,8 +25,8 @@ function StaffCard({ member }: { member: Staff }) {
     return (
         <div key={member.id} className="bg-white rounded-3xl border border-gray-100 px-4 py-4 shadow-sm transition-all hover:shadow-md flex gap-4">
             <div className="flex items-start gap-6 mb-6">
-                <Avatar className="w-14 h-14 border-2 border-white bg-gray-100">
-                    <AvatarImage src={member.profilePicture} />
+                <Avatar className="w-14 h-14 bg-gray-100">
+                    <AvatarImage src={member.profilePicture} className="object-cover"/>
                     <AvatarFallback className="bg-gray-200 font-bold text-gray-500 text-xl">
                         {member.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>

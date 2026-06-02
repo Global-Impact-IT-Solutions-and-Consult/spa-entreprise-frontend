@@ -27,6 +27,7 @@ const PhoneNumberInput = React.forwardRef<HTMLInputElement, PhoneNumberInputProp
                 .map(c => ({
                     label: `${c.flag} +${c.phonecode}`,
                     value: `+${c.phonecode}`,
+                    key: `${c.isoCode}-${c.phonecode}`,
                     name: c.name
                 }))
                 .sort((a, b) => {
@@ -121,6 +122,7 @@ const PhoneNumberInput = React.forwardRef<HTMLInputElement, PhoneNumberInputProp
                         <Select
                             options={countryOptions}
                             value={currentCountryCode}
+                            key={currentCountryCode}
                             onChange={handleCountryChange}
                             className={cn(
                                 "h-[50px] rounded-xl",
