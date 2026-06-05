@@ -132,7 +132,7 @@ export default function BusinessProfilePage() {
     // Set the business URL client-side only to avoid SSR window access
     useEffect(() => {
         if (businessId) {
-            setBusinessUrl(`${window.location.origin}/businesses/${business?.slug || businessId}`);
+            setBusinessUrl(`${window.location.origin}/businesses/${business?.slug}`);
         }
     }, [businessId, business?.slug]);
 
@@ -198,7 +198,7 @@ export default function BusinessProfilePage() {
     };
 
     const handleOpenLive = () => {
-        const businessLink = `${window.location.origin}/businesses/${business?.slug || businessId}`;
+        const businessLink = `${window.location.origin}/businesses/${business?.slug}`;
         window.open(businessLink, '_blank');
     };
 
