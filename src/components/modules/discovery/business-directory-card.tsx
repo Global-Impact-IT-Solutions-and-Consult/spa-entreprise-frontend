@@ -109,7 +109,7 @@ export function BusinessDirectoryCard({ business }: BusinessDirectoryCardProps) 
     };
 
     const businessSlug = business.slug || businessIdString;
-    const isAtDestination = pathname === `/businesses/${businessSlug}` || pathname === `/businesses/${businessIdString}`;
+    const isAtDestination = pathname === `/businesses/${businessSlug}`;
 
     const handleCardClick = () => {
         if (isAtDestination) return;

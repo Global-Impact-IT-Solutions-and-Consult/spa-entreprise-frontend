@@ -95,8 +95,8 @@ export function ServiceCard({ service }: ServiceCardProps) {
         router.push(`/bookings/new?serviceId=${service.id}&businessId=${businessId}`);
     };
 
-    const businessSlug = service.businessSlug || service.businessId;
-    const isAtDestination = pathname === `/businesses/${businessSlug}` || pathname === `/businesses/${service.businessId}`;
+    const businessSlug = service.businessSlug;
+    const isAtDestination = pathname === `/businesses/${businessSlug}`;
 
     const handleCardClick = () => {
         if (isAtDestination) return;
