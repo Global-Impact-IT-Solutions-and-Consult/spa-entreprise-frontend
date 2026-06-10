@@ -28,6 +28,8 @@ export default function CancellationPage() {
     const [step, setStep] = useState<CancelStep>('details');
     const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
     const [hasAgreedToTerms, setHasAgreedToTerms] = useState(false);
+    const [canCancel, setCanCancel] = useState(true);
+    const [timeRemainingMinutes, setTimeRemainingMinutes] = useState<string | number | null>(null);
 
     // Helper functions for formatting
     const formatTime12h = (time24: string) => {
@@ -57,6 +59,45 @@ export default function CancellationPage() {
             return dateString;
         }
     };
+
+    const getBookingEndDateTime = (bookingData: Booking) => {
+        if (!bookingData || !bookingData.bookingDate || !bookingData.endTime) return null;
+        try {
+            const datePart = bookingData.bookingDate.split('T')[0];
+            const timePart = bookingData.endTime;
+            const formattedTime = timePart.split(':').length === 3 ? timePart : `${timePart}:00`;
+            return new Date(`${datePart}T${formattedTime}`);
+        } catch (e) {
+            console.error("Failed to parse end date/time", e);
+            return null;
+        }
+    };
+
+    useEffect(() => {
+        if (!booking) return;
+
+        const calculateTimeRemaining = () => {
+            const endDateTime = getBookingEndDateTime(booking);
+            if (!endDateTime) return;
+
+            const cancellationDeadline = new Date(endDateTime.getTime() + 30 * 60 * 1000); // 30 minutes after endTime
+            const now = new Date();
+            const diffMs = cancellationDeadline.getTime() - now.getTime();
+
+            if (diffMs <= 0) {
+                setCanCancel(false);
+                setTimeRemainingMinutes(booking?.endTime || null);
+            } else {
+                setCanCancel(true);
+                setTimeRemainingMinutes(Math.ceil(diffMs / (60 * 1000)));
+            }
+        };
+
+        calculateTimeRemaining();
+
+        const timer = setInterval(calculateTimeRemaining, 30000); // Update every 30 seconds
+        return () => clearInterval(timer);
+    }, [booking]);
 
     useEffect(() => {
         const fetchBookingAndStaff = async () => {
@@ -239,17 +280,31 @@ export default function CancellationPage() {
             <main className="flex-1 flex flex-col items-center py-12 px-4 md:px-8">
                 <div className="w-full max-w-2xl space-y-4">
                     {/* Policy Banner */}
-                    <div className="bg-[#FF383C1A] border border-l-4 border-l-[#CA3A31] rounded-lg p-5 px-2 flex items-start gap-2">
-                        <div className="rounded-full flex items-center justify-center flex-shrink-0">
-                            <AlertCircle className="w-6 h-6 text-[#CA3A31]" />
+                    {canCancel ? (
+                        <div className="bg-[#FF383C1A] border border-l-4 border-l-[#CA3A31] rounded-lg p-5 px-2 flex items-start gap-2">
+                            <div className="rounded-full flex items-center justify-center flex-shrink-0">
+                                <AlertCircle className="w-6 h-6 text-[#CA3A31]" />
+                            </div>
+                            <div>
+                                <h3 className="text-[#862E00] font-semibold mb-1 tracking-wide">Action Required: Limited Window</h3>
+                                <p className="text-[#5E6058] text-sm font-medium leading-relaxed">
+                                    After <strong>30 minutes</strong> from appointment end. This option will expire in <strong>{timeRemainingMinutes} minute{timeRemainingMinutes !== 1 ? 's' : ''}</strong>.
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-[#862E00] font-semibold mb-1 tracking-wide">Action Required: Limited Window</h3>
-                            <p className="text-[#5E6058] text-sm font-medium leading-relaxed">
-                                These options will expire in <strong>12 minutes</strong>. After 30 minutes, you can only request to reschedule.
-                            </p>
+                    ) : (
+                        <div className="bg-gray-100 border border-l-4 border-l-gray-400 rounded-lg p-5 px-2 flex items-start gap-2">
+                            <div className="rounded-full flex items-center justify-center flex-shrink-0">
+                                <AlertCircle className="w-6 h-6 text-gray-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-gray-700 font-semibold mb-1 tracking-wide">Cancellation Expired</h3>
+                                <p className="text-gray-500 text-sm font-medium leading-relaxed">
+                                    The 30-minute cancellation window has expired. You can no longer cancel this booking.
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Details Card */}
                     <div className="bg-white rounded-3xl p-8 shadow-sm gap-8">
@@ -298,14 +353,18 @@ export default function CancellationPage() {
                     <div className="space-y-4 pt-4">
                         <Button
                             onClick={() => setIsTermsModalOpen(true)}
-                            className="w-full h-14 bg-[#E89D24] hover:bg-[#D97706] text-white font-medium text-base rounded-md shadow-xl shadow-orange-100 transition-all active:scale-[0.99]"
+                            disabled={!canCancel || isSubmitting}
+                            className={cn(
+                                "w-full h-14 bg-[#E89D24] hover:bg-[#D97706] text-white font-medium text-base rounded-md shadow-xl shadow-orange-100 transition-all active:scale-[0.99]",
+                                (!canCancel || isSubmitting) && "bg-gray-100 text-gray-400 hover:bg-gray-100 hover:text-gray-400 cursor-not-allowed shadow-none"
+                            )}
                         >
                             Request Cancellation
                         </Button>
                         <Button
                             variant="ghost"
                             onClick={() => router.push(`/reschedule/${booking.id}`)}
-                            className="w-full h-14 text-[#E89D24] font-medium text-base rounded-md border border-orange-100 transition-all disabled:opacity-80 disabled:cursor-not-allowed"
+                            className="w-full h-14 text-[#E89D24] font-medium text-base rounded-md border border-orange-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={true}
                         >
                             I want to reschedule
