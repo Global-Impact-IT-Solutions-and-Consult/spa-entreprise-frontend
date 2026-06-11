@@ -20,8 +20,10 @@ import {
     Settings,
     Info,
     ChevronRight,
+    ChevronLeft,
     Copy,
-    Check
+    Check,
+    QrCode
 } from "lucide-react";
 import { Country, State, City, ICountry, IState, ICity } from 'country-state-city';
 
@@ -38,12 +40,13 @@ import { businessService, BusinessImage } from "@/services/business.service";
 import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { Lightbox } from "@/components/ui/lightbox";
 import { ShareBusinessModal } from "@/components/modules/discovery/share-business-modal";
 import { FaInfoCircle } from "react-icons/fa";
 import { GoNumber } from "react-icons/go";
 import { Tooltip } from "@/components/ui/tooltip";
 
-type TabType = "About" | "Gallery" | "Settings";
+type TabType = "About" | "Gallery" | "QR Code" | "Settings";
 
 const businessTypeLabels: Record<string, string> = {
     spa: "Spa and Wellness Center",
@@ -355,6 +358,8 @@ export default function BusinessProfilePage() {
         }
     };
 
+
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -457,6 +462,7 @@ export default function BusinessProfilePage() {
     const tabs: { label: TabType; icon: React.ReactNode }[] = [
         { label: "About", icon: <Info className="h-4 w-4" /> },
         { label: "Gallery", icon: <ImageIcon className="h-4 w-4" /> },
+        { label: "QR Code", icon: <QrCode className="h-4 w-4" /> },
         { label: "Settings", icon: <Settings className="h-4 w-4" /> },
     ];
 
@@ -581,7 +587,7 @@ export default function BusinessProfilePage() {
                                 {[1, 2, 3, 4, 5].map((i) => (
                                     <Star
                                         key={i}
-                                        className={`h-4 w-4 ${i <= Math.floor(Number(business?.rating?.average) || 0)
+                                        className={`h-4 w-4 ${i <= Math.floor(Number(business?.averageRating) || 0)
                                             ? "fill-[#F59E0B] text-[#F59E0B]"
                                             : "text-gray-200"
                                             }`}
@@ -649,7 +655,7 @@ export default function BusinessProfilePage() {
                                         : "text-gray-400 hover:text-gray-600"
                                 )}
                             >
-                                {tab.label === "About" ? <Info className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
+                                {tab.icon}
                                 {tab.label}
                                 {isActive && (
                                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#F59E0B] rounded-t-full shadow-sm shadow-amber-200" />
@@ -867,7 +873,7 @@ export default function BusinessProfilePage() {
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                             {allImages.map((img) => (
                                 <div
                                     key={img.id}
@@ -919,6 +925,23 @@ export default function BusinessProfilePage() {
                         </div>
                     )}
                 </div>
+            )}
+
+            {activeTab === "QR Code" && (
+                <QrCodeDesignTab
+                    business={business}
+                    onUpdate={(updatedBusiness) => {
+                        if (user && business) {
+                            const updatedBusinesses = user.businesses
+                                ? user.businesses.map(b => b.id === business.id ? { ...b, ...updatedBusiness } : b)
+                                : [updatedBusiness];
+                            updateUser({
+                                business: user.business?.id === business.id ? { ...user.business, ...updatedBusiness } : user.business,
+                                businesses: updatedBusinesses
+                            });
+                        }
+                    }}
+                />
             )}
 
             {/* Caption Modal */}
@@ -973,33 +996,11 @@ export default function BusinessProfilePage() {
 
             {/* Lightbox Modal */}
             {lightboxImage && (
-                <div
-                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-                    onClick={() => setLightboxImage(null)}
-                >
-                    <div className="relative max-w-4xl h-full w-full">
-                        <button
-                            onClick={() => setLightboxImage(null)}
-                            className="absolute top-0 right-0 p-2 text-white/80 hover:text-white transition-colors z-10"
-                        >
-                            <X className="h-6 w-6" />
-                        </button>
-                        <Image
-                            src={lightboxImage.url}
-                            alt={lightboxImage.caption || "Gallery image"}
-                            fill
-                            className="object-contain rounded-2xl"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        {lightboxImage.caption && (
-                            <div className="absolute bottom-4 inset-x-4 text-center">
-                                <p className="text-white text-sm font-medium bg-black/40 backdrop-blur-md rounded-xl px-4 py-2 inline-block">
-                                    {lightboxImage.caption}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                <Lightbox
+                    images={allImages}
+                    initialIndex={allImages.findIndex(img => img.id === lightboxImage.id)}
+                    onClose={() => setLightboxImage(null)}
+                />
             )}
 
             {/* Share Modal */}
@@ -1009,7 +1010,394 @@ export default function BusinessProfilePage() {
                 businessUrl={businessUrl}
                 businessName={formData.businessName || "this business"}
                 description="Share your business profile with customers and partners."
+                qrCode={business?.qrCode}
             />
+        </div>
+    );
+}
+
+interface PresetPalette {
+    name: string;
+    bg: string;
+    text: string;
+}
+
+const presets: PresetPalette[] = [
+    { name: "Warm Orange", bg: "#ff6b00", text: "#ffffff" },
+    { name: "Midnight Blue", bg: "#0f172a", text: "#ffffff" },
+    { name: "Emerald Forest", bg: "#064e3b", text: "#ffffff" },
+    { name: "Light Mint", bg: "#d1fae5", text: "#064e3b" },
+    { name: "Elegant Gold", bg: "#1a1a1a", text: "#fbbf24" }
+];
+
+function QrCodeDesignTab({ business, onUpdate }: { business: any; onUpdate: (updated: any) => void }) {
+    const [bgColor, setBgColor] = useState(business?.qrCodeBackgroundColor || "#ff6b00");
+    const [textColor, setTextColor] = useState(business?.qrCodeTextColor || "#ffffff");
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Sync state if business prop updates
+    useEffect(() => {
+        if (business?.qrCodeBackgroundColor) setBgColor(business.qrCodeBackgroundColor);
+        if (business?.qrCodeTextColor) setTextColor(business.qrCodeTextColor);
+    }, [business?.qrCodeBackgroundColor, business?.qrCodeTextColor]);
+
+    const getPreviewUrl = useCallback((base64Svg: string | null | undefined, bg: string, text: string) => {
+        if (!base64Svg) return "";
+        try {
+            const parts = base64Svg.split(',');
+            if (parts.length < 2) return base64Svg;
+            let svgXml = atob(parts[1]);
+
+            const currentBg = business?.qrCodeBackgroundColor || "#ff6b00";
+            const currentText = business?.qrCodeTextColor || "#ffffff";
+
+            const cleanBg = bg.startsWith('#') ? bg : `#${bg}`;
+            const cleanText = text.startsWith('#') ? text : `#${text}`;
+
+            svgXml = svgXml.replaceAll(currentBg, cleanBg);
+            svgXml = svgXml.replaceAll(currentBg.toUpperCase(), cleanBg);
+            svgXml = svgXml.replaceAll(currentBg.toLowerCase(), cleanBg);
+            
+            svgXml = svgXml.replaceAll(currentText, cleanText);
+            svgXml = svgXml.replaceAll(currentText.toUpperCase(), cleanText);
+            svgXml = svgXml.replaceAll(currentText.toLowerCase(), cleanText);
+
+            return `data:image/svg+xml;utf8,${encodeURIComponent(svgXml)}`;
+        } catch (e) {
+            console.error("Error generating live preview:", e);
+            return base64Svg;
+        }
+    }, [business?.qrCodeBackgroundColor, business?.qrCodeTextColor]);
+
+    const previewUrl = getPreviewUrl(business?.qrCode, bgColor, textColor);
+
+    const getCustomSvgXml = () => {
+        if (!business?.qrCode) return "";
+        try {
+            const parts = business.qrCode.split(',');
+            if (parts.length < 2) return "";
+            let svgXml = atob(parts[1]);
+
+            const currentBg = business?.qrCodeBackgroundColor || "#ff6b00";
+            const currentText = business?.qrCodeTextColor || "#ffffff";
+
+            const cleanBg = bgColor.startsWith('#') ? bgColor : `#${bgColor}`;
+            const cleanText = textColor.startsWith('#') ? textColor : `#${textColor}`;
+
+            svgXml = svgXml.replaceAll(currentBg, cleanBg);
+            svgXml = svgXml.replaceAll(currentBg.toUpperCase(), cleanBg);
+            svgXml = svgXml.replaceAll(currentBg.toLowerCase(), cleanBg);
+            
+            svgXml = svgXml.replaceAll(currentText, cleanText);
+            svgXml = svgXml.replaceAll(currentText.toUpperCase(), cleanText);
+            svgXml = svgXml.replaceAll(currentText.toLowerCase(), cleanText);
+
+            return svgXml;
+        } catch (e) {
+            console.error(e);
+            return "";
+        }
+    };
+
+    const handleSaveDesign = async () => {
+        if (!business?.id) return;
+        setIsSaving(true);
+        try {
+            const updated = await businessService.updateQrCodeDesign(business.id, {
+                backgroundColor: bgColor,
+                textColor: textColor
+            });
+            onUpdate(updated);
+            toaster.create({ title: "Design saved successfully!", type: "success" });
+        } catch (e) {
+            console.error(e);
+            toaster.create({ title: "Failed to save QR Code design", type: "error" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDownloadSvg = () => {
+        const svgXml = getCustomSvgXml();
+        if (!svgXml) return;
+        const element = document.createElement("a");
+        const file = new Blob([svgXml], { type: 'image/svg+xml;charset=utf-8' });
+        element.href = URL.createObjectURL(file);
+        element.download = `${business.slug || 'business'}-qr-code.svg`;
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        toaster.create({ title: "SVG Downloaded", type: "success" });
+    };
+
+    const handleDownloadPng = () => {
+        const svgXml = getCustomSvgXml();
+        if (!svgXml) return;
+        
+        const img = new window.Image();
+        const svgBlob = new Blob([svgXml], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1600;
+            canvas.height = 500;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0, 1600, 500);
+                const pngUrl = canvas.toDataURL('image/png');
+                const element = document.createElement("a");
+                element.href = pngUrl;
+                element.download = `${business.slug || 'business'}-qr-code.png`;
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+                toaster.create({ title: "PNG Downloaded", type: "success" });
+            }
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    };
+
+    const handleDownloadPdf = async () => {
+        const svgXml = getCustomSvgXml();
+        if (!svgXml) return;
+
+        const img = new window.Image();
+        const svgBlob = new Blob([svgXml], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        img.onload = async () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1600;
+            canvas.height = 500;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0, 1600, 500);
+                const pngData = canvas.toDataURL('image/png');
+                
+                const { jsPDF } = await import('jspdf');
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [1600, 500]
+                });
+                doc.addImage(pngData, 'PNG', 0, 0, 1600, 500);
+                doc.save(`${business.slug || 'business'}-qr-code.pdf`);
+                toaster.create({ title: "PDF Downloaded", type: "success" });
+            }
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    };
+
+    const handleShareQr = () => {
+        const svgXml = getCustomSvgXml();
+        if (!svgXml) return;
+        
+        const img = new window.Image();
+        const svgBlob = new Blob([svgXml], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1600;
+            canvas.height = 500;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0, 1600, 500);
+                canvas.toBlob(async (blob) => {
+                    if (blob) {
+                        try {
+                            const fileName = `${business.slug || 'business'}-qr-code.png`;
+                            const file = new File([blob], fileName, { type: 'image/png' });
+                            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: `${business.businessName || 'Business'} QR Code`,
+                                    text: `Scan to book appointments at ${business.businessName || 'our business'}!`
+                                });
+                            } else {
+                                toaster.create({ title: "Sharing files is not supported on this device.", type: "error" });
+                            }
+                        } catch (e) {
+                            if ((e as Error).name !== 'AbortError') {
+                                console.error(e);
+                                toaster.create({ title: "Failed to share image", type: "error" });
+                            }
+                        }
+                    }
+                }, 'image/png');
+            }
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    };
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-300 mb-8">
+            {/* Left Column - Customizer Controls */}
+            <div className="lg:col-span-5 bg-white rounded-[1rem] border border-gray-100 shadow-sm p-8 space-y-8">
+                <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-gray-900">Customize Banner</h3>
+                    <p className="text-sm text-gray-500 font-medium">
+                        Change the colors of your QR code banner to match your business brand.
+                    </p>
+                </div>
+
+                {/* Presets */}
+                <div className="space-y-4">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Harmonious Presets</label>
+                    <div className="flex flex-wrap gap-3">
+                        {presets.map((preset) => (
+                            <button
+                                key={preset.name}
+                                onClick={() => {
+                                    setBgColor(preset.bg);
+                                    setTextColor(preset.text);
+                                }}
+                                className="group relative flex items-center justify-center p-1 rounded-xl border border-gray-100 hover:border-amber-500 transition-all duration-200"
+                                title={preset.name}
+                            >
+                                <div className="flex h-10 w-16 rounded-lg overflow-hidden shadow-sm">
+                                    <div className="w-1/2" style={{ backgroundColor: preset.bg }} />
+                                    <div className="w-1/2 flex items-center justify-center font-bold text-xs" style={{ backgroundColor: preset.bg, color: preset.text }}>
+                                        Abc
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Custom Pickers */}
+                <div className="space-y-6">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Custom Colors</label>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">Background</label>
+                            <div className="flex gap-2">
+                                <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-gray-200 cursor-pointer shrink-0">
+                                    <input
+                                        type="color"
+                                        value={bgColor}
+                                        onChange={(e) => setBgColor(e.target.value)}
+                                        className="absolute inset-0 w-full h-full p-0 border-0 cursor-pointer scale-150"
+                                    />
+                                </div>
+                                <input
+                                    type="text"
+                                    value={bgColor}
+                                    onChange={(e) => setBgColor(e.target.value)}
+                                    placeholder="#FFFFFF"
+                                    className="w-full h-10 px-3 bg-gray-50 border border-gray-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm font-semibold uppercase outline-none transition-colors"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">Text & Logo</label>
+                            <div className="flex gap-2">
+                                <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-gray-200 cursor-pointer shrink-0">
+                                    <input
+                                        type="color"
+                                        value={textColor}
+                                        onChange={(e) => setTextColor(e.target.value)}
+                                        className="absolute inset-0 w-full h-full p-0 border-0 cursor-pointer scale-150"
+                                    />
+                                </div>
+                                <input
+                                    type="text"
+                                    value={textColor}
+                                    onChange={(e) => setTextColor(e.target.value)}
+                                    placeholder="#000000"
+                                    className="w-full h-10 px-3 bg-gray-50 border border-gray-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm font-semibold uppercase outline-none transition-colors"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-50">
+                    <Button
+                        onClick={handleSaveDesign}
+                        disabled={isSaving || (bgColor.toLowerCase() === (business?.qrCodeBackgroundColor || "#ff6b00").toLowerCase() && textColor.toLowerCase() === (business?.qrCodeTextColor || "#ffffff").toLowerCase())}
+                        className="w-full h-11 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all"
+                    >
+                        {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                        Save Design
+                    </Button>
+                </div>
+            </div>
+
+            {/* Right Column - Live Preview */}
+            <div className="lg:col-span-7 flex flex-col justify-between bg-white rounded-[1rem] border border-gray-100 shadow-sm p-8 gap-8">
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-bold text-gray-900">Live Preview</h3>
+                        <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-xs font-bold flex items-center gap-1.5 border border-amber-100">
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                            Real-time
+                        </span>
+                    </div>
+
+                    <div className="relative aspect-[16/5] bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 flex items-center justify-center">
+                        {previewUrl ? (
+                            <img
+                                src={previewUrl}
+                                alt="QR Code Customizer Live Preview"
+                                className="w-full h-full object-cover transition-opacity duration-300"
+                            />
+                        ) : (
+                            <div className="text-center p-6 text-gray-400 space-y-2">
+                                <QrCode className="h-12 w-12 mx-auto animate-pulse" />
+                                <p className="text-sm font-semibold">Generating QR code banner...</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Download Actions */}
+                <div className="space-y-4">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Download & Share</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <Button
+                            variant="outline"
+                            onClick={handleDownloadPng}
+                            disabled={!business?.qrCode}
+                            className="h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 font-bold rounded-xl text-xs flex items-center justify-center gap-2"
+                        >
+                            PNG Image
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleDownloadSvg}
+                            disabled={!business?.qrCode}
+                            className="h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 font-bold rounded-xl text-xs flex items-center justify-center gap-2"
+                        >
+                            Vector SVG
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleDownloadPdf}
+                            disabled={!business?.qrCode}
+                            className="h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 font-bold rounded-xl text-xs flex items-center justify-center gap-2"
+                        >
+                            Print PDF
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleShareQr}
+                            disabled={!business?.qrCode}
+                            className="h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 font-bold rounded-xl text-xs flex items-center justify-center gap-2"
+                        >
+                            <Share2 className="h-4 w-4" />
+                            Share QR
+                        </Button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

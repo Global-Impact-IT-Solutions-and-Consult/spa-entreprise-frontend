@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Download, Image as ImageIcon, Share2 } from "lucide-react";
 import { useState } from "react";
 import { toaster } from "@/components/ui/toaster";
 import { FaFacebook, FaWhatsapp, FaInstagram, FaTiktok } from "react-icons/fa";
@@ -15,6 +15,7 @@ interface ShareBusinessModalProps {
     businessName: string;
     title?: string;
     description?: string;
+    qrCode?: string | null;
 }
 
 export function ShareBusinessModal({ 
@@ -23,7 +24,8 @@ export function ShareBusinessModal({
     businessUrl, 
     businessName,
     title = "Share Business",
-    description = "Share this business profile with your friends and family."
+    description = "Share this business profile with your friends and family.",
+    qrCode
 }: ShareBusinessModalProps) {
     const [isCopied, setIsCopied] = useState(false);
 
@@ -32,6 +34,100 @@ export function ShareBusinessModal({
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
         toaster.create({ title: "Link copied to clipboard", type: "success" });
+    };
+
+    const handleDownloadQr = () => {
+        if (!qrCode) return;
+        const img = new window.Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1600;
+            canvas.height = 500;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0, 1600, 500);
+                const pngUrl = canvas.toDataURL('image/png');
+                const element = document.createElement("a");
+                element.href = pngUrl;
+                element.download = `${businessName.toLowerCase().replace(/\s+/g, '-')}-qr-code.png`;
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+                toaster.create({ title: "QR Code downloaded!", type: "success" });
+            }
+        };
+        img.src = qrCode;
+    };
+
+    const handleCopyQrImage = async () => {
+        if (!qrCode) return;
+        try {
+            const img = new window.Image();
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1600;
+                canvas.height = 500;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, 1600, 500);
+                    canvas.toBlob(async (blob) => {
+                        if (blob) {
+                            try {
+                                await navigator.clipboard.write([
+                                    new ClipboardItem({
+                                        [blob.type]: blob
+                                    })
+                                ]);
+                                toaster.create({ title: "QR Code copied to clipboard!", type: "success" });
+                            } catch (e) {
+                                console.error(e);
+                                toaster.create({ title: "Could not copy image. Try downloading it instead.", type: "error" });
+                            }
+                        }
+                    }, 'image/png');
+                }
+            };
+            img.src = qrCode;
+        } catch (e) {
+            console.error(e);
+            toaster.create({ title: "Failed to copy QR Code", type: "error" });
+        }
+    };
+
+    const handleShareQr = () => {
+        if (!qrCode) return;
+        const img = new window.Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1600;
+            canvas.height = 500;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0, 1600, 500);
+                canvas.toBlob(async (blob) => {
+                    if (blob) {
+                        try {
+                            const file = new File([blob], `${businessName.toLowerCase().replace(/\s+/g, '-')}-qr-code.png`, { type: 'image/png' });
+                            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: `${businessName} QR Code`,
+                                    text: `Scan to book appointments at ${businessName}!`
+                                });
+                            } else {
+                                toaster.create({ title: "Sharing files is not supported on this device.", type: "error" });
+                            }
+                        } catch (e) {
+                            if ((e as Error).name !== 'AbortError') {
+                                console.error(e);
+                                toaster.create({ title: "Failed to share image", type: "error" });
+                            }
+                        }
+                    }
+                }, 'image/png');
+            }
+        };
+        img.src = qrCode;
     };
 
     return (
@@ -46,6 +142,47 @@ export function ShareBusinessModal({
                     </DialogHeader>
 
                     <div className="space-y-4">
+                        {qrCode && (
+                            <div className="space-y-3 p-1 border border-gray-100 bg-gray-50/50 rounded-2xl">
+                                <div className="relative aspect-[16/5] w-full overflow-hidden rounded-xl border border-gray-100 bg-white flex items-center justify-center">
+                                    <img
+                                        src={qrCode}
+                                        alt={`${businessName} QR Code`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 p-1">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleDownloadQr}
+                                        className="h-9 text-xs font-bold rounded-lg border-gray-200 hover:bg-gray-50 hover:text-gray-700 flex items-center justify-center gap-1.5"
+                                    >
+                                        <Download className="w-3.5 h-3.5" />
+                                        Download
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleCopyQrImage}
+                                        className="h-9 text-xs font-bold rounded-lg border-gray-200 hover:bg-gray-50 hover:text-gray-700 flex items-center justify-center gap-1.5"
+                                    >
+                                        <ImageIcon className="w-3.5 h-3.5" />
+                                        Copy
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleShareQr}
+                                        className="h-9 text-xs font-bold rounded-lg border-gray-200 hover:bg-gray-50 hover:text-gray-700 flex items-center justify-center gap-1.5"
+                                    >
+                                        <Share2 className="w-3.5 h-3.5" />
+                                        Share
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex items-center space-x-2">
                             <div className="grid flex-1 gap-2">
                                 <Label htmlFor="link" className="sr-only">Link</Label>
