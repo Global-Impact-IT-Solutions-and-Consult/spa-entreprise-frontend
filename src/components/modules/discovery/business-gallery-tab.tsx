@@ -1,20 +1,28 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
+import { Lightbox } from "@/components/ui/lightbox";
 
 interface BusinessGalleryTabProps {
     images: string[];
 }
 
 export function BusinessGalleryTab({ images }: BusinessGalleryTabProps) {
+    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
     return (
         <div className="space-y-10">
             <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Gallery</h2>
 
             {images.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
                     {images.map((img, i) => (
-                        <div key={i} className="group relative aspect-square rounded-3xl overflow-hidden bg-gray-100 border border-gray-50 shadow-sm hover:shadow-md transition-all">
+                        <div
+                            key={i}
+                            onClick={() => setSelectedIndex(i)}
+                            className="group relative aspect-square rounded-3xl overflow-hidden bg-gray-100 border border-gray-50 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                        >
                             <Image
                                 src={img}
                                 alt={`Business Gallery ${i + 1}`}
@@ -29,6 +37,15 @@ export function BusinessGalleryTab({ images }: BusinessGalleryTabProps) {
                 <p className="text-gray-500 py-10 text-center bg-white rounded-3xl border border-dashed border-gray-200">
                     No gallery images available yet.
                 </p>
+            )}
+
+            {/* Lightbox Modal */}
+            {selectedIndex !== null && (
+                <Lightbox
+                    images={images}
+                    initialIndex={selectedIndex}
+                    onClose={() => setSelectedIndex(null)}
+                />
             )}
         </div>
     );

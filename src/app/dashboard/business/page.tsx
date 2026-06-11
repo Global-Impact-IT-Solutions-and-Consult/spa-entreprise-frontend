@@ -20,6 +20,7 @@ import {
     Settings,
     Info,
     ChevronRight,
+    ChevronLeft,
     Copy,
     Check,
     QrCode
@@ -39,6 +40,7 @@ import { businessService, BusinessImage } from "@/services/business.service";
 import { authService } from "@/services/auth.service";
 import { toaster } from "@/components/ui/toaster";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { Lightbox } from "@/components/ui/lightbox";
 import { ShareBusinessModal } from "@/components/modules/discovery/share-business-modal";
 import { FaInfoCircle } from "react-icons/fa";
 import { GoNumber } from "react-icons/go";
@@ -355,6 +357,8 @@ export default function BusinessProfilePage() {
             toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to set primary image", type: "error" });
         }
     };
+
+
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -869,7 +873,7 @@ export default function BusinessProfilePage() {
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                             {allImages.map((img) => (
                                 <div
                                     key={img.id}
@@ -992,33 +996,11 @@ export default function BusinessProfilePage() {
 
             {/* Lightbox Modal */}
             {lightboxImage && (
-                <div
-                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-                    onClick={() => setLightboxImage(null)}
-                >
-                    <div className="relative max-w-4xl h-full w-full">
-                        <button
-                            onClick={() => setLightboxImage(null)}
-                            className="absolute top-0 right-0 p-2 text-white/80 hover:text-white transition-colors z-10"
-                        >
-                            <X className="h-6 w-6" />
-                        </button>
-                        <Image
-                            src={lightboxImage.url}
-                            alt={lightboxImage.caption || "Gallery image"}
-                            fill
-                            className="object-contain rounded-2xl"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        {lightboxImage.caption && (
-                            <div className="absolute bottom-4 inset-x-4 text-center">
-                                <p className="text-white text-sm font-medium bg-black/40 backdrop-blur-md rounded-xl px-4 py-2 inline-block">
-                                    {lightboxImage.caption}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                <Lightbox
+                    images={allImages}
+                    initialIndex={allImages.findIndex(img => img.id === lightboxImage.id)}
+                    onClose={() => setLightboxImage(null)}
+                />
             )}
 
             {/* Share Modal */}
@@ -1209,6 +1191,49 @@ function QrCodeDesignTab({ business, onUpdate }: { business: any; onUpdate: (upd
         img.src = url;
     };
 
+    const handleShareQr = () => {
+        const svgXml = getCustomSvgXml();
+        if (!svgXml) return;
+        
+        const img = new window.Image();
+        const svgBlob = new Blob([svgXml], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1600;
+            canvas.height = 500;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0, 1600, 500);
+                canvas.toBlob(async (blob) => {
+                    if (blob) {
+                        try {
+                            const fileName = `${business.slug || 'business'}-qr-code.png`;
+                            const file = new File([blob], fileName, { type: 'image/png' });
+                            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: `${business.businessName || 'Business'} QR Code`,
+                                    text: `Scan to book appointments at ${business.businessName || 'our business'}!`
+                                });
+                            } else {
+                                toaster.create({ title: "Sharing files is not supported on this device.", type: "error" });
+                            }
+                        } catch (e) {
+                            if ((e as Error).name !== 'AbortError') {
+                                console.error(e);
+                                toaster.create({ title: "Failed to share image", type: "error" });
+                            }
+                        }
+                    }
+                }, 'image/png');
+            }
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    };
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-300 mb-8">
             {/* Left Column - Customizer Controls */}
@@ -1335,8 +1360,8 @@ function QrCodeDesignTab({ business, onUpdate }: { business: any; onUpdate: (upd
 
                 {/* Download Actions */}
                 <div className="space-y-4">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Download Formats</label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Download & Share</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <Button
                             variant="outline"
                             onClick={handleDownloadPng}
@@ -1360,6 +1385,15 @@ function QrCodeDesignTab({ business, onUpdate }: { business: any; onUpdate: (upd
                             className="h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 font-bold rounded-xl text-xs flex items-center justify-center gap-2"
                         >
                             Print PDF
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleShareQr}
+                            disabled={!business?.qrCode}
+                            className="h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 font-bold rounded-xl text-xs flex items-center justify-center gap-2"
+                        >
+                            <Share2 className="h-4 w-4" />
+                            Share QR
                         </Button>
                     </div>
                 </div>
