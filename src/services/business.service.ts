@@ -141,6 +141,8 @@ export interface Business {
     // Onboarding completion tracking (from backend)
     onboardingCompleted?: boolean;
     onboardingCompletedAt?: string | null;
+    averageRating?: string | number | null;
+    totalReviews: number
     rating: {
         average: number;
         totalReviews: number
@@ -148,6 +150,10 @@ export interface Business {
     primaryImageUrl?: string | null;
     profileImage?: string | null;
     coverImage?: string | null;
+    qrCode?: string | null;
+    qrCodeUrl?: string | null;
+    qrCodeBackgroundColor?: string | null;
+    qrCodeTextColor?: string | null;
     facebookUrl?: string | null;
     instagramUrl?: string | null;
     twitterUrl?: string | null;
@@ -465,6 +471,12 @@ export const businessService = {
     // Update Business Profile
     updateProfile: async (id: string, data: UpdateProfileDto) => {
         const response = await apiClient.put(`/spas/${id}/profile`, data);
+        return response.data;
+    },
+
+    // Update QR Code Design
+    updateQrCodeDesign: async (businessId: string, data: { backgroundColor: string; textColor: string }): Promise<Business> => {
+        const response = await apiClient.put<Business>(`/spas/${businessId}/qr-code-design`, data);
         return response.data;
     },
 

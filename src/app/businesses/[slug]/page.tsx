@@ -303,6 +303,7 @@ export default function BusinessDetailsPage() {
                 onClose={setIsShareModalOpen}
                 businessUrl={businessUrl}
                 businessName={business?.businessName || "this business"}
+                qrCode={business?.qrCode}
             />
         </div>
     );
