@@ -105,8 +105,8 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
     return (
         <div 
-            onClick={handleCardClick}
-            className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group ${isAtDestination ? 'cursor-default' : 'cursor-pointer'}`}
+            // onClick={handleCardClick}
+            className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group`}
         >
             {/* Image Container */}
             <div className="relative h-48 md:h-52 overflow-hidden">
@@ -133,7 +133,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
             {/* Content */}
             <div className="p-4">
                 <div className="mb-3">
-                    <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1 group-hover:text-[#E89D24] transition-colors line-clamp-1">
+                    <h3 className={`text-lg font-bold text-gray-900 leading-tight mb-1 transition-colors line-clamp-1`}>
                         {service.name}
                     </h3>
                     {isAtDestination ? (
