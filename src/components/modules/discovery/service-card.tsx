@@ -95,12 +95,13 @@ export function ServiceCard({ service }: ServiceCardProps) {
         router.push(`/bookings/new?serviceId=${service.id}&businessId=${businessId}`);
     };
 
-    const businessSlug = service.businessSlug;
-    const isAtDestination = pathname === `/businesses/${businessSlug}`;
+    const businessSlug = service.businessSlug || businessId;
+    const businessProfilePath = `/businesses/${businessSlug}`;
+    const isAtDestination = pathname === businessProfilePath;
 
     const handleCardClick = () => {
         if (isAtDestination) return;
-        router.push(`/businesses/${businessSlug}`);
+        router.push(businessProfilePath);
     };
 
     return (
@@ -142,7 +143,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                         </span>
                     ) : (
                         <Link 
-                            href={`/businesses/${businessSlug}`} 
+                            href={businessProfilePath}
                             className="text-sm text-gray-500 font-medium hover:text-[#E89D24] transition-colors"
                             onClick={(e) => e.stopPropagation()}
                         >

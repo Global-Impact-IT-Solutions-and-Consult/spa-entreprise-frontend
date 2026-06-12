@@ -61,6 +61,7 @@ export default function SavedPage() {
                     ...s,
                     id: f.serviceId || s.id,
                     businessId: s.businessId || s.business?.id,
+                    businessSlug: s.business?.slug || s.businessSlug || null,
                     businessName: s.business?.businessName || "Wellness Business",
                     location: s.business?.city?.name || s.business?.city || "Lagos",
                     imageUrl: s.imageUrl || "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
