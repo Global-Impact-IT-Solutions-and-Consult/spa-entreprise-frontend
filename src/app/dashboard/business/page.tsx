@@ -1332,7 +1332,7 @@ function QrCodeDesignTab({ business, onUpdate }: { business: any; onUpdate: (upd
             </div>
 
             {/* Right Column - Live Preview */}
-            <div className="lg:col-span-7 flex flex-col justify-between bg-white rounded-[1rem] border border-gray-100 shadow-sm p-8 gap-8">
+            <div className="lg:col-span-7 flex flex-col justify-between bg-white rounded-[1rem] border border-gray-100 shadow-sm p-8 gap-8 h-fit">
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h3 className="text-xl font-bold text-gray-900">Live Preview</h3>
@@ -1361,7 +1361,7 @@ function QrCodeDesignTab({ business, onUpdate }: { business: any; onUpdate: (upd
                 {/* Download Actions */}
                 <div className="space-y-4">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Download & Share</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="grid sm:grid-cols-3 gap-3">
                         <Button
                             variant="outline"
                             onClick={handleDownloadPng}
@@ -1386,7 +1386,7 @@ function QrCodeDesignTab({ business, onUpdate }: { business: any; onUpdate: (upd
                         >
                             Print PDF
                         </Button>
-                        <Button
+                        {/* <Button
                             variant="outline"
                             onClick={handleShareQr}
                             disabled={!business?.qrCode}
@@ -1394,7 +1394,7 @@ function QrCodeDesignTab({ business, onUpdate }: { business: any; onUpdate: (upd
                         >
                             <Share2 className="h-4 w-4" />
                             Share QR
-                        </Button>
+                        </Button> */}
                     </div>
                 </div>
             </div>

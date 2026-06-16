@@ -132,8 +132,8 @@ export function ShareBusinessModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md bg-white rounded-lg p-0 overflow-hidden border-none cursor-default">
-                <div className="p-6">
+            <DialogContent className="sm:max-w-md md:max-w-3xl bg-white rounded-lg p-0 overflow-hidden border-none cursor-default">
+                <div className="p-2 sm:p-6">
                     <DialogHeader className="mb-4">
                         <DialogTitle className="text-lg font-bold text-gray-900">{title}</DialogTitle>
                         <DialogDescription className="text-sm text-gray-500 font-medium">
@@ -143,7 +143,7 @@ export function ShareBusinessModal({
 
                     <div className="space-y-4">
                         {qrCode && (
-                            <div className="space-y-3 p-1 border border-gray-100 bg-gray-50/50 rounded-2xl">
+                            <div className="space-y-1 p-1 border border-gray-100 bg-gray-50/50 rounded-2xl">
                                 <div className="relative aspect-[16/5] w-full overflow-hidden rounded-xl border border-gray-100 bg-white flex items-center justify-center">
                                     <img
                                         src={qrCode}
@@ -151,33 +151,15 @@ export function ShareBusinessModal({
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 p-1">
+                                <div className="">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={handleDownloadQr}
-                                        className="h-9 text-xs font-bold rounded-lg border-gray-200 hover:bg-gray-50 hover:text-gray-700 flex items-center justify-center gap-1.5"
+                                        className="h-9 w-full text-xs font-bold rounded-lg border-gray-200 hover:bg-gray-50 hover:text-gray-700 flex items-center justify-center gap-1.5"
                                     >
                                         <Download className="w-3.5 h-3.5" />
                                         Download
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={handleCopyQrImage}
-                                        className="h-9 text-xs font-bold rounded-lg border-gray-200 hover:bg-gray-50 hover:text-gray-700 flex items-center justify-center gap-1.5"
-                                    >
-                                        <ImageIcon className="w-3.5 h-3.5" />
-                                        Copy
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={handleShareQr}
-                                        className="h-9 text-xs font-bold rounded-lg border-gray-200 hover:bg-gray-50 hover:text-gray-700 flex items-center justify-center gap-1.5"
-                                    >
-                                        <Share2 className="w-3.5 h-3.5" />
-                                        Share
                                     </Button>
                                 </div>
                             </div>

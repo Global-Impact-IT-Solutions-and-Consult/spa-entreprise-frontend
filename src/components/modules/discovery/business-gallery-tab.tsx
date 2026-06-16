@@ -16,12 +16,12 @@ export function BusinessGalleryTab({ images }: BusinessGalleryTabProps) {
             <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Gallery</h2>
 
             {images.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {images.map((img, i) => (
                         <div
                             key={i}
                             onClick={() => setSelectedIndex(i)}
-                            className="group relative aspect-square rounded-3xl overflow-hidden bg-gray-100 border border-gray-50 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                            className="group relative aspect-square rounded-md overflow-hidden bg-gray-100 border border-gray-50 shadow-sm hover:shadow-md transition-all cursor-pointer"
                         >
                             <Image
                                 src={img}
