@@ -53,6 +53,7 @@ export function CustomerHeader() {
             parsed.state = newState;
             parsed.city = newState; // Default city to state for simplicity in manual override
             parsed.timestamp = Date.now();
+            parsed.isManual = true;
             
             localStorage.setItem('user_location_cache', JSON.stringify(parsed));
             

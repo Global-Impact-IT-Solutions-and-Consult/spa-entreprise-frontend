@@ -9,6 +9,7 @@ interface LocationCache {
   latitude: number | null;
   longitude: number | null;
   timestamp: number;
+  isManual?: boolean;
 }
 
 export function useUserLocation() {
@@ -21,12 +22,25 @@ export function useUserLocation() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let fallbackCache: LocationCache | null = null;
+
     // 1. Check Cache
     try {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         try {
           const parsed: LocationCache = JSON.parse(cached);
+          
+          // If manually overridden, bypass coordinates validation and expiration
+          if (parsed.isManual) {
+            setLocation(parsed.city);
+            setState(parsed.state || "");
+            setLatitude(parsed.latitude ?? null);
+            setLongitude(parsed.longitude ?? null);
+            setLoading(false);
+            return;
+          }
+
           const isExpired = Date.now() - parsed.timestamp > CACHE_EXPIRY;
           
           // CRITICAL: Ensure we have valid coordinates in the cache
@@ -40,11 +54,11 @@ export function useUserLocation() {
             setLoading(false);
             return;
           } else {
-            localStorage.removeItem(CACHE_KEY);
+            // Keep old cache as a backup fallback if geolocate fails
+            fallbackCache = parsed;
           }
         } catch (parseError) {
           console.error("Failed to parse location cache", parseError);
-          localStorage.removeItem(CACHE_KEY);
         }
       }
     } catch (e) {
@@ -53,8 +67,15 @@ export function useUserLocation() {
 
     // 2. Fallback to geolocation
     if (!navigator.geolocation) {
-      setLocation("Location unavailable");
-      setError("Geolocation is not supported by your browser");
+      if (fallbackCache) {
+        setLocation(fallbackCache.city);
+        setState(fallbackCache.state || "");
+        setLatitude(fallbackCache.latitude);
+        setLongitude(fallbackCache.longitude);
+      } else {
+        setLocation("Location unavailable");
+        setError("Geolocation is not supported by your browser");
+      }
       setLoading(false);
       return;
     }
@@ -97,8 +118,15 @@ export function useUserLocation() {
           
         } catch (err) {
           console.error("Error fetching location data:", err);
-          setLocation("Location unavailable");
-          setError("Failed to resolve location name");
+          if (fallbackCache) {
+            setLocation(fallbackCache.city);
+            setState(fallbackCache.state || "");
+            setLatitude(fallbackCache.latitude);
+            setLongitude(fallbackCache.longitude);
+          } else {
+            setLocation("Location unavailable");
+            setError("Failed to resolve location name");
+          }
         } finally {
           setLoading(false);
         }
@@ -106,14 +134,20 @@ export function useUserLocation() {
       (geoError) => {
         console.error("Geolocation error:", geoError);
         
-        // Handle specific error codes if desired
-        if (geoError.code === geoError.PERMISSION_DENIED) {
-            setLocation("Nigeria"); // Fallback
+        if (fallbackCache) {
+            setLocation(fallbackCache.city);
+            setState(fallbackCache.state || "");
+            setLatitude(fallbackCache.latitude);
+            setLongitude(fallbackCache.longitude);
         } else {
-            setLocation("Location unavailable");
+            // Handle specific error codes if desired
+            if (geoError.code === geoError.PERMISSION_DENIED) {
+                setLocation("Nigeria"); // Fallback
+            } else {
+                setLocation("Location unavailable");
+            }
+            setError(geoError.message);
         }
-        
-        setError(geoError.message);
         setLoading(false);
       },
       {
