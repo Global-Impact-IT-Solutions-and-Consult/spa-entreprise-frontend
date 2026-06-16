@@ -107,6 +107,11 @@ export default function CancellationPage() {
                 const bookingData = await bookingService.getBookingById(bookingId);
                 setBooking(bookingData);
 
+                // If cancellation is already pending or has been requested, jump to success screen
+                if (bookingData.cancellationRequested || bookingData.status === 'cancellation_pending_approval') {
+                    setStep('success');
+                }
+
                 // Fetch staff details
                 if (bookingData.businessId) {
                     try {
@@ -185,6 +190,21 @@ export default function CancellationPage() {
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center text-center px-4">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2 font-playfair">Appointment Not Found</h2>
                 <p className="text-gray-500 mb-6">We couldn't find the appointment details.</p>
+                <Button onClick={() => router.push("/my-bookings")} className="bg-[#E89D24] text-white font-bold h-12 px-6">
+                    Return to Bookings
+                </Button>
+            </div>
+        );
+    }
+
+    if (booking.status === 'cancelled') {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center text-center px-4">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
+                    <X className="w-8 h-8" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 font-playfair">Booking Cancelled</h2>
+                <p className="text-gray-500 mb-6">This appointment has already been cancelled.</p>
                 <Button onClick={() => router.push("/my-bookings")} className="bg-[#E89D24] text-white font-bold h-12 px-6">
                     Return to Bookings
                 </Button>

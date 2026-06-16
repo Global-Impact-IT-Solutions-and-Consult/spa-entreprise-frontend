@@ -24,7 +24,7 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
     const [serviceImage, setServiceImage] = useState<string | null>(null);
 
     const isCanceled = booking.status === "cancelled";
-    const isPastOrCancelled = booking.status === "completed" || booking.status === "cancelled";
+    const isPastOrCancelled = booking.status === "completed" || booking.status === "cancelled" || booking.status === "cancellation_pending_approval";
 
     useEffect(() => {
         const fetchServiceData = async () => {
