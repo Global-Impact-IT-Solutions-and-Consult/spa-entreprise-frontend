@@ -890,7 +890,7 @@ export default function BusinessProfilePage() {
 
                                     {/* Action buttons */}
                                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {!img.isPrimary && (
+                                        {/* {!img.isPrimary && (
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -901,7 +901,7 @@ export default function BusinessProfilePage() {
                                             >
                                                 <Star className="h-3.5 w-3.5" />
                                             </button>
-                                        )}
+                                        )} */}
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -914,12 +914,12 @@ export default function BusinessProfilePage() {
                                     </div>
 
                                     {/* Primary badge */}
-                                    {img.isPrimary && (
+                                    {/* {img.isPrimary && (
                                         <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-amber-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-sm">
                                             <Star className="h-3 w-3 fill-white" />
                                             Primary
                                         </div>
-                                    )}
+                                    )} */}
                                 </div>
                             ))}
                         </div>
