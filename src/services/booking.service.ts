@@ -9,13 +9,16 @@ export interface Booking {
     bookingDate: string;
     startTime: string;
     endTime: string;
-    status: 'pending_payment' | 'confirmed' | 'completed' | 'cancelled' | 'expired';
+    status: 'pending_payment' | 'confirmed' | 'completed' | 'cancelled' | 'expired' | 'cancellation_pending_approval';
     totalPrice: number;
     customerName?: string;
     customerPhone?: string;
     staffName?: string;
     staffId?: string;
     createdAt: string;
+    cancellationRequested?: boolean;
+    canCancel?: boolean;
+    hasPassed?: boolean;
 }
 
 export interface BookingStats {
@@ -73,6 +76,12 @@ export const bookingService = {
     // Cancel a booking
     cancelBooking: async (bookingId: string, data: { reason?: string }) => {
         const response = await apiClient.post<Booking>(`/bookings/${bookingId}/cancel`, data);
+        return response.data;
+    },
+
+    // Approve or reject a customer's pending cancellation request (Business only)
+    cancellationDecision: async (bookingId: string, businessId: string, data: { approve: boolean; reason?: string }) => {
+        const response = await apiClient.post<Booking>(`/bookings/${bookingId}/cancellation-decision?businessId=${businessId}`, data);
         return response.data;
     },
 

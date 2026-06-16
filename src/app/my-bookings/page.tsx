@@ -17,7 +17,7 @@ function MyBookingsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { isAuthenticated } = useAuthStore();
-    const [activeTab, setActiveTab] = useState<"Upcoming" | "History" | "Canceled">("Upcoming");
+    const [activeTab, setActiveTab] = useState<"Upcoming" | "History" | "Pending Cancellations" | "Canceled">("Upcoming");
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -36,7 +36,7 @@ function MyBookingsContent() {
         router.replace("/my-bookings");
     };
 
-    const tabs = ["Upcoming", "History", "Canceled"];
+    const tabs = ["Upcoming", "History", "Pending Cancellations", "Canceled"];
 
     const fetchBookings = useCallback(async (isLoadMore = false, currentLimit = limit) => {
         if (isLoadMore) {
@@ -49,6 +49,7 @@ function MyBookingsContent() {
             let apiStatus = '';
             if (activeTab === 'Upcoming') apiStatus = 'confirmed';
             else if (activeTab === 'History') apiStatus = 'completed';
+            else if (activeTab === 'Pending Cancellations') apiStatus = 'cancellation_pending_approval';
             else if (activeTab === 'Canceled') apiStatus = 'cancelled';
 
             const response = await bookingService.getUserBookings({ status: apiStatus, limit: currentLimit });

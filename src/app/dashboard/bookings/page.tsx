@@ -50,6 +50,7 @@ export default function BookingsPage() {
     const [tabCount, setTabCount] = useState({
         upcoming: 0,
         completed: 0,
+        "pending cancellations": 0,
         canceled: 0
     });
 
@@ -61,6 +62,8 @@ export default function BookingsPage() {
 
     const [searchQuery, setSearchQuery] = useState("");
     const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+    const [bookingToReject, setBookingToReject] = useState<string | null>(null);
+    const [bookingToApprove, setBookingToApprove] = useState<string | null>(null);
 
     // Applied filters (only update when "Apply" is clicked)
     const [appliedFilters, setAppliedFilters] = useState({
@@ -74,6 +77,7 @@ export default function BookingsPage() {
     const statusMap: Record<string, string[]> = {
         "Upcoming": ["pending_payment", "confirmed"],
         "Completed": ["completed"],
+        "Pending Cancellations": ["cancellation_pending_approval"],
         "Canceled": ["cancelled", "expired"]
     };
 
@@ -95,6 +99,7 @@ export default function BookingsPage() {
             setTabCount({
                 upcoming: bookingsArray.filter(b => b.status === 'pending_payment' || b.status === 'confirmed').length,
                 completed: bookingsArray.filter(b => b.status === 'completed').length,
+                "pending cancellations": bookingsArray.filter(b => b.status === 'cancellation_pending_approval').length,
                 canceled: bookingsArray.filter(b => b.status === 'cancelled' || b.status === 'expired').length
             });
 
@@ -222,9 +227,16 @@ export default function BookingsPage() {
         setBookingToCancel(id);
     };
 
+    const handleApproveCancellation = (id: string) => {
+        setBookingToApprove(id);
+    };
+
+    const handleRejectCancellation = (id: string) => {
+        setBookingToReject(id);
+    };
+
     const confirmCancel = async () => {
         if (!bookingToCancel) return;
-
         try {
             await bookingService.cancelBooking(bookingToCancel, { reason: "Cancelled by business owner" });
             fetchBookings();
@@ -234,6 +246,34 @@ export default function BookingsPage() {
             toaster.create({ title: "Cancellation Failed", description: "Could not cancel booking", type: "error" });
         } finally {
             setBookingToCancel(null);
+        }
+    };
+
+    const confirmApproveCancellation = async () => {
+        if (!bookingToApprove || !businessId) return;
+        try {
+            await bookingService.cancellationDecision(bookingToApprove, businessId, { approve: true, reason: "Cancellation request approved by business." });
+            fetchBookings();
+            toaster.create({ title: "Cancellation Approved", description: "The customer has been notified.", type: "success" });
+        } catch (error) {
+            console.error("Error approving cancellation:", error);
+            toaster.create({ title: "Action Failed", description: "Could not approve cancellation request.", type: "error" });
+        } finally {
+            setBookingToApprove(null);
+        }
+    };
+
+    const confirmRejectCancellation = async () => {
+        if (!bookingToReject || !businessId) return;
+        try {
+            await bookingService.cancellationDecision(bookingToReject, businessId, { approve: false, reason: "Outside cancellation window." });
+            fetchBookings();
+            toaster.create({ title: "Request Rejected", description: "The booking remains active.", type: "success" });
+        } catch (error) {
+            console.error("Error rejecting cancellation:", error);
+            toaster.create({ title: "Action Failed", description: "Could not reject cancellation request.", type: "error" });
+        } finally {
+            setBookingToReject(null);
         }
     };
 
@@ -362,7 +402,7 @@ export default function BookingsPage() {
             {/* Tabs & Filters */}
             <div className="space-y-6 mb-8">
                 <div className="flex items-center gap-8 border-b border-gray-200">
-                    {["Upcoming", "Completed", "Canceled"].map((tab) => (
+                    {["Upcoming", "Completed", "Pending Cancellations", "Canceled"].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -611,9 +651,11 @@ export default function BookingsPage() {
                                                         "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize",
                                                         booking.status === 'confirmed' || booking.status === 'completed'
                                                             ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                                            : booking.status === 'cancellation_pending_approval'
+                                                            ? "bg-none text-rose-600 border-none font-semibold px-0"
                                                             : "bg-amber-50 text-amber-600 border-amber-100"
                                                     )}>
-                                                        {booking.status.replace('_', ' ')}
+                                                        {booking.status.replaceAll('_', ' ')}
                                                     </div>
                                                     <p className="text-lg font-bold text-gray-900">₦{booking.totalPrice.toLocaleString()}</p>
                                                 </div>
@@ -631,15 +673,34 @@ export default function BookingsPage() {
                                                     Confirm
                                                 </Button>
                                             )}
-                                            {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-                                                <Button
-                                                    onClick={() => handleCancel(booking.id)}
-                                                    variant="outline"
-                                                    className="h-9 gap-1.5 bg-[#CA3A311A] text-red-600 border-[#CA3A31] hover:bg-red-50 font-semibold px-4"
-                                                >
-                                                    <X className="h-3.5 w-3.5" />
-                                                    Cancel
-                                                </Button>
+                                            {booking.status === 'cancellation_pending_approval' ? (
+                                                <>
+                                                    <Button
+                                                        onClick={() => handleRejectCancellation(booking.id)}
+                                                        variant="outline"
+                                                        className="h-9 gap-1.5 border-gray-200 hover:border-[#1A1F2C] hover:bg-gray-50 font-semibold px-4"
+                                                    >
+                                                        Reject Request
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleApproveCancellation(booking.id)}
+                                                        className="bg-[#E74C3C] hover:bg-[#C0392B] text-white h-9 gap-1.5 font-bold px-4"
+                                                    >
+                                                        <X className="h-3.5 w-3.5" />
+                                                        Approve Cancellation
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                booking.status !== 'cancelled' && booking.status !== 'completed' && (
+                                                    <Button
+                                                        onClick={() => handleCancel(booking.id)}
+                                                        variant="outline"
+                                                        className="h-9 gap-1.5 bg-[#CA3A311A] text-red-600 border-[#CA3A31] hover:bg-red-50 font-semibold px-4"
+                                                    >
+                                                        <X className="h-3.5 w-3.5" />
+                                                        Cancel
+                                                    </Button>
+                                                )
                                             )}
                                         </div>
                                     </div>
@@ -678,6 +739,26 @@ export default function BookingsPage() {
                 confirmLabel="Cancel Booking"
                 onConfirm={confirmCancel}
                 onCancel={() => setBookingToCancel(null)}
+            />
+
+            <ConfirmModal
+                isOpen={!!bookingToApprove}
+                title="Approve Cancellation Request?"
+                message="Are you sure you want to approve this cancellation? The booking will be cancelled and the customer will be notified."
+                variant="danger"
+                confirmLabel="Approve & Cancel"
+                onConfirm={confirmApproveCancellation}
+                onCancel={() => setBookingToApprove(null)}
+            />
+
+            <ConfirmModal
+                isOpen={!!bookingToReject}
+                title="Reject Cancellation Request?"
+                message="Are you sure you want to reject this request? The booking will remain active and the customer will be notified."
+                variant="warning"
+                confirmLabel="Reject Request"
+                onConfirm={confirmRejectCancellation}
+                onCancel={() => setBookingToReject(null)}
             />
         </div>
     );
