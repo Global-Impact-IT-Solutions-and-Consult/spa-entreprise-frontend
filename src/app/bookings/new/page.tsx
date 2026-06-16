@@ -52,6 +52,7 @@ function BookingContent() {
     const [selectedSlot, setSelectedSlot] = useState<any | null>(null);
     const [deliveryType, setDeliveryType] = useState<"in_location" | "home_service">("in_location");
     const [instructions, setInstructions] = useState("");
+    const [homeServiceAddress, setHomeServiceAddress] = useState("");
 
     // Fetch initial data
     useEffect(() => {
@@ -182,6 +183,8 @@ function BookingContent() {
                 bookingDate: selectedDate,
                 startTime: selectedSlot.startTime,
                 userId: user.id,
+                isHomeService: deliveryType === "home_service",
+                homeServiceAddress: deliveryType === "home_service" ? homeServiceAddress : undefined,
             });
 
             // Initialize Payment
@@ -261,12 +264,12 @@ function BookingContent() {
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-gray-400 font-medium">
                                         <MapPin className="w-4 h-4 text-[#E89D24]" />
-                                        1.2 mi away
+                                        {business.address}
                                     </div>
                                 </div>
                             </div>
                             <div className="text-right flex flex-col items-end">
-                                <p className="text-xl font-bold text-gray-900">₦{service.price.toLocaleString()}</p>
+                                <p className="text-xl font-bold text-gray-900">₦{price.toLocaleString()}</p>
                                 <p className="text-xs text-gray-400 font-medium mt-1">{service.duration} minutes</p>
                                 <Link
                                     href={`/businesses/${business?.slug}`}
@@ -457,8 +460,30 @@ function BookingContent() {
                                 >
                                     <Home className={cn("w-5 h-5", service.deliveryType === 'in_location_only' ? "text-gray-300" : "text-[#E89D24]")} />
                                     Home Service
+                                    {service.homeServicePrice && service.homeServicePrice !== service.price && (
+                                        <span className="text-xs font-bold text-[#E89D24] ml-1">
+                                            ₦{service.homeServicePrice.toLocaleString()}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* Home service address input — shown only when home_service is selected */}
+                            {deliveryType === "home_service" && (
+                                <div className="mt-5 space-y-2">
+                                    <label className="text-xs font-bold text-gray-900 uppercase tracking-wide block">
+                                        Delivery Address <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={homeServiceAddress}
+                                        onChange={(e) => setHomeServiceAddress(e.target.value)}
+                                        placeholder="e.g. 12 Admiralty Way, Lekki Phase 1, Lagos"
+                                        className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#E89D24]/30 focus:border-[#E89D24] transition-all"
+                                    />
+                                    <p className="text-[10px] text-gray-400 font-medium">Please provide a full address including landmark if possible.</p>
+                                </div>
+                            )}
                         </section>
 
                         {/* Add Details & Extras */}
@@ -489,7 +514,7 @@ function BookingContent() {
                                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{service.duration} minutes • {business.businessName}</p>
                                             <p className="text-[10px] text-gray-400 font-bold">Barbershop</p>
                                         </div>
-                                        <p className="font-bold text-gray-900 text-sm">₦{service.price.toLocaleString()}</p>
+                                        <p className="font-bold text-gray-900 text-sm">₦{price.toLocaleString()}</p>
                                     </div>
 
                                     <div className="space-y-1">
@@ -528,7 +553,7 @@ function BookingContent() {
 
                                 <Button
                                     onClick={handleConfirmBooking}
-                                    disabled={isSubmitting || !selectedSlot}
+                                    disabled={isSubmitting || !selectedSlot || (deliveryType === 'home_service' && !homeServiceAddress.trim())}
                                     className="w-full h-12 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold text-sm rounded-lg transition-all active:scale-[0.98]"
                                 >
                                     {isSubmitting ? (

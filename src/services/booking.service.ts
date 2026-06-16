@@ -103,6 +103,8 @@ export const bookingService = {
         customerName?: string;
         customerPhone?: string;
         totalPrice?: number;
+        isHomeService?: boolean;
+        homeServiceAddress?: string;
     }) => {
         const response = await apiClient.post<Booking>('/bookings', data);
         return response.data;
