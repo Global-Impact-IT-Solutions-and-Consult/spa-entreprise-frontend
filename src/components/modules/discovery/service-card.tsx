@@ -105,8 +105,8 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
     return (
         <div 
-            // onClick={handleCardClick}
-            className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group`}
+            onClick={handleCardClick}
+            className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group ${isAtDestination ? 'cursor-default' : 'cursor-pointer'}`}
         >
             {/* Image Container */}
             <div className="relative h-48 md:h-52 overflow-hidden">
@@ -143,7 +143,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                     ) : (
                         <Link 
                             href={`/businesses/${businessSlug}`} 
-                            className="text-sm text-gray-500 font-medium hover:text-[#E89D24] transition-colors"
+                            className="text-sm text-gray-500 font-medium group-hover:text-[#E89D24] transition-colors"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {service.businessName}
