@@ -106,8 +106,8 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
     return (
         <div 
-            // onClick={handleCardClick}
-            className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group`}
+            onClick={handleCardClick}
+            className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group ${isAtDestination ? 'cursor-default' : 'cursor-pointer'}`}
         >
             {/* Image Container */}
             <div className="relative h-48 md:h-52 overflow-hidden">
