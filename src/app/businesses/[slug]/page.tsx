@@ -18,6 +18,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getFallbackImage } from "@/lib/image.utils";
 import { ShareBusinessModal } from "@/components/modules/discovery/share-business-modal";
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export default function BusinessDetailsPage() {
     const params = useParams();
     const slug = params.slug as string;
@@ -51,8 +53,10 @@ export default function BusinessDetailsPage() {
             setLoading(true);
             setError(null);
             try {
-                // Fetch the business profile by its slug first
-                const businessData = await businessService.getBusinessProfileBySlug(slug);
+                // Resolve either a public slug or an older UUID URL before calling UUID-only endpoints.
+                const businessData = UUID_PATTERN.test(slug)
+                    ? await businessService.getBusinessProfile(slug)
+                    : await businessService.getBusinessProfileBySlug(slug);
                 const businessId = businessData.id;
 
                 // Then fetch all other details using the resolved businessId
