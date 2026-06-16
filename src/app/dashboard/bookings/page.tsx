@@ -652,7 +652,7 @@ export default function BookingsPage() {
                                                         booking.status === 'confirmed' || booking.status === 'completed'
                                                             ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                                                             : booking.status === 'cancellation_pending_approval'
-                                                            ? "bg-rose-50 text-rose-600 border-rose-100 font-semibold"
+                                                            ? "bg-none text-rose-600 border-none font-semibold px-0"
                                                             : "bg-amber-50 text-amber-600 border-amber-100"
                                                     )}>
                                                         {booking.status.replaceAll('_', ' ')}

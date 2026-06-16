@@ -64,7 +64,7 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
                     <div className="flex items-center gap-1">
                         <CheckCircle2 className={`w-3 h-3 ${isCanceled ? 'text-red-500' : 'text-green-600'}`} />
                         <span className={`text-xs font-medium ${isCanceled ? 'text-red-600' : 'text-green-700'}`}>
-                            {booking.status.replace('_', ' ')}
+                            {booking.status.replaceAll('_', ' ')}
                         </span>
                     </div>
                 </div>
@@ -108,7 +108,7 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
                         <span className="text-xl font-bold text-gray-900">₦{booking.totalPrice.toLocaleString()}</span>
                         {isPastOrCancelled ? (
                             <span className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                                {formatDistanceToNow(new Date(booking.bookingDate), { addSuffix: true })}
+                                {formatDistanceToNow(new Date(booking.createdAt), { addSuffix: true })}
                             </span>
                         ) : (
                             <button

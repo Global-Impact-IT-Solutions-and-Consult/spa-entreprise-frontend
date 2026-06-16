@@ -13,7 +13,7 @@ import Image from "next/image";
 import { getFallbackImage } from "@/lib/image.utils";
 import { BiChat } from "react-icons/bi";
 
-type CancelStep = 'details' | 'success';
+type CancelStep = 'details' | 'success' | 'cancelled';
 
 export default function CancellationPage() {
     const params = useParams();
@@ -30,6 +30,7 @@ export default function CancellationPage() {
     const [hasAgreedToTerms, setHasAgreedToTerms] = useState(false);
     const [canCancel, setCanCancel] = useState(true);
     const [timeRemainingMinutes, setTimeRemainingMinutes] = useState<string | number | null>(null);
+    const [isBeforeStart, setIsBeforeStart] = useState(false);
 
     // Helper functions for formatting
     const formatTime12h = (time24: string) => {
@@ -77,10 +78,26 @@ export default function CancellationPage() {
         if (!booking) return;
 
         const calculateTimeRemaining = () => {
+            // Determine if we are before the appointment start
+            try {
+                const datePart = booking.bookingDate.split('T')[0];
+                const startTimePart = booking.startTime;
+                const formattedStart = startTimePart.split(':').length === 3 ? startTimePart : `${startTimePart}:00`;
+                const startDateTime = new Date(`${datePart}T${formattedStart}`);
+                const now = new Date();
+                if (startDateTime > now) {
+                    setIsBeforeStart(true);
+                    setCanCancel(true);
+                    setTimeRemainingMinutes(null);
+                    return;
+                }
+            } catch { /* fall through to end-time logic */ }
+
+            setIsBeforeStart(false);
             const endDateTime = getBookingEndDateTime(booking);
             if (!endDateTime) return;
 
-            const cancellationDeadline = new Date(endDateTime.getTime() + 30 * 60 * 1000); // 30 minutes after endTime
+            const cancellationDeadline = new Date(endDateTime.getTime() + 30 * 60 * 1000);
             const now = new Date();
             const diffMs = cancellationDeadline.getTime() - now.getTime();
 
@@ -94,8 +111,7 @@ export default function CancellationPage() {
         };
 
         calculateTimeRemaining();
-
-        const timer = setInterval(calculateTimeRemaining, 30000); // Update every 30 seconds
+        const timer = setInterval(calculateTimeRemaining, 30000);
         return () => clearInterval(timer);
     }, [booking]);
 
@@ -159,12 +175,24 @@ export default function CancellationPage() {
             await bookingService.cancelBooking(bookingId, { reason: "Customer requested cancellation via dedicated page" });
 
             setIsTermsModalOpen(false);
-            setStep('success');
-            toaster.create({
-                title: "Cancellation Request Sent",
-                description: "Your request is being processed.",
-                type: "success"
-            });
+
+            if (isBeforeStart) {
+                // Immediate cancellation — booking is cancelled right away
+                setStep('cancelled');
+                toaster.create({
+                    title: "Booking Cancelled",
+                    description: "Your appointment has been cancelled successfully.",
+                    type: "success"
+                });
+            } else {
+                // Post-appointment cancellation request — needs business approval
+                setStep('success');
+                toaster.create({
+                    title: "Cancellation Request Sent",
+                    description: "Your request is being processed.",
+                    type: "success"
+                });
+            }
         } catch (error: any) {
             console.error("Cancellation failed", error);
             toaster.create({
@@ -208,6 +236,58 @@ export default function CancellationPage() {
                 <Button onClick={() => router.push("/my-bookings")} className="bg-[#E89D24] text-white font-bold h-12 px-6">
                     Return to Bookings
                 </Button>
+            </div>
+        );
+    }
+
+    if (step === 'cancelled') {
+        return (
+            <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-12 text-center">
+                <div className="w-48 h-48 relative rounded-full overflow-hidden mb-8 bg-gray-50 flex items-center justify-center">
+                    <Image
+                        src={businessImage || getFallbackImage(booking.businessName)}
+                        alt={booking.businessName}
+                        fill
+                        className="object-cover"
+                    />
+                </div>
+
+                <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4 -mt-6">
+                    <CheckCircle2 className="w-7 h-7 text-emerald-500" />
+                </div>
+
+                <h1 className="text-2xl font-bold text-gray-900 font-inter mb-3">Booking Cancelled</h1>
+                <p className="text-gray-500 text-sm font-normal max-w-sm mx-auto mb-5 leading-relaxed">
+                    Your appointment with <span className="font-bold text-[#E89D24]">{booking.businessName}</span> has been cancelled.
+                </p>
+
+                <div className="w-full max-w-sm bg-amber-50 border border-amber-100 rounded-xl p-4 mb-8 text-left">
+                    <h3 className="text-sm font-bold text-amber-800 mb-2 uppercase tracking-widest">Refund Info</h3>
+                    <ul className="space-y-2 text-sm text-amber-700">
+                        <li className="">
+                            - A <strong>10% cancellation fee</strong> will be deducted from your total payment.
+                        </li>
+                        <li className="">
+                            - The <strong>remaining amount</strong> will be refunded to your original payment method within 3–5 business days.
+                        </li>
+                    </ul>
+                </div>
+
+                <div className="w-full max-w-sm flex items-center gap-2">
+                    <Button
+                        onClick={() => router.push("/")}
+                        className="w-full h-12 bg-[#E89D24] hover:bg-[#D97706] text-white font-medium rounded-md shadow-lg shadow-orange-100"
+                    >
+                        Back to Home
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => router.push("/my-bookings")}
+                        className="w-full h-12 text-gray-500 font-medium hover:bg-gray-50 rounded-md"
+                    >
+                        View Bookings
+                    </Button>
+                </div>
             </div>
         );
     }
@@ -300,7 +380,19 @@ export default function CancellationPage() {
             <main className="flex-1 flex flex-col items-center py-12 px-4 md:px-8">
                 <div className="w-full max-w-2xl space-y-4">
                     {/* Policy Banner */}
-                    {canCancel ? (
+                    {isBeforeStart ? (
+                        <div className="bg-blue-50 border border-l-4 border-l-blue-400 rounded-lg p-5 px-4 flex items-start gap-2">
+                            <div className="rounded-full flex items-center justify-center flex-shrink-0">
+                                <Info className="w-6 h-6 text-blue-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-blue-800 font-semibold mb-1 tracking-wide">Cancellation before appointment</h3>
+                                <p className="text-blue-700 text-sm font-medium leading-relaxed">
+                                    Since your appointment hasn't started yet, cancelling now will <strong>immediately cancel</strong> the booking. A 10% cancellation fee applies and the remainder will be refunded.
+                                </p>
+                            </div>
+                        </div>
+                    ) : canCancel ? (
                         <div className="bg-[#FF383C1A] border border-l-4 border-l-[#CA3A31] rounded-lg p-5 px-2 flex items-start gap-2">
                             <div className="rounded-full flex items-center justify-center flex-shrink-0">
                                 <AlertCircle className="w-6 h-6 text-[#CA3A31]" />
@@ -379,7 +471,7 @@ export default function CancellationPage() {
                                 (!canCancel || isSubmitting) && "bg-gray-100 text-gray-400 hover:bg-gray-100 hover:text-gray-400 cursor-not-allowed shadow-none"
                             )}
                         >
-                            Request Cancellation
+                            {isBeforeStart ? "Cancel Appointment" : "Request Cancellation"}
                         </Button>
                         <Button
                             variant="ghost"
@@ -419,7 +511,9 @@ export default function CancellationPage() {
                             <div className="space-y-6">
                                 <div className="space-y-4">
                                     <p className="text-gray-600 font-medium leading-relaxed">
-                                        Please note that all cancellation requests are subject to business approval. If your request is accepted, a 10% cancellation fee will be applied to your account.
+                                        {isBeforeStart
+                                            ? "Since your appointment hasn't started yet, cancelling will immediately cancel the booking. A 10% cancellation fee applies and the remaining amount will be refunded to your payment method within 3–5 business days."
+                                            : "Please note that all cancellation requests are subject to business approval. If your request is accepted, a 10% cancellation fee will be applied to your account."}
                                     </p>
                                 </div>
 
