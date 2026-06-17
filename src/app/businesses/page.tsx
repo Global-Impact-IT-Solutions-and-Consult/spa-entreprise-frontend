@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { State, City, IState, ICity } from "country-state-city";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
-import { businessService, BusinessType, SpaSearchResult, isBusinessOpen, Service } from "@/services/business.service";
+import { businessService, BusinessType, isBusinessOpen } from "@/services/business.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from '@/store/auth.store';
 import { useFavoritesStore } from '@/store/favorites.store';
@@ -21,27 +21,27 @@ function BusinessDirectoryContent() {
     const router = useRouter();
 
     // State for data
+    const PAGE_SIZE = 12;
     const [businesses, setBusinesses] = useState<any[]>([]);
     const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [total, setTotal] = useState(0);
+    const [meta, setMeta] = useState<{ page: number, limit: number, total: number, totalPages: number } | null>(null);
 
     const [states, setStates] = useState<IState[]>([]);
     const [cities, setCities] = useState<ICity[]>([]);
     const countryCode = "NG";
     
     const { isAuthenticated } = useAuthStore();
-    const { businessIds: favoriteBusinessIds, setServiceIds: setFavoriteServiceIds, setBusinessIds: setFavoriteBusinessIds, clear: clearFavorites } = useFavoritesStore();
+    const { setServiceIds: setFavoriteServiceIds, setBusinessIds: setFavoriteBusinessIds, clear: clearFavorites } = useFavoritesStore();
 
     // Filter State for Pills
-    const [activeFilter, setActiveFilter] = useState("All Services");
+    const [activeFilter, setActiveFilter] = useState(searchParams.get("type") || "All Services");
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>({
-        maxPrice: 100000,
-        distance: "any",
+        maxPrice: searchParams.get("maxPrice") ? parseInt(searchParams.get("maxPrice")!) : 100000,
         availability: [],
-        rating: "any",
+        rating: searchParams.get("minRating") || "any",
     });
 
     // Initial filter state from URL
@@ -50,15 +50,12 @@ function BusinessDirectoryContent() {
         state: searchParams.get("state") || "",
         city: searchParams.get("city") || "",
         category: searchParams.get("category") || "All Businesses",
-        minRating: searchParams.get("minRating") || "All Rating",
-        limit: parseInt(searchParams.get("limit") || "12"),
+        date: searchParams.get("date") || "",
     };
 
     const [filters, setFilters] = useState(initialFilters);
-    const [pendingFilters, setPendingFilters] = useState(initialFilters);
+    const [tempFilters, setTempFilters] = useState(initialFilters);
     const [isLocationLoaded, setIsLocationLoaded] = useState(false);
-
-    const [tempSearch, setTempSearch] = useState(initialFilters.search);
 
     // Fetch business types and states
     useEffect(() => {
@@ -82,14 +79,8 @@ function BusinessDirectoryContent() {
                 if (cached) {
                     const parsed = JSON.parse(cached);
                     if (parsed.state) {
-                        setFilters(prev => ({
-                            ...prev,
-                            state: parsed.state
-                        }));
-                        setPendingFilters(prev => ({
-                            ...prev,
-                            state: parsed.state
-                        }));
+                        setFilters(prev => ({ ...prev, state: parsed.state }));
+                        setTempFilters(prev => ({ ...prev, state: parsed.state }));
                     }
                 }
             } catch (e) {
@@ -97,12 +88,12 @@ function BusinessDirectoryContent() {
             }
         }
         setIsLocationLoaded(true);
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Fetch cities when State changes
     useEffect(() => {
-        if (pendingFilters.state) {
-            const stateObj = states.find(s => s.name === pendingFilters.state);
+        if (tempFilters.state) {
+            const stateObj = states.find(s => s.name === tempFilters.state);
             if (stateObj) {
                 setCities(City.getCitiesOfState(countryCode, stateObj.isoCode));
             } else {
@@ -111,7 +102,7 @@ function BusinessDirectoryContent() {
         } else {
             setCities([]);
         }
-    }, [pendingFilters.state, states]);
+    }, [tempFilters.state, states]);
 
     // Fetch User Favorites
     useEffect(() => {
@@ -145,37 +136,68 @@ function BusinessDirectoryContent() {
     }, [isAuthenticated, setFavoriteServiceIds, setFavoriteBusinessIds, clearFavorites]);
 
     // Main fetch function
-    const fetchBusinesses = useCallback(async (currentFilters: typeof filters, isLoadMore = false) => {
-        if (isLoadMore) setLoadingMore(true);
+    const fetchBusinesses = useCallback(async (page = 1, append = false) => {
+        if (append) setLoadingMore(true);
         else setLoading(true);
 
         try {
-            const params: any = {};
+            const params: any = {
+                page,
+                limit: PAGE_SIZE,
+                sortBy: 'rating',
+                sortOrder: 'desc',
+            };
 
-            if (currentFilters.state) params.state = currentFilters.state;
-            if (currentFilters.city) params.city = currentFilters.city;
-            if (currentFilters.category !== "All Businesses") params.businessTypeCode = currentFilters.category;
-            if (currentFilters.minRating !== "All Rating") params.minRating = parseFloat(currentFilters.minRating);
+            if (filters.search) params.search = filters.search;
+            if (filters.state) params.state = filters.state;
+            if (filters.city) params.city = filters.city;
+            if (filters.category !== "All Businesses") params.businessTypeCode = [filters.category];
+            if (filters.date) params.date = filters.date;
 
-            params.limit = currentFilters.limit;
-            params.sortBy = 'rating';
-            params.sortOrder = 'desc';
+            // Advanced Filters
+            if (advancedFilters.rating !== "any") params.minRating = parseFloat(advancedFilters.rating);
+            if (advancedFilters.maxPrice && advancedFilters.maxPrice !== 100000) params.maxPrice = advancedFilters.maxPrice;
+
+            // Active Pills
+            if (activeFilter === "Saved") {
+                if (!isAuthenticated) {
+                    setBusinesses([]);
+                    setMeta(null);
+                    setLoading(false);
+                    setLoadingMore(false);
+                    return;
+                }
+                params.favoritesOnly = true;
+            }
 
             const response = await businessService.searchSpasWithEnrichment(params);
-            setBusinesses(response.data);
-            setTotal(response.meta.total);
+            
+            // Client-side fallback for delivery types (since backend doesn't support it yet)
+            let finalData = response.data;
+            if (activeFilter === "In-Store") {
+                finalData = finalData.filter((b: any) => b.availableDeliveryTypes?.includes('in_location_only') || b.availableDeliveryTypes?.includes('both'));
+            } else if (activeFilter === "Home Service") {
+                finalData = finalData.filter((b: any) => b.availableDeliveryTypes?.includes('home_service') || b.availableDeliveryTypes?.includes('both'));
+            }
+
+            if (append) {
+                setBusinesses(prev => [...prev, ...finalData]);
+            } else {
+                setBusinesses(finalData);
+            }
+            setMeta(response.meta);
         } catch (error) {
             console.error("Failed to fetch businesses:", error);
         } finally {
             setLoading(false);
             setLoadingMore(false);
         }
-    }, []);
+    }, [filters, advancedFilters, activeFilter, isAuthenticated]);
 
-    // Trigger fetch on filter/limit change
+    // Trigger fetch on filter change
     useEffect(() => {
         if (!isLocationLoaded) return;
-        fetchBusinesses(filters);
+        fetchBusinesses(1, false);
 
         // Update URL
         const params = new URLSearchParams();
@@ -183,72 +205,43 @@ function BusinessDirectoryContent() {
         if (filters.state) params.set("state", filters.state);
         if (filters.city) params.set("city", filters.city);
         if (filters.category !== "All Businesses") params.set("category", filters.category);
-        if (filters.minRating !== "All Rating") params.set("minRating", filters.minRating);
-        if (filters.limit > 12) params.set("limit", filters.limit.toString());
+        if (filters.date) params.set("date", filters.date);
+        if (advancedFilters.rating !== "any") params.set("minRating", advancedFilters.rating);
+        if (advancedFilters.maxPrice !== 100000) params.set("maxPrice", advancedFilters.maxPrice.toString());
+        if (activeFilter !== "All Services") params.set("type", activeFilter);
 
         router.push(`/businesses?${params.toString()}`, { scroll: false });
-    }, [filters, fetchBusinesses, router, isLocationLoaded]);
-
-    // Derived filtered businesses
-    const filteredBusinesses = useMemo(() => {
-        let result = businesses;
-
-        // Filter by delivery type
-        if (activeFilter === "In-Store") {
-            // We'll need to check if ANY service in the business is in-store
-            // Since we enriched businesses with full data, let's assume they have deliveryTypes
-            // If not, we'll need to update the enrichment query
-            result = result.filter(b => b.availableDeliveryTypes?.includes('in_location_only') || b.availableDeliveryTypes?.includes('both'));
-        } else if (activeFilter === "Home Service") {
-            result = result.filter(b => b.availableDeliveryTypes?.includes('home_service') || b.availableDeliveryTypes?.includes('both'));
-        } else if (activeFilter === "Saved") {
-            const favoriteIdsSet = new Set(favoriteBusinessIds);
-            result = result.filter(b => favoriteIdsSet.has(b.id));
-        }
-
-        // Apply Advanced Filters (Client-side for now)
-        if (advancedFilters.rating !== "any") {
-            const minR = parseFloat(advancedFilters.rating);
-            result = result.filter(b => (typeof b.averageRating === 'string' ? parseFloat(b.averageRating) : (b.averageRating || 0)) >= minR);
-        }
-
-        return result;
-    }, [businesses, activeFilter, favoriteBusinessIds, advancedFilters]);
+    }, [filters, activeFilter, advancedFilters, fetchBusinesses, router, isLocationLoaded]);
 
     const handleApplyFilters = () => {
-        const newFilters = { ...pendingFilters, search: tempSearch, limit: 12 };
-        setFilters(newFilters);
-        setPendingFilters(newFilters);
+        setFilters(tempFilters);
     };
 
     const handleLoadMore = () => {
-        if (businesses.length < total) {
-            const newLimit = filters.limit + 12;
-            setFilters(prev => ({ ...prev, limit: newLimit }));
-            setPendingFilters(prev => ({ ...prev, limit: newLimit }));
+        if (meta && meta.page < meta.totalPages) {
+            fetchBusinesses(meta.page + 1, true);
         }
     };
 
     const handleReset = () => {
-        setTempSearch("");
         const resetState = {
             search: "",
             state: "",
             city: "",
             category: "All Businesses",
-            minRating: "All Rating",
-            limit: 12,
+            date: "",
         };
-        setPendingFilters(resetState);
+        setTempFilters(resetState);
         setFilters(resetState);
         setActiveFilter("All Services");
         setAdvancedFilters({
             maxPrice: 100000,
-            distance: "any",
             availability: [],
             rating: "any",
         });
     };
+
+    const hasMore = meta ? meta.page < meta.totalPages : false;
 
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
@@ -272,8 +265,8 @@ function BusinessDirectoryContent() {
                             <input
                                 type="text"
                                 placeholder="Search Business name"
-                                value={tempSearch}
-                                onChange={(e) => setTempSearch(e.target.value)}
+                                value={tempFilters.search}
+                                onChange={(e) => setTempFilters(prev => ({ ...prev, search: e.target.value }))}
                                 onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
                                 className="w-full pl-12 pr-4 h-12 focus:outline-none transition-all cursor-pointer font-medium text-gray-700"
                             />
@@ -282,8 +275,8 @@ function BusinessDirectoryContent() {
                         <div className="relative lg:w-48">
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <select
-                                value={pendingFilters.state}
-                                onChange={(e) => setPendingFilters(prev => ({ ...prev, state: e.target.value, city: "" }))}
+                                value={tempFilters.state}
+                                onChange={(e) => setTempFilters(prev => ({ ...prev, state: e.target.value, city: "" }))}
                                 className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
                             >
                                 <option value="">Select State</option>
@@ -294,12 +287,12 @@ function BusinessDirectoryContent() {
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         </div>
                         {/* City Filter */}
-                        <div className={`relative lg:w-44 ${!pendingFilters.state ? 'opacity-50' : ''}`}>
+                        <div className={`relative lg:w-44 ${!tempFilters.state ? 'opacity-50' : ''}`}>
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <select
-                                value={pendingFilters.city}
-                                onChange={(e) => setPendingFilters(prev => ({ ...prev, city: e.target.value }))}
-                                disabled={!pendingFilters.state}
+                                value={tempFilters.city}
+                                onChange={(e) => setTempFilters(prev => ({ ...prev, city: e.target.value }))}
+                                disabled={!tempFilters.state}
                                 className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
                             >
                                 <option value="">Select City</option>
@@ -313,30 +306,14 @@ function BusinessDirectoryContent() {
                         <div className="relative lg:w-52">
                             <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <select
-                                value={pendingFilters.category}
-                                onChange={(e) => setPendingFilters(prev => ({ ...prev, category: e.target.value }))}
+                                value={tempFilters.category}
+                                onChange={(e) => setTempFilters(prev => ({ ...prev, category: e.target.value }))}
                                 className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
                             >
                                 <option>All Businesses</option>
                                 {businessTypes.map(type => (
                                     <option key={type.id} value={type.code}>{type.name}</option>
                                 ))}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        </div>
-                        {/* Rating Filter */}
-                        <div className="relative lg:w-44">
-                            <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <select
-                                value={pendingFilters.minRating}
-                                onChange={(e) => setPendingFilters(prev => ({ ...prev, minRating: e.target.value }))}
-                                className="w-full pl-12 pr-10 h-12 rounded-lg border border-transparent bg-gray-50/50 focus:outline-none appearance-none cursor-pointer font-medium text-gray-700"
-                            >
-                                <option>All Rating</option>
-                                <option value="4.5">4.5+ Stars</option>
-                                <option value="4.0">4.0+ Stars</option>
-                                <option value="3.5">3.5+ Stars</option>
-                                <option value="3.0">3.0+ Stars</option>
                             </select>
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         </div>
@@ -352,17 +329,15 @@ function BusinessDirectoryContent() {
                     <div className="flex flex-col gap-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xl font-bold text-gray-900">Filter by</h3>
-                            {/* <button onClick={() => setShowAdvanced(true)} className="flex items-center gap-2 text-sm font-bold text-[#E89D24] hover:text-[#E5A800] transition-colors">
+                            <button onClick={() => setShowAdvanced(true)} className="flex items-center gap-2 text-sm font-bold text-[#E89D24] hover:text-[#E5A800] transition-colors">
                                 <SlidersHorizontal className="w-4 h-4" />
                                 Advance Filter Option
-                            </button> */}
+                            </button>
                         </div>
                         <div className="flex flex-wrap gap-3">
                             {[
                                 { id: "All Services", label: "All Services", icon: null },
                                 { id: "Saved", label: "Saved", icon: Heart },
-                                { id: "In-Store", label: "In-Store", icon: Store },
-                                { id: "Home Service", label: "Home Service", icon: Home },
                             ].map((filter) => (
                                 <button
                                     key={filter.id}
@@ -380,87 +355,80 @@ function BusinessDirectoryContent() {
                     </div>
                 </div>
 
-                {/* Client-side name filtering */}
-                {(() => {
-                    const finalBusinesses = filteredBusinesses;
+                {/* Grid Header */}
+                <div className="flex items-center justify-between mb-10">
+                    <h2 className="text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
+                        {filters.search ? `Search Results for "${filters.search}"` : "All Businesses"}
+                    </h2>
+                    <p className="text-sm font-medium text-gray-500">
+                        {loading ? "Searching..." : meta ? `${meta.total} results found` : "0 results found"}
+                    </p>
+                </div>
 
-                    return (
-                        <>
-                            {/* Grid Header */}
-                            <div className="flex items-center justify-between mb-10">
-                                <h2 className="text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
-                                    {filters.search ? `Search Results for "${filters.search}"` : "All Businesses"}
-                                </h2>
-                                <p className="text-sm font-medium text-gray-500">{finalBusinesses.length} results found</p>
-                            </div>
- 
-                            {/* Business Grid */}
-                            {
-                                loading ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                                        {[1, 2, 3, 4, 5, 6].map((i) => (
-                                            <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm p-4 h-[400px]">
-                                                <Skeleton className="h-48 w-full rounded-xl mb-4" />
-                                                <Skeleton className="h-6 w-3/4 mb-2" />
-                                                <Skeleton className="h-4 w-1/2 mb-4" />
-                                                <div className="space-y-2">
-                                                    <Skeleton className="h-4 w-full" />
-                                                    <Skeleton className="h-4 w-5/6" />
-                                                </div>
-                                                <div className="mt-auto flex justify-between items-center pt-8">
-                                                    <Skeleton className="h-8 w-24" />
-                                                    <Skeleton className="h-10 w-28" />
-                                                </div>
-                                            </div>
-                                        ))}
+                {/* Business Grid */}
+                {
+                    loading && businesses.length === 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm p-4 h-[400px]">
+                                    <Skeleton className="h-48 w-full rounded-xl mb-4" />
+                                    <Skeleton className="h-6 w-3/4 mb-2" />
+                                    <Skeleton className="h-4 w-1/2 mb-4" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-full" />
+                                        <Skeleton className="h-4 w-5/6" />
                                     </div>
-                                ) : finalBusinesses.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                                        {finalBusinesses.map((business: any) => (
-                                            <BusinessDirectoryCard
-                                                key={business.id}
-                                                business={{
-                                                    ...business,
-                                                    isVerified: business.status === 'APPROVED',
-                                                    isOpen: isBusinessOpen(business.operatingHours),
-                                                }}
-                                            />
-                                        ))}
+                                    <div className="mt-auto flex justify-between items-center pt-8">
+                                        <Skeleton className="h-8 w-24" />
+                                        <Skeleton className="h-10 w-28" />
                                     </div>
-                                ) : (
-                                    <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
-                                        <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                            {activeFilter === "Saved" ? (
-                                                !isAuthenticated ? "Sign in to view saved businesses" : "No saved businesses yet"
-                                            ) : "No businesses found"}
-                                        </h3>
-                                        <p className="text-gray-500">
-                                            {activeFilter === "Saved" ? (
-                                                !isAuthenticated
-                                                    ? "Log in to your account so you can save and access your favorite businesses here."
-                                                    : "Start exploring and mark the businesses you love by clicking the heart icon."
-                                            ) : "Try adjusting your filters or search terms."}
-                                        </p>
-                                        {activeFilter === "Saved" && !isAuthenticated ? (
-                                            <Link href="/auth/login">
-                                                <Button className="mt-6 rounded-xl h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold shadow-lg shadow-yellow-500/20">
-                                                    Login to Account
-                                                </Button>
-                                            </Link>
-                                        ) : (
-                                            <Button variant="outline" onClick={handleReset} className="mt-6 rounded-xl">Clear All Filters</Button>
-                                        )}
-                                    </div>
-                                )
-                            }
-                        </>
-                    );
-                })()}
+                                </div>
+                            ))}
+                        </div>
+                    ) : businesses.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                            {businesses.map((business: any) => (
+                                <BusinessDirectoryCard
+                                    key={business.id}
+                                    business={{
+                                        ...business,
+                                        isVerified: business.status === 'APPROVED',
+                                        isOpen: isBusinessOpen(business.operatingHours),
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
+                            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                {activeFilter === "Saved" ? (
+                                    !isAuthenticated ? "Sign in to view saved businesses" : "No saved businesses yet"
+                                ) : "No businesses found"}
+                            </h3>
+                            <p className="text-gray-500">
+                                {activeFilter === "Saved" ? (
+                                    !isAuthenticated
+                                        ? "Log in to your account so you can save and access your favorite businesses here."
+                                        : "Start exploring and mark the businesses you love by clicking the heart icon."
+                                ) : "Try adjusting your filters or search terms."}
+                            </p>
+                            {activeFilter === "Saved" && !isAuthenticated ? (
+                                <Link href="/auth/login">
+                                    <Button className="mt-6 rounded-xl h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold shadow-lg shadow-yellow-500/20">
+                                        Login to Account
+                                    </Button>
+                                </Link>
+                            ) : (
+                                <Button variant="outline" onClick={handleReset} className="mt-6 rounded-xl">Clear All Filters</Button>
+                            )}
+                        </div>
+                    )
+                }
 
                 {/* Pagination */}
                 {
-                    businesses.length < total && (
+                    !loading && hasMore && (
                         <div className="flex justify-center pt-8 border-t border-gray-100 mb-12">
                             <Button
                                 variant="outline"
@@ -485,7 +453,7 @@ function BusinessDirectoryContent() {
                     open={showAdvanced}
                     onClose={() => setShowAdvanced(false)}
                     initialFilters={advancedFilters}
-                    onApply={(filters) => setAdvancedFilters(filters)}
+                    onApply={(newFilters) => setAdvancedFilters(newFilters)}
                 />
             </main >
  

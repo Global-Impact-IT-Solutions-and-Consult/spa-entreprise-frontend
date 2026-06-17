@@ -109,7 +109,7 @@ export default function HistoryPage() {
                             activeTab === "businesses" ? "text-orange-400" : "text-gray-300 hover:text-gray-400"
                         )}
                     >
-                        Saved Businesses
+                        Businesses
                         {activeTab === "businesses" && (
                             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-400" />
                         )}
@@ -121,7 +121,7 @@ export default function HistoryPage() {
                             activeTab === "services" ? "text-orange-400" : "text-gray-300 hover:text-gray-400"
                         )}
                     >
-                        Saved Services
+                        Services
                         {activeTab === "services" && (
                             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-400" />
                         )}
