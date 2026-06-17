@@ -214,6 +214,7 @@ export interface Staff {
 }
 
 export interface SearchSpasParams {
+    search?: string;
     state?: string;
     city?: string;
     page?: number;
@@ -224,6 +225,8 @@ export interface SearchSpasParams {
     minRating?: number;
     sortBy?: 'rating' | 'price' | 'newest' | 'name';
     sortOrder?: 'asc' | 'desc';
+    favoritesOnly?: boolean;
+    date?: string;
 }
 
 export interface SpaSearchResult {
@@ -297,12 +300,16 @@ interface RawService extends Partial<Service> {
 }
 
 export interface SearchServicesParams {
+    page?: number;
+    limit?: number;
     latitude?: number;
     longitude?: number;
-    state?: string;
     maxDistance?: number;
     distanceUnit?: 'km' | 'mi';
+    state?: string;
+    city?: string;
     categoryIds?: string[];
+    search?: string;
     minPrice?: number;
     maxPrice?: number;
     minRating?: number;
@@ -310,8 +317,7 @@ export interface SearchServicesParams {
     availableToday?: boolean;
     weekendAvailability?: boolean;
     eveningSessions?: boolean;
-    page?: number;
-    limit?: number;
+    favoritesOnly?: boolean;
 }
 
 export interface SearchServicesResponse {
@@ -508,7 +514,7 @@ export const businessService = {
     searchSpasWithEnrichment: async (params: SearchSpasParams) => {
         // 1. Get search results
         // Use /spas/search ONLY if city is provided, otherwise fallback to /spas
-        const endpoint = params.state || params.city || params.businessTypeCode || params.minRating ? '/spas/search' : '/spas';
+        const endpoint = params.search || params.state || params.city || params.businessTypeCode || params.minRating || params.date || params.maxPrice ? '/spas/search' : '/spas';
         const searchResponse = await apiClient.get<SearchSpasResponse>(endpoint, { params });
         const businesses = searchResponse.data.data;
         const meta = searchResponse.data.meta;

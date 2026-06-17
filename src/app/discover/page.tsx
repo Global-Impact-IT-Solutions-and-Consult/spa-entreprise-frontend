@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { State, City, IState, ICity } from "country-state-city";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
@@ -19,20 +19,15 @@ function DiscoverContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    // All services fetched once from GET /spas/services
-    const [allServices, setAllServices] = useState<EnrichedService[]>([]);
     const [categories, setCategories] = useState<ServiceCategory[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loadingCategories, setLoadingCategories] = useState(true);
 
     const [states, setStates] = useState<IState[]>([]);
     const [cities, setCities] = useState<ICity[]>([]);
     const countryCode = "NG";
 
     const { isAuthenticated } = useAuthStore();
-    const { serviceIds: favoriteServiceIds, setServiceIds: setFavoriteServiceIds, setBusinessIds: setFavoriteBusinessIds, clear: clearFavorites } = useFavoritesStore();
-
-    const favoriteServiceIdsSet = useMemo(() => new Set(favoriteServiceIds), [favoriteServiceIds]);
-
+    const { setServiceIds: setFavoriteServiceIds, setBusinessIds: setFavoriteBusinessIds, clear: clearFavorites } = useFavoritesStore();
 
     // Filter State
     const [activeFilter, setActiveFilter] = useState(searchParams.get("type") || "All Services");
@@ -43,14 +38,8 @@ function DiscoverContent() {
         city: searchParams.get("city") || "",
         category: searchParams.get("category") || "All Categories",
     });
-    const [isLocationLoaded, setIsLocationLoaded] = useState(false);
-    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>({
-        maxPrice: 100000,
-        distance: "any",
-        availability: [],
-        rating: "any",
-    });
-
+    
+    // Temp filters for search bar before applying
     const [tempFilters, setTempFilters] = useState({
         search: filters.search,
         state: filters.state,
@@ -58,15 +47,19 @@ function DiscoverContent() {
         category: filters.category,
     });
 
-    // Client-side pagination — show items in increments of 12
-    const PAGE_SIZE = 12;
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>({
+        maxPrice: 100000,
+        availability: [],
+        rating: "any",
+    });
 
-    // Backend filtering state
-    const [backendResults, setBackendResults] = useState<EnrichedService[]>([]);
-    const [backendMeta, setBackendMeta] = useState<PaginationMeta | null>(null);
-    const [isBackendFilterActive, setIsBackendFilterActive] = useState(false);
-    const [isSearching, setIsSearching] = useState(false);
+    const [isLocationLoaded, setIsLocationLoaded] = useState(false);
+
+    // Results State
+    const PAGE_SIZE = 12;
+    const [results, setResults] = useState<EnrichedService[]>([]);
+    const [meta, setMeta] = useState<PaginationMeta | null>(null);
+    const [isSearching, setIsSearching] = useState(true);
 
     const deliveryFilters = [
         { id: "All Services", label: "All Services", icon: null },
@@ -75,25 +68,20 @@ function DiscoverContent() {
         { id: "Home Service", label: "Home Service", icon: Home },
     ];
 
-    // Fetch all services + categories + states on mount (one time)
+    // Fetch categories and states on mount
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
+        const fetchInitialData = async () => {
             try {
-                const [servicesData, categoriesData] = await Promise.all([
-                    businessService.getAllServices(),
-                    businessService.getServiceCategories()
-                ]);
-                setAllServices(servicesData);
+                const categoriesData = await businessService.getServiceCategories();
                 setCategories(categoriesData);
                 setStates(State.getStatesOfCountry(countryCode));
             } catch (error) {
-                console.error("Failed to fetch data:", error);
+                console.error("Failed to fetch initial data:", error);
             } finally {
-                setLoading(false);
+                setLoadingCategories(false);
             }
         };
-        fetchData();
+        fetchInitialData();
     }, []);
 
     // Load default location filter from localStorage if not present in URL on mount
@@ -104,14 +92,8 @@ function DiscoverContent() {
                 if (cached) {
                     const parsed = JSON.parse(cached);
                     if (parsed.state) {
-                        setFilters(prev => ({
-                            ...prev,
-                            state: parsed.state
-                        }));
-                        setTempFilters(prev => ({
-                            ...prev,
-                            state: parsed.state
-                        }));
+                        setFilters(prev => ({ ...prev, state: parsed.state }));
+                        setTempFilters(prev => ({ ...prev, state: parsed.state }));
                     }
                 }
             } catch (e) {
@@ -119,7 +101,7 @@ function DiscoverContent() {
             }
         }
         setIsLocationLoaded(true);
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Fetch Cities when State changes (in temp filters)
     useEffect(() => {
@@ -166,93 +148,6 @@ function DiscoverContent() {
         }
     }, [isAuthenticated, setFavoriteServiceIds, setFavoriteBusinessIds, clearFavorites]);
 
-    // Client-side filtering
-    const filteredServices = useMemo(() => {
-        let result = allServices;
-
-        // Search by service name
-        if (filters.search) {
-            const searchTerm = filters.search.toLowerCase();
-            result = result.filter(s =>
-                s.name.toLowerCase().includes(searchTerm) ||
-                s.businessName.toLowerCase().includes(searchTerm)
-            );
-        }
-
-        // Filter by city
-        if (filters.city) {
-            const cityTerm = filters.city.toLowerCase();
-            result = result.filter(s => s.location?.toLowerCase().includes(cityTerm));
-        }
-
-        // Filter by state
-        if (filters.state) {
-            const stateObj = states.find(s => s.name === filters.state);
-            if (stateObj) {
-                const stateCities = City.getCitiesOfState(countryCode, stateObj.isoCode).map(c => c.name.toLowerCase());
-                result = result.filter(s => {
-                    const loc = s.location?.toLowerCase();
-                    return loc && (loc === filters.state.toLowerCase() || stateCities.includes(loc));
-                });
-            }
-        }
-
-        // Filter by category
-        if (filters.category !== "All Categories") {
-            result = result.filter(s => s.category?.id === filters.category);
-        }
-
-        // Filter by delivery type
-        if (activeFilter === "In-Store") {
-            result = result.filter(s => s.deliveryType?.toLowerCase() === 'in_location_only' || s.deliveryType?.toLowerCase() === 'both');
-        } else if (activeFilter === "Home Service") {
-            result = result.filter(s => s.deliveryType?.toLowerCase() === 'home_service' || s.deliveryType?.toLowerCase() === 'both');
-        } else if (activeFilter === "Favorite") {
-            result = result.filter(s => favoriteServiceIdsSet.has(s.id));
-        }
-
-        // Apply Advanced Filters
-        // 1. Max Price
-        result = result.filter(s => s.price <= advancedFilters.maxPrice);
-
-        // 2. Rating
-        if (advancedFilters.rating !== "any") {
-            if (advancedFilters.rating === "4+") {
-                result = result.filter(s => Number(s.rating || 0) >= 4);
-            } else if (advancedFilters.rating === "3+") {
-                result = result.filter(s => Number(s.rating || 0) >= 3);
-            }
-        }
-
-        return result;
-    }, [allServices, filters, activeFilter, favoriteServiceIdsSet, advancedFilters, states]);
-
-    // Combined visible services
-    const visibleServices = useMemo(() => {
-        if (isBackendFilterActive) {
-            let results = backendResults;
-            // Apply client-side search if backend doesn't support it
-            if (filters.search) {
-                const term = filters.search.toLowerCase();
-                results = results.filter(s => 
-                    s.name.toLowerCase().includes(term) || 
-                    s.businessName.toLowerCase().includes(term)
-                );
-            }
-            return results;
-        }
-        return filteredServices.slice(0, visibleCount);
-    }, [isBackendFilterActive, backendResults, filteredServices, visibleCount, filters.search]);
-
-    const hasMore = isBackendFilterActive 
-        ? (backendMeta ? backendMeta.page < backendMeta.totalPages : false)
-        : visibleCount < filteredServices.length;
-
-    // Reset pagination when filters change
-    useEffect(() => {
-        setVisibleCount(PAGE_SIZE);
-    }, [filters, activeFilter]);
-
     // Sync URL with filters
     useEffect(() => {
         if (!isLocationLoaded) return;
@@ -266,7 +161,7 @@ function DiscoverContent() {
         router.push(`/discover?${params.toString()}`, { scroll: false });
     }, [filters, activeFilter, router, isLocationLoaded]);
 
-    const fetchBackendServices = async (page = 1, append = false) => {
+    const fetchServices = async (page = 1, append = false) => {
         setIsSearching(true);
         try {
             const params: SearchServicesParams = {
@@ -274,18 +169,27 @@ function DiscoverContent() {
                 limit: PAGE_SIZE,
             };
 
-            if (filters.state) {
-                params.state = filters.state;
-            }
+            if (filters.search) params.search = filters.search;
+            if (filters.state) params.state = filters.state;
+            if (filters.city) params.city = filters.city;
 
-            // Map frontend filters to backend params
+            // Categories
             if (filters.category !== "All Categories") {
                 params.categoryIds = [filters.category];
             }
 
-            // Map delivery type
+            // Delivery & Favorites
             if (activeFilter === "In-Store") params.delivery = "in_store";
             else if (activeFilter === "Home Service") params.delivery = "home_service";
+            else if (activeFilter === "Favorite") {
+                if (!isAuthenticated) {
+                    setResults([]);
+                    setMeta(null);
+                    setIsSearching(false);
+                    return;
+                }
+                params.favoritesOnly = true;
+            }
 
             // Advanced Filters
             if (advancedFilters.maxPrice < 100000) params.maxPrice = advancedFilters.maxPrice;
@@ -293,15 +197,20 @@ function DiscoverContent() {
                 params.minRating = advancedFilters.rating === "4+" ? 4 : 3;
             }
 
+            // Availability
+            if (advancedFilters.availability.includes("today")) params.availableToday = true;
+            if (advancedFilters.availability.includes("weekend")) params.weekendAvailability = true;
+            if (advancedFilters.availability.includes("evening")) params.eveningSessions = true;
+
+
             const response = await businessService.discoverServicesFilter(params);
             
             if (append) {
-                setBackendResults(prev => [...prev, ...response.data]);
+                setResults(prev => [...prev, ...response.data]);
             } else {
-                setBackendResults(response.data);
+                setResults(response.data);
             }
-            setBackendMeta(response.meta);
-            setIsBackendFilterActive(true);
+            setMeta(response.meta);
         } catch (error) {
             console.error("Backend search failed:", error);
         } finally {
@@ -309,87 +218,24 @@ function DiscoverContent() {
         }
     };
 
-    const handleSearch = async (customFilters?: { search?: string; state?: string; city?: string; category?: string } | null | React.MouseEvent, customAdvanced?: AdvancedFiltersState | null, customActive?: string | null) => {
-        // If triggered by a button click, first arg is the event
-        const isEvent = customFilters && 'nativeEvent' in (customFilters as object);
-        const actualFilters = isEvent ? tempFilters : ((customFilters as { search?: string; state?: string; city?: string; category?: string }) || tempFilters);
-        const targetFilters = {
-            search: actualFilters.search || "",
-            state: actualFilters.state || "",
-            city: actualFilters.city || "",
-            category: actualFilters.category || "All Categories"
-        };
-        const targetAdvanced = customAdvanced || advancedFilters;
-        const targetActive = (customActive as string) || activeFilter;
+    // Trigger search whenever applied filters change
+    useEffect(() => {
+        if (!isLocationLoaded) return;
+        fetchServices(1, false);
+    }, [filters, activeFilter, advancedFilters, isLocationLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
-        setFilters(targetFilters);
-        if (customAdvanced) setAdvancedFilters(customAdvanced);
-        if (customActive) setActiveFilter(customActive);
-        
-        // Determine if we should use backend or local filtering
-        const hasBackendFilters = 
-            targetFilters.category !== "All Categories" || 
-            targetActive === "In-Store" || 
-            targetActive === "Home Service" ||
-            targetAdvanced.rating !== "any" ||
-            targetAdvanced.maxPrice < 100000 ||
-            targetAdvanced.availability.length > 0;
-
-        if (hasBackendFilters) {
-            setIsSearching(true);
-            try {
-                const params: any = { page: 1, limit: PAGE_SIZE };
-                
-                if (targetFilters.state) {
-                    params.state = targetFilters.state;
-                }
-
-                // Categories
-                if (targetFilters.category !== "All Categories") {
-                    params.categoryIds = [targetFilters.category];
-                }
-
-                // Delivery
-                if (targetActive === "In-Store") params.delivery = "in_store";
-                else if (targetActive === "Home Service") params.delivery = "home_service";
-
-                // Price & Rating
-                if (targetAdvanced.maxPrice < 100000) params.maxPrice = targetAdvanced.maxPrice;
-                if (targetAdvanced.rating !== "any") {
-                    params.minRating = targetAdvanced.rating === "4+" ? 4 : 3;
-                }
-
-                // Availability
-                if (targetAdvanced.availability.includes("today")) params.availableToday = true;
-                if (targetAdvanced.availability.includes("weekend")) params.weekendAvailability = true;
-                if (targetAdvanced.availability.includes("evening")) params.eveningSessions = true;
-
-                // Distance (if we have location - for now we just pass maxDistance if selected)
-                if (targetAdvanced.distance !== "any") {
-                    params.maxDistance = parseInt(targetAdvanced.distance);
-                    params.distanceUnit = "mi";
-                }
-
-                const response = await businessService.discoverServicesFilter(params);
-                setBackendResults(response.data);
-                setBackendMeta(response.meta);
-                setIsBackendFilterActive(true);
-            } catch (err) {
-                console.error("Backend search failed:", err);
-            } finally {
-                setIsSearching(false);
-            }
-        } else {
-            setIsBackendFilterActive(false);
-            setBackendResults([]);
-        }
+    const handleSearchClick = () => {
+        setFilters({
+            search: tempFilters.search || "",
+            state: tempFilters.state || "",
+            city: tempFilters.city || "",
+            category: tempFilters.category || "All Categories"
+        });
     };
 
     const handleLoadMore = () => {
-        if (isBackendFilterActive && backendMeta) {
-            fetchBackendServices(backendMeta.page + 1, true);
-        } else {
-            setVisibleCount(prev => prev + PAGE_SIZE);
+        if (meta && meta.page < meta.totalPages) {
+            fetchServices(meta.page + 1, true);
         }
     };
 
@@ -405,14 +251,12 @@ function DiscoverContent() {
         setActiveFilter("All Services");
         setAdvancedFilters({
             maxPrice: 100000,
-            distance: "any",
             availability: [],
             rating: "any",
         });
-        setIsBackendFilterActive(false);
-        setBackendResults([]);
-        setBackendMeta(null);
     };
+
+    const hasMore = meta ? meta.page < meta.totalPages : false;
 
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
@@ -438,7 +282,7 @@ function DiscoverContent() {
                                 placeholder="Search services"
                                 value={tempFilters.search}
                                 onChange={(e) => setTempFilters(prev => ({ ...prev, search: e.target.value }))}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSearchClick()}
                                 className="w-full pl-12 pr-4 h-12 focus:outline-none transition-all cursor-pointer font-medium"
                             />
                         </div>
@@ -488,11 +332,10 @@ function DiscoverContent() {
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         </div>
                         <Button
-                            onClick={handleSearch}
-                            disabled={isSearching}
-                            className="h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold rounded-xl shadow-lg shadow-yellow-500/20 disabled:opacity-70"
+                            onClick={handleSearchClick}
+                            className="h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold rounded-xl shadow-lg shadow-yellow-500/20"
                         >
-                            {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : "Search"}
+                            Search
                         </Button>
                     </div>
 
@@ -509,7 +352,7 @@ function DiscoverContent() {
                             {deliveryFilters.map((filter) => (
                                 <button
                                     key={filter.id}
-                                    onClick={() => handleSearch(null, null, filter.id)}
+                                    onClick={() => setActiveFilter(filter.id)}
                                     className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-sm font-bold transition-all border ${activeFilter === filter.id
                                         ? "bg-[#E89D24] border-[#E89D24] text-white shadow-md scale-105"
                                         : "bg-white border-gray-100 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
@@ -526,20 +369,24 @@ function DiscoverContent() {
                 {/* Results Info */}
                 <div className="mb-8 flex items-center justify-between">
                     <p className="text-sm font-medium text-gray-500">
-                        Showing <span className="text-gray-900 font-bold">{visibleServices.length}</span> of <span className="text-gray-900 font-bold">{filteredServices.length} services</span>
+                        {isSearching ? (
+                            <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-[#E89D24]" /> Searching...</span>
+                        ) : meta ? (
+                            <>Showing <span className="text-gray-900 font-bold">{results.length}</span> of <span className="text-gray-900 font-bold">{meta.total}</span> services</>
+                        ) : null}
                     </p>
                 </div>
 
                 {/* Services Grid */}
-                {loading ? (
+                {isSearching && results.length === 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
                         {[1, 2, 3, 4, 5, 6].map((i) => (
                             <ServiceSkeleton key={i} />
                         ))}
                     </div>
-                ) : visibleServices.length > 0 ? (
+                ) : results.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                        {visibleServices.map((service) => (
+                        {results.map((service) => (
                             <ServiceCard key={service.id} service={service} />
                         ))}
                     </div>
@@ -577,7 +424,7 @@ function DiscoverContent() {
                 )}
 
                 {/* Load More */}
-                {!loading && hasMore && (
+                {!isSearching && hasMore && (
                     <div className="flex justify-center pt-8 border-t border-gray-100">
                         <Button
                             variant="outline"
@@ -588,12 +435,19 @@ function DiscoverContent() {
                         </Button>
                     </div>
                 )}
+                {isSearching && results.length > 0 && (
+                    <div className="flex justify-center pt-8 border-t border-gray-100">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#E89D24]" />
+                    </div>
+                )}
 
                 <AdvanceFilterModal
                     open={showAdvanced}
                     onClose={() => setShowAdvanced(false)}
                     initialFilters={advancedFilters}
-                    onApply={(newFilters) => handleSearch(null, newFilters)}
+                    onApply={(newFilters) => {
+                        setAdvancedFilters(newFilters);
+                    }}
                 />
             </main>
 

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 
 export interface AdvancedFiltersState {
     maxPrice: number;
-    distance: string;
     availability: string[];
     rating: string;
 }
@@ -21,7 +20,6 @@ interface AdvanceFilterModalProps {
 
 const DEFAULT_FILTERS: AdvancedFiltersState = {
     maxPrice: 50000,
-    distance: "any",
     availability: [],
     rating: "any",
 };
@@ -112,29 +110,7 @@ export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: A
                         </div>
                     </div>
 
-                    {/* Distance */}
-                    <div className="space-y-4">
-                        <h3 className="text-[15px] font-semibold text-gray-800">Distance</h3>
-                        <div className="flex flex-wrap gap-3">
-                            {[
-                                { label: "Within 1 mi", value: "1" },
-                                { label: "Within 5 mi", value: "5" },
-                                { label: "Within 10 mi", value: "10" },
-                                { label: "Any distance", value: "any" },
-                            ].map((option) => (
-                                <button
-                                    key={option.value}
-                                    onClick={() => setFilters({ ...filters, distance: option.value })}
-                                    className={`px-5 py-2.5 rounded-full text-xs font-medium transition-colors ${filters.distance === option.value
-                                        ? "bg-[#FFF6ED] text-[#E89D24]"
-                                        : "bg-gray-50 text-gray-500 hover:bg-gray-100"
-                                        }`}
-                                >
-                                    {option.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+
 
                     {/* Availability */}
                     <div className="space-y-4">
