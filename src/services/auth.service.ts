@@ -205,6 +205,16 @@ export const authService = {
 
     // Google OAuth - Initiate
     googleLogin: () => {
+        // Check if there's a returnUrl in the current URL parameters
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const returnUrl = params.get('returnUrl');
+            
+            if (returnUrl) {
+                sessionStorage.setItem('google_auth_return_url', returnUrl);
+            }
+        }
+
         // Redirect to backend Google OAuth endpoint
         window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
     },
