@@ -61,9 +61,11 @@ export default function NotificationsPage() {
             );
         }
 
+        if (notif.read) return null;
+
         return (
             <button 
-                onClick={() => !notif.read && handleMarkAsRead(notif.id)}
+                onClick={() => handleMarkAsRead(notif.id)}
                 className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
             >
                 Dismiss

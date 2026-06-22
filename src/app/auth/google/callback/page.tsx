@@ -31,8 +31,9 @@ function CallbackContent() {
 
                 if (accessToken && refreshToken) {
                     // Store tokens
-                    Cookies.set('accessToken', accessToken, { secure: true, sameSite: 'strict' });
-                    Cookies.set('refreshToken', refreshToken, { secure: true, sameSite: 'strict' });
+                    const isProduction = process.env.NODE_ENV === 'production';
+                    Cookies.set('accessToken', accessToken, { secure: isProduction, sameSite: 'strict' });
+                    Cookies.set('refreshToken', refreshToken, { secure: isProduction, sameSite: 'strict' });
 
                     setStatus('success');
                     toaster.create({
@@ -41,8 +42,15 @@ function CallbackContent() {
                         type: "success"
                     });
 
-                    // Redirect to dashboard (or onboarding if needed - we'll check businesses later)
-                    setTimeout(() => router.push('/dashboard'), 1000);
+                    // Redirect to returnUrl or dashboard
+                    const returnUrl = sessionStorage.getItem('google_auth_return_url');
+                    if (returnUrl) {
+                        sessionStorage.removeItem('google_auth_return_url');
+                        setTimeout(() => router.push(returnUrl), 1000);
+                    } else {
+                        // Redirect to dashboard (or onboarding if needed - we'll check businesses later)
+                        setTimeout(() => router.push('/dashboard'), 1000);
+                    }
                 } else {
                     setStatus('error');
                     toaster.create({
