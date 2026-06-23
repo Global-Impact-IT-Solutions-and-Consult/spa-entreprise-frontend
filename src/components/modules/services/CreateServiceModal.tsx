@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { toaster } from "@/components/ui/toaster";
+import { validateImageFile, ACCEPTED_IMAGE_EXTENSIONS } from "@/lib/utils";
 import { businessService, CreateServiceDto, Service } from '@/services/business.service';
 
 interface CreateServiceModalProps {
@@ -51,12 +52,9 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!file.type.startsWith('image/')) {
-            toaster.create({ title: "Invalid File", description: "Please select an image file (PNG, JPG, JPEG)", type: "error" });
-            return;
-        }
-        if (file.size > 10 * 1024 * 1024) {
-            toaster.create({ title: "File Too Large", description: "Image must be less than 10MB", type: "error" });
+        const validationError = validateImageFile(file);
+        if (validationError) {
+            toaster.create({ title: "Invalid File", description: validationError, type: "error" });
             return;
         }
 
@@ -324,7 +322,7 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                     <span className="text-sm text-gray-400">Click to upload image</span>
-                                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                                    <input type="file" accept={ACCEPTED_IMAGE_EXTENSIONS} onChange={handleImageChange} className="hidden" />
                                 </label>
                             )}
                         </div>

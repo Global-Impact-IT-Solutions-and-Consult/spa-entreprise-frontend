@@ -14,7 +14,7 @@ import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, CreateServiceDto, Service } from '@/services/business.service';
 import { EditServiceModal } from '@/components/modules/services/EditServiceModal';
-import { cn } from '@/lib/utils';
+import { cn, validateImageFile, ACCEPTED_IMAGE_EXTENSIONS } from '@/lib/utils';
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { GiShop } from 'react-icons/gi';
 import { Store } from 'lucide-react';
@@ -371,14 +371,9 @@ export default function ServicesPage() {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                toaster.create({ title: "Invalid File", description: "Please select an image file (PNG, JPG, JPEG)", type: "error" });
-                return;
-            }
-            // Validate file size (10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                toaster.create({ title: "File Too Large", description: "Image must be less than 10MB", type: "error" });
+            const validationError = validateImageFile(file);
+            if (validationError) {
+                toaster.create({ title: "Invalid File", description: validationError, type: "error" });
                 return;
             }
             setServiceImage(file);
@@ -659,13 +654,13 @@ export default function ServicesPage() {
                                         </div>
                                         <input
                                             type="file"
-                                            accept="image/png,image/jpeg,image/jpg"
+                                            accept={ACCEPTED_IMAGE_EXTENSIONS}
                                             onChange={handleImageChange}
                                             className="hidden"
                                         />
                                     </label>
                                 )}
-                                <p className="text-[10px] text-gray-400">JPG, PNG up to 10MB each. File Supported (PNG & JPEG)</p>
+                                <p className="text-[10px] text-gray-400">JPG, PNG, WEBP up to 5MB</p>
                             </div>
                         </div>
 

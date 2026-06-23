@@ -33,7 +33,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuthStore } from "@/store/auth.store";
-import { cn } from "@/lib/utils";
+import { cn, validateImageFile, ACCEPTED_IMAGE_EXTENSIONS } from "@/lib/utils";
 import CustomInput from '@/components/ui/InputGroup';
 import PhoneNumberInput from '@/components/ui/PhoneNumberInput';
 import { businessService, BusinessImage } from "@/services/business.service";
@@ -245,6 +245,14 @@ export default function BusinessProfilePage() {
     const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !businessId) return;
+
+        const validationError = validateImageFile(file);
+        if (validationError) {
+            toaster.create({ title: 'Invalid Image', description: validationError, type: 'error' });
+            if (profileImageInputRef.current) profileImageInputRef.current.value = '';
+            return;
+        }
+
         setIsUploadingProfile(true);
         try {
             const res = await businessService.uploadProfileImage(businessId, file);
@@ -264,6 +272,14 @@ export default function BusinessProfilePage() {
     const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !businessId) return;
+
+        const validationError = validateImageFile(file);
+        if (validationError) {
+            toaster.create({ title: 'Invalid Image', description: validationError, type: 'error' });
+            if (coverImageInputRef.current) coverImageInputRef.current.value = '';
+            return;
+        }
+
         setIsUploadingCover(true);
         try {
             const res = await businessService.uploadCoverImage(businessId, file);
@@ -281,7 +297,25 @@ export default function BusinessProfilePage() {
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
-        setPendingFiles(Array.from(files));
+
+        // Validate all selected files
+        const validFiles: File[] = [];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const validationError = validateImageFile(file);
+            if (validationError) {
+                toaster.create({ title: 'Invalid Image', description: `${file.name}: ${validationError}`, type: 'error' });
+            } else {
+                validFiles.push(file);
+            }
+        }
+
+        if (validFiles.length === 0) {
+            if (galleryFileInputRef.current) galleryFileInputRef.current.value = '';
+            return;
+        }
+
+        setPendingFiles(validFiles);
         setCaptionInput("");
         setShowCaptionModal(true);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -562,8 +596,8 @@ export default function BusinessProfilePage() {
                 </div>
 
                 {/* Hidden file inputs */}
-                <input type="file" ref={profileImageInputRef} onChange={handleProfileImageUpload} accept="image/*" className="hidden" />
-                <input type="file" ref={coverImageInputRef} onChange={handleCoverImageUpload} accept="image/*" className="hidden" />
+                <input type="file" ref={profileImageInputRef} onChange={handleProfileImageUpload} accept={ACCEPTED_IMAGE_EXTENSIONS} className="hidden" />
+                <input type="file" ref={coverImageInputRef} onChange={handleCoverImageUpload} accept={ACCEPTED_IMAGE_EXTENSIONS} className="hidden" />
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -851,7 +885,7 @@ export default function BusinessProfilePage() {
                             type="file"
                             ref={galleryFileInputRef}
                             onChange={handleFileSelect}
-                            accept="image/*"
+                            accept={ACCEPTED_IMAGE_EXTENSIONS}
                             multiple
                             className="hidden"
                         />
