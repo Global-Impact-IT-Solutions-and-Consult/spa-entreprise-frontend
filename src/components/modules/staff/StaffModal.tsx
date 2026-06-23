@@ -17,7 +17,7 @@ import { Select as CustomSelect } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { businessService, Staff, Service, CreateStaffDto } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
-import { cn } from "@/lib/utils";
+import { cn, validateImageFile, ACCEPTED_IMAGE_EXTENSIONS } from "@/lib/utils";
 import PhoneNumberInput from "@/components/ui/PhoneNumberInput";
 
 const experienceLevels = [
@@ -75,12 +75,9 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
     }, [staff, isOpen]);
 
     const handleFileSelect = useCallback((file: File) => {
-        if (!file.type.match(/^image\/(jpeg|png|webp)$/)) {
-            toaster.create({ title: "Invalid file type", description: "Please upload JPG, PNG, or WEBP", type: "error" });
-            return;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-            toaster.create({ title: "File too large", description: "Max file size is 5MB", type: "error" });
+        const validationError = validateImageFile(file);
+        if (validationError) {
+            toaster.create({ title: "Invalid File", description: validationError, type: "error" });
             return;
         }
         setImageFile(file);
@@ -237,7 +234,7 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept="image/jpeg,image/png,image/webp"
+                                    accept={ACCEPTED_IMAGE_EXTENSIONS}
                                     className="hidden"
                                     onChange={(e) => {
                                         const file = e.target.files?.[0];
