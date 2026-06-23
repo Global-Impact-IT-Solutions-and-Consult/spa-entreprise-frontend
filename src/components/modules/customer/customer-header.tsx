@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2, Bookmark, History, ChevronDown } from "lucide-react";
+import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2, Bookmark, History, ChevronDown, LayoutDashboard } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { notificationService } from "@/services/notification.service";
@@ -215,6 +215,16 @@ export function CustomerHeader() {
                                     {/* Profile Dropdown */}
                                     {profileDropdownOpen && (
                                         <div className="absolute right-0 mt-3 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                                            {user?.role === 'business' && (
+                                                <Link
+                                                    href="/dashboard"
+                                                    onClick={() => setProfileDropdownOpen(false)}
+                                                    className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <LayoutDashboard className="w-4 h-4 text-gray-500" />
+                                                    Dashboard
+                                                </Link>
+                                            )}
                                             <Link
                                                 href="/settings"
                                                 onClick={() => setProfileDropdownOpen(false)}
