@@ -175,7 +175,7 @@ function LoginContent() {
             // Route unverified users to the verification page
             if (error?.response?.status === 403) {
                 toaster.create({ title: "Account not verified", description: "Please verify your email to continue.", type: "warning" });
-                router.push(`/auth/verify?email=${encodeURIComponent(email)}`);
+                router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
                 return;
             }
             handleApiError(error, "Login Failed");

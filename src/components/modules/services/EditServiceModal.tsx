@@ -127,10 +127,12 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
             if (serviceImage && updatedService.id) {
                 try {
                     await businessService.uploadImage(businessId, serviceImage, false, `Service: ${serviceName}`, 'services', updatedService.id);
-                } catch {
+                } catch (error) {
+                    const err = error as { response?: { data?: { message?: string } } };
+                    const errorMessage = err.response?.data?.message || "Service was updated but image upload failed.";
                     toaster.create({
                         title: "Service Updated",
-                        description: "Service was updated but image upload failed.",
+                        description: errorMessage,
                         type: "warning"
                     });
                 }

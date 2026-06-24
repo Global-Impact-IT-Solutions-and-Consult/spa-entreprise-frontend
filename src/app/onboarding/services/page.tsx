@@ -274,10 +274,11 @@ export default function ServicesPage() {
                 } catch (imageError) {
                     const imgErr = imageError as { response?: { data?: { message?: string } } };
                     console.error('Failed to upload service image:', imgErr);
+                    const errorMessage = imgErr.response?.data?.message || "Service was created but image upload failed. You can upload it later.";
                     // Don't fail the entire service creation if image upload fails
                     toaster.create({
                         title: "Service Created",
-                        description: "Service was created but image upload failed. You can upload it later.",
+                        description: errorMessage,
                         type: "warning"
                     });
                 }

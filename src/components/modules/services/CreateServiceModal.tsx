@@ -120,10 +120,12 @@ export const CreateServiceModal = ({ businessId, isOpen, onClose, onSuccess, cat
             if (serviceImage && newService.id) {
                 try {
                     await businessService.uploadImage(businessId, serviceImage, false, `Service: ${serviceName}`, 'services', newService.id);
-                } catch {
+                } catch (error) {
+                    const err = error as { response?: { data?: { message?: string } } };
+                    const errorMessage = err.response?.data?.message || "Service was created but image upload failed. You can upload it later.";
                     toaster.create({
                         title: "Service Created",
-                        description: "Service was created but image upload failed. You can upload it later.",
+                        description: errorMessage,
                         type: "warning"
                     });
                 }
