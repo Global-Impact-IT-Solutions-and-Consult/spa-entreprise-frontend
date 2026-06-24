@@ -6,6 +6,7 @@ export interface LoginDto {
     email: string;
     password?: string;
     mfaCode?: string;
+    rememberMe?: boolean;
 }
 
 export interface RegisterDto {
@@ -76,21 +77,29 @@ export const authService = {
     login: async (data: LoginDto) => {
         // If MFA code is present, use verify-mfa endpoint, else standard login
         const endpoint = data.mfaCode ? '/auth/verify-mfa' : '/auth/login';
-        const response = await apiClient.post<AuthResponse>(endpoint, data);
+        
+        // Exclude rememberMe from the API payload
+        const payload = { email: data.email, password: data.password, mfaCode: data.mfaCode };
+        
+        const response = await apiClient.post<AuthResponse>(endpoint, payload);
 
         // If login successful (and not just an MFA challenge intermediate step if API worked that way, 
         // but here standard login returns tokens directly)
         if (response.data.accessToken) {
             // Only use secure flag in production (HTTPS), not in development (HTTP localhost)
             const isProduction = process.env.NODE_ENV === 'production' && window.location.protocol === 'https:';
-            Cookies.set('accessToken', response.data.accessToken, {
+            
+            const cookieOptions: Cookies.CookieAttributes = {
                 secure: isProduction,
                 sameSite: 'strict'
-            });
-            Cookies.set('refreshToken', response.data.refreshToken!, {
-                secure: isProduction,
-                sameSite: 'strict'
-            });
+            };
+
+            if (data.rememberMe) {
+                cookieOptions.expires = 30; // 30 days
+            }
+
+            Cookies.set('accessToken', response.data.accessToken, cookieOptions);
+            Cookies.set('refreshToken', response.data.refreshToken!, cookieOptions);
         }
         return response.data;
     },
@@ -177,7 +186,7 @@ export const authService = {
     // Verify MFA for Login
     // Note: The API requires email, password AND mfaCode.
     // This implies we need the password again, or this endpoint is a direct login replacement.
-    verifyMfaLogin: async (data: Required<LoginDto>) => {
+    verifyMfaLogin: async (data: LoginDto & { mfaCode: string }) => {
         const response = await apiClient.post<AuthResponse>('/auth/verify-mfa', {
             email: data.email,
             password: data.password,
