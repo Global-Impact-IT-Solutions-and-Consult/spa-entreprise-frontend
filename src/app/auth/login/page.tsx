@@ -25,6 +25,7 @@ function LoginContent() {
     const { setBusinessId } = useOnboardingStore();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     
     // MFA State
@@ -98,7 +99,8 @@ function LoginContent() {
             const data = await authService.login({ 
                 email, 
                 password,
-                ...(isMfaStep && { mfaCode: fullMfaCode })
+                ...(isMfaStep && { mfaCode: fullMfaCode }),
+                rememberMe
             });
 
             // Handle MFA challenge
@@ -169,7 +171,13 @@ function LoginContent() {
                 toaster.create({ title: "Login failed", description: "Invalid response from server", type: "error" });
             }
 
-        } catch (error) {
+        } catch (error: any) {
+            // Route unverified users to the verification page
+            if (error?.response?.status === 403) {
+                toaster.create({ title: "Account not verified", description: "Please verify your email to continue.", type: "warning" });
+                router.push(`/auth/verify?email=${encodeURIComponent(email)}`);
+                return;
+            }
             handleApiError(error, "Login Failed");
         } finally {
             setIsLoading(false);
@@ -220,6 +228,8 @@ function LoginContent() {
                                     <div className="relative flex items-center">
                                         <input
                                             type="checkbox"
+                                            checked={rememberMe}
+                                            onChange={(e) => setRememberMe(e.target.checked)}
                                             className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-gray-300 transition-all checked:bg-[#E59622] checked:border-[#E59622]"
                                         />
                                         <svg
