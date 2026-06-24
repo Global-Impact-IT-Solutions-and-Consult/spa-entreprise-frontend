@@ -186,7 +186,7 @@ export const authService = {
     // Verify MFA for Login
     // Note: The API requires email, password AND mfaCode.
     // This implies we need the password again, or this endpoint is a direct login replacement.
-    verifyMfaLogin: async (data: Required<LoginDto>) => {
+    verifyMfaLogin: async (data: LoginDto & { mfaCode: string }) => {
         const response = await apiClient.post<AuthResponse>('/auth/verify-mfa', {
             email: data.email,
             password: data.password,
