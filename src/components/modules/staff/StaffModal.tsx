@@ -130,8 +130,10 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
                     try {
                         const uploadRes = await businessService.uploadStaffProfilePicture(businessId, staff.id, imageFile);
                         profilePictureUrl = uploadRes.profilePicture;
-                    } catch {
-                        toaster.create({ title: "Image upload failed", description: "Profile picture could not be uploaded", type: "error" });
+                    } catch (error) {
+                        const err = error as { response?: { data?: { message?: string } } };
+                        const errorMessage = err.response?.data?.message || "Profile picture could not be uploaded";
+                        toaster.create({ title: "Image upload failed", description: errorMessage, type: "error" });
                     }
                 }
 
@@ -157,8 +159,10 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
                             ...basePayload,
                             profilePicture: uploadRes.profilePicture,
                         });
-                    } catch {
-                        toaster.create({ title: "Image upload failed", description: "Staff saved, but profile picture could not be uploaded", type: "error" });
+                    } catch (error) {
+                        const err = error as { response?: { data?: { message?: string } } };
+                        const errorMessage = err.response?.data?.message || "Staff saved, but profile picture could not be uploaded";
+                        toaster.create({ title: "Image upload failed", description: errorMessage, type: "error" });
                     }
                 }
 
