@@ -85,7 +85,7 @@ export function CustomerHeader() {
             fetchUnreadCount();
 
             // Optional: poll every 5 minutes
-            const interval = setInterval(fetchUnreadCount, 5 * 60 * 1000);
+            const interval = setInterval(fetchUnreadCount, 1 * 60 * 1000);
 
             // Listen for manual refresh events
             const handleRefresh = () => fetchUnreadCount();
