@@ -194,8 +194,8 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
     const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (file.size > 5 * 1024 * 1024) {
-            toaster.create({ title: 'File too large', description: 'Max 5MB', type: 'error' });
+        if (file.size > 1 * 1024 * 1024) {
+            toaster.create({ title: 'File too large', description: 'Max 1MB', type: 'error' });
             return;
         }
         // Preview immediately
@@ -257,7 +257,7 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
                 </div>
                 <div>
                     <p className="text-sm font-semibold text-gray-900">Profile Photo</p>
-                    <p className="text-xs text-gray-400 mb-3">JPG, PNG or GIF, max 5MB</p>
+                    <p className="text-xs text-gray-400 mb-3">JPG, PNG or GIF, max 1MB</p>
                     <button
                         onClick={() => avatarInputRef.current?.click()}
                         className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"

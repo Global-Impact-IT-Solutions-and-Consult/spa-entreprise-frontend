@@ -246,7 +246,7 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
                                     }}
                                 />
                             </div>
-                            <p className="text-xs text-gray-400">JPG, PNG, WEBP up to 5MB</p>
+                            <p className="text-xs text-gray-400">JPG, PNG, WEBP up to 1MB</p>
                         </div>
 
                         {/* Staff Name */}

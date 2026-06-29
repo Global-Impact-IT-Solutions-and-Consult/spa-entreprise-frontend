@@ -71,29 +71,29 @@ const ServiceCard = ({ service, categoryName, onDelete, onEdit }: ServiceCardPro
                     <span className="text-xs font-bold text-gray-800">{service.bufferTime || 10}min</span>
                 </div>
                 {(service.deliveryType === 'in_location_only' || service.deliveryType === 'both') && (
-                <div className={`text-gray-400 space-y-2 ${service.deliveryType === 'both' ? 'border-r border-gray-300' : ''}`}>
-                    <div className='flex items-center gap-1'>
-                        <Store className="h-4 w-4" />
-                        <span className="text-xs font-medium text-gray-400">On Site</span>
-                    </div>
+                    <div className={`text-gray-400 space-y-2 ${service.deliveryType === 'both' ? 'border-r border-gray-300' : ''}`}>
+                        <div className='flex items-center gap-1'>
+                            <Store className="h-4 w-4" />
+                            <span className="text-xs font-medium text-gray-400">On Site</span>
+                        </div>
 
-                    <div className="">
-                        <p className="text-lg font-bold text-gray-900 leading-none">₦{service.price.toLocaleString()}</p>
+                        <div className="">
+                            <p className="text-lg font-bold text-gray-900 leading-none">₦{service.price.toLocaleString()}</p>
+                        </div>
                     </div>
-                </div>
                 )}
                 {(service.deliveryType === 'home_service' || service.deliveryType === 'both') && (
-                <div className="items-center space-y-2 text-gray-400">
+                    <div className="items-center space-y-2 text-gray-400">
                         <>
-                        <div className='flex items-center gap-1'>
-                            <FiHome className="h-4 w-4" />
-                            <span className="text-xs font-medium text-gray-400">Home Service</span>
-                        </div>
-                        <div className="border-l border-gray-50">
-                            <p className="text-lg font-bold text-gray-900 leading-none">₦{service?.homeServicePrice?.toLocaleString()}</p>
-                        </div>
+                            <div className='flex items-center gap-1'>
+                                <FiHome className="h-4 w-4" />
+                                <span className="text-xs font-medium text-gray-400">Home Service</span>
+                            </div>
+                            <div className="border-l border-gray-50">
+                                <p className="text-lg font-bold text-gray-900 leading-none">₦{service?.homeServicePrice?.toLocaleString()}</p>
+                            </div>
                         </>
-                </div>
+                    </div>
                 )}
             </div>
         </div>
@@ -661,7 +661,7 @@ export default function ServicesPage() {
                                         />
                                     </label>
                                 )}
-                                <p className="text-[10px] text-gray-400">JPG, PNG, WEBP up to 5MB</p>
+                                <p className="text-[10px] text-gray-400">JPG, PNG, WEBP up to 1MB</p>
                             </div>
                         </div>
 

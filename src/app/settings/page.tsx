@@ -121,13 +121,13 @@ export default function SettingsPage() {
         if (!file) return;
 
         // Validation
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 1 * 1024 * 1024; // 1MB
         const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
         if (file.size > maxSize) {
             toaster.create({
                 title: "File too large",
-                description: "Profile picture must be less than 5MB",
+                description: "Profile picture must be less than 1MB",
                 type: "error"
             });
             return;
@@ -223,7 +223,7 @@ export default function SettingsPage() {
                                             onChange={handleFileChange}
                                         />
                                     </div>
-                                    <p className="text-xs text-gray-400">JPG, PNG max 5MB</p>
+                                    <p className="text-xs text-gray-400">JPG, PNG max 1MB</p>
                                 </div>
 
                                 {/* Form Fields */}
@@ -309,7 +309,7 @@ export default function SettingsPage() {
                                         <div>
                                             <p className="font-bold text-gray-900">Password</p>
                                             <p className="text-sm text-gray-400">
-                                                {securitySettings?.lastLoginAt 
+                                                {securitySettings?.lastLoginAt
                                                     ? `Last login: ${format(new Date(securitySettings.lastLoginAt), "MMM d, yyyy")}`
                                                     : "Password secured"}
                                             </p>
@@ -337,8 +337,8 @@ export default function SettingsPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <Switch 
-                                        checked={securitySettings?.mfaEnabled || false} 
+                                    <Switch
+                                        checked={securitySettings?.mfaEnabled || false}
                                         onCheckedChange={(checked) => {
                                             setMfaMode(checked ? "enable" : "disable");
                                             setIsMfaModalOpen(true);
@@ -459,7 +459,7 @@ export default function SettingsPage() {
                                         <p className="text-sm text-red-400">Permanently remove your account and all data</p>
                                     </div>
                                 </div>
-                                <Button 
+                                <Button
                                     onClick={() => setIsDeleteModalOpen(true)}
                                     className="bg-[#E74C3C] hover:bg-[#C0392B] text-white px-8 h-10 rounded-lg font-bold"
                                 >
