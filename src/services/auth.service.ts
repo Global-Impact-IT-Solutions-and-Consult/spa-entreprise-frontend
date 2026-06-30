@@ -37,6 +37,8 @@ export interface User {
     profilePicture?: string;
     profileImage?: string;
     bio?: string;
+    isSuperAdmin?: boolean;
+    isSeededAdmin?: boolean;
 }
 
 export interface UserNotification {

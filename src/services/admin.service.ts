@@ -160,7 +160,7 @@ export interface CreateAdminUserDto {
   firstName?: string;
   lastName?: string;
   phone?: string;
-  role: 'customer' | 'business' | 'admin';
+  role: 'customer' | 'business';
 }
 
 export interface UpdateAdminUserDto {
@@ -168,6 +168,38 @@ export interface UpdateAdminUserDto {
   lastName?: string;
   phone?: string;
   password?: string;
+}
+
+export interface AdminAccount {
+  id: string;
+  email: string;
+  phone: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  status: 'active' | 'suspended' | 'inactive';
+  isSuperAdmin: boolean;
+  isSeededAdmin: boolean;
+  emailVerified: boolean;
+  lastLoginAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateAdminAccountDto {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
+export interface UpdateAdminAccountDto {
+  email?: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string | null;
+  status?: 'active' | 'suspended' | 'inactive';
 }
 
 // --- Dashboard (ADMIN_API.md §4) ---
@@ -673,6 +705,26 @@ export const adminService = {
   },
   unsuspendUser: async (id: string) => {
     const res = await apiClient.post(`/admin/users/${id}/unsuspend`);
+    return res.data;
+  },
+
+  // --- Admin account management (super admin only) ---
+  getAdmins: async () => {
+    const res = await apiClient.get<AdminAccount[]>('/admin/admins');
+    return res.data;
+  },
+  createAdmin: async (body: CreateAdminAccountDto) => {
+    const res = await apiClient.post<AdminAccount>('/admin/admins', body);
+    return res.data;
+  },
+  updateAdmin: async (id: string, body: UpdateAdminAccountDto) => {
+    const res = await apiClient.patch<AdminAccount>(`/admin/admins/${id}`, body);
+    return res.data;
+  },
+  deleteAdmin: async (id: string) => {
+    const res = await apiClient.delete<{ message: string }>(
+      `/admin/admins/${id}`,
+    );
     return res.data;
   },
 

@@ -21,6 +21,7 @@ import {
   CheckSquare,
   Bell,
   Search,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   AdminHeaderProvider,
@@ -32,6 +33,12 @@ import Image from 'next/image';
 const adminSidebarItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
   { icon: Users, label: 'User Management', href: '/admin/users' },
+  {
+    icon: ShieldCheck,
+    label: 'Admin Management',
+    href: '/admin/admins',
+    superAdminOnly: true,
+  },
   { icon: Building2, label: 'Business Management', href: '/admin/businesses' },
   { icon: CheckSquare, label: 'Approval', href: '/admin/approval' },
   {
@@ -95,13 +102,15 @@ export default function AdminLayout({
           {/* SUPER ADMIN Label */}
           <div className="px-6 pb-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              SUPER ADMIN
+              {user.isSuperAdmin ? 'SUPER ADMIN' : 'ADMIN'}
             </p>
           </div>
 
           {/* Navigation Items */}
           <nav className="flex-1 space-y-1 px-3 py-4">
-            {adminSidebarItems.map((item) => {
+            {adminSidebarItems
+              .filter((item) => !item.superAdminOnly || user.isSuperAdmin)
+              .map((item) => {
               const isActive =
                 pathname === item.href ||
                 (item.href !== '/admin' && pathname.startsWith(item.href));

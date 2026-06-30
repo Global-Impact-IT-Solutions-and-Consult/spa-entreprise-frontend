@@ -45,8 +45,8 @@ const SORT_OPTIONS: SelectOption[] = [
   { value: 'date_asc', label: 'Oldest first' },
 ];
 
-function toApiRole(role: string): 'customer' | 'business' | 'admin' {
-  return role === 'business_owner' ? 'business' : (role as 'customer' | 'business' | 'admin');
+function toApiRole(role: string): 'customer' | 'business' {
+  return role === 'business_owner' ? 'business' : 'customer';
 }
 
 function downloadBlob(blob: Blob, filename: string) {

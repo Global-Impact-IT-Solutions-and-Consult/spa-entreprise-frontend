@@ -33,5 +33,4 @@ export const STATUS_LABELS: Record<UserStatus, string> = {
 export const ROLE_OPTIONS = [
   { value: 'customer', label: 'Customer' },
   { value: 'business_owner', label: 'Business Owner' },
-  { value: 'admin', label: 'Admin' },
 ];
