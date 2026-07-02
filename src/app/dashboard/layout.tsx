@@ -3,12 +3,13 @@
 import { useAuthStore } from '@/store/auth.store';
 import { Sidebar } from '@/components/modules/Sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell, Clock, X, Info } from 'lucide-react';
+import { Bell, Clock, X, Info, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { authService, UserNotification } from '@/services/auth.service';
 import { businessService } from '@/services/business.service';
+import { notificationService } from '@/services/notification.service';
 import Link from 'next/link';
 
 export default function DashboardLayout({
@@ -60,6 +61,59 @@ export default function DashboardLayout({
       fetchNotifications();
     }
   }, [isNotificationsOpen]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !business?.id) return;
+
+    const fetchCount = async () => {
+      try {
+        const response = await authService.getNotifications({ limit: 1 });
+        setUnreadCount(response.unreadCount);
+      } catch (error) {}
+    };
+
+    fetchCount();
+    const interval = setInterval(fetchCount, 60000); // Poll every minute
+
+    const handleRefresh = () => {
+      fetchCount();
+      if (isNotificationsOpen) fetchNotifications();
+    };
+    
+    window.addEventListener('notifications:refresh', handleRefresh);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notifications:refresh', handleRefresh);
+    };
+  }, [isAuthenticated, business?.id, isNotificationsOpen]);
+
+  const [markingAll, setMarkingAll] = useState(false);
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      await notificationService.markAsRead(notificationId);
+      window.dispatchEvent(new CustomEvent('notifications:refresh'));
+    } catch (error) {
+      console.error("Failed to mark notification as read", error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (markingAll) return;
+    setMarkingAll(true);
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+      window.dispatchEvent(new CustomEvent('notifications:refresh'));
+    } catch (error) {
+      console.error("Failed to mark all notifications as read", error);
+    } finally {
+      setMarkingAll(false);
+    }
+  };
 
   const filteredNotifications = notifications.filter((n) => {
     if (activeTab === 'All') return true;
@@ -119,18 +173,30 @@ export default function DashboardLayout({
                 className="fixed inset-0 z-40 bg-transparent"
                 onClick={() => setIsNotificationsOpen(false)}
               />
-              <div className="absolute top-20 right-8 w-[440px] bg-white rounded-[2rem] shadow-2xl shadow-black/10 border border-gray-100 z-50 animate-in fade-in slide-in-from-top-2 flex flex-col overflow-hidden">
+              <div className="absolute top-20 right-8 w-[440px] max-h-[700px] bg-white rounded-md shadow-2xl shadow-black/10 border border-gray-100 z-50 animate-in fade-in slide-in-from-top-2 flex flex-col overflow-hidden">
                 <div className="p-8 pb-4">
                   <div className="flex items-center justify-between mb-8">
                     <h3 className="text-2xl font-bold text-gray-900">
                       Notifications
                     </h3>
-                    <button
-                      onClick={() => setIsNotificationsOpen(false)}
-                      className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors"
-                    >
-                      <X className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          disabled={markingAll}
+                          className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1.5"
+                        >
+                          {markingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                          Mark all as read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setIsNotificationsOpen(false)}
+                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors"
+                      >
+                        <X className="h-5 w-5" strokeWidth={2.5} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Tabs */}
@@ -140,9 +206,9 @@ export default function DashboardLayout({
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={cn(
-                          'px-5 py-2.5 text-sm font-bold transition-all rounded-2xl',
+                          'px-5 py-2.5 text-sm font-bold transition-all',
                           activeTab === tab
-                            ? 'bg-[#FFF7ED] text-[#F59E0B]'
+                            ? 'text-[#F59E0B] border-b-2 border-[#F59E0B]'
                             : 'text-gray-500 hover:bg-gray-50',
                         )}
                       >
@@ -190,33 +256,46 @@ export default function DashboardLayout({
                         return (
                           <div
                             key={notif.id}
-                            className="bg-white p-5 rounded-[1.5rem] border border-gray-50 shadow-sm hover:shadow-md transition-all group flex flex-col relative"
+                            className="bg-white p-5 rounded-md border border-gray-50 shadow-sm hover:shadow-md transition-all group flex flex-col relative"
                           >
                             {!notif.read && (
                               <div className="absolute top-6 right-6 h-2 w-2 rounded-full bg-[#F59E0B]" />
                             )}
 
                             <div className="pr-6">
-                              <h4 className="text-sm font-bold text-gray-900 leading-tight">
-                                {notif.title}{' '}
-                                <span className="text-gray-400 font-medium">
-                                  {notif.body &&
-                                    typeof notif.body === 'object' &&
-                                    'message' in notif.body &&
-                                    typeof notif.body.message === 'string'
-                                    ? notif.body.message
-                                    : ''}
+                              <h4 className="text-sm font-bold text-gray-500 leading-tight">
+                                {notif.title}{' '} <br/>
+                                <span className="text-gray-600 text-xs font-medium">
+                                  {typeof notif.body === 'string'
+                                    ? notif.body
+                                    : (notif.body && typeof notif.body === 'object' && 'message' in notif.body && typeof notif.body.message === 'string')
+                                      ? notif.body.message
+                                      : ''}
                                 </span>
                               </h4>
                             </div>
 
-                            <div className="flex items-center justify-between mt-6">
-                              <span className="text-[11px] font-medium text-gray-400">
-                                {dayTime}
-                              </span>
-                              <span className="text-[11px] font-medium text-gray-400">
-                                {timeAgo}
-                              </span>
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-medium text-gray-400">
+                                  {dayTime}
+                                </span>
+                                <span className="text-[11px] font-medium text-gray-300">•</span>
+                                <span className="text-[11px] font-medium text-gray-400">
+                                  {timeAgo}
+                                </span>
+                              </div>
+                              {!notif.read && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMarkAsRead(notif.id);
+                                  }}
+                                  className="text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors z-10"
+                                >
+                                  Dismiss
+                                </button>
+                              )}
                             </div>
                           </div>
                         );
@@ -232,9 +311,11 @@ export default function DashboardLayout({
                   </div>
                 </div>
                 <div className="p-4 bg-gray-50/30">
-                  <Button className="w-full bg-white hover:bg-gray-50 text-gray-500 font-bold h-12 rounded-2xl text-sm transition-colors border border-gray-100 shadow-sm">
-                    View All Notifications
-                  </Button>
+                  <Link href="/dashboard/notifications" onClick={() => setIsNotificationsOpen(false)}>
+                    <Button className="w-full bg-white hover:bg-gray-50 text-gray-500 font-bold h-12 rounded-2xl text-sm transition-colors border border-gray-100 shadow-sm">
+                      View All Notifications
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </>

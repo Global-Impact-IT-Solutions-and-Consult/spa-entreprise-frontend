@@ -107,12 +107,14 @@ export default function DashboardPage() {
         {
             label: "Staff Online",
             value: `${dashboardData.staffOnline.online}/${dashboardData.staffOnline.total}`,
-            change: `${dashboardData.staffOnline.onHomeService} staff on home service`,
+            // change: `${dashboardData.staffOnline.onHomeService} staff on home service`,
+            change: '',
             icon: Users,
             iconBg: "bg-[#8916B240]",
             iconColor: "text-[#8916B2]",
             changeColor: "text-gray-400",
-            changeIcon: Home
+            // changeIcon: Home
+            changeIcon: ''
         }
     ] : [];
 
