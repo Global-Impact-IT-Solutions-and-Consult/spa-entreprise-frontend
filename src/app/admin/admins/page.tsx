@@ -6,7 +6,9 @@ import { useAdminHeader } from '@/contexts/AdminHeaderContext';
 import {
   adminService,
   type AdminAccount,
+  type BanAdminAccountDto,
   type CreateAdminAccountDto,
+  type SuspendAdminAccountDto,
   type UpdateAdminAccountDto,
 } from '@/services/admin.service';
 import { normalizeApiMessage } from '@/lib/api';
@@ -22,14 +24,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { toaster } from '@/components/ui/toaster';
 import {
   Ban,
   CheckCircle,
+  Clock,
   Lock,
   Pencil,
   ShieldCheck,
   Trash2,
+  Unlock,
   UserPlus,
 } from 'lucide-react';
 
@@ -72,6 +77,8 @@ export default function AdminAccountsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
+  const [accessMode, setAccessMode] = useState<'suspend' | 'ban'>('suspend');
   const [selectedAdmin, setSelectedAdmin] = useState<AdminAccount | null>(null);
 
   const fetchAdmins = useCallback(async () => {
@@ -179,6 +186,78 @@ export default function AdminAccountsPage() {
     }
   };
 
+  const handleSuspendAdmin = async (
+    target: AdminAccount,
+    data: SuspendAdminAccountDto,
+  ) => {
+    try {
+      await adminService.suspendAdmin(target.id, data);
+      toaster.create({
+        title: 'Admin suspended',
+        description: `${displayName(target)} has been suspended for ${data.days} day(s).`,
+        type: 'success',
+      });
+      setAccessOpen(false);
+      setSelectedAdmin(null);
+      fetchAdmins();
+    } catch (err) {
+      const message = getApiError(err, 'Failed to suspend admin');
+      toaster.create({ title: 'Error', description: message, type: 'error' });
+      throw err;
+    }
+  };
+
+  const handleBanAdmin = async (
+    target: AdminAccount,
+    data: BanAdminAccountDto,
+  ) => {
+    try {
+      await adminService.banAdmin(target.id, data);
+      toaster.create({
+        title: 'Admin banned',
+        description: `${displayName(target)} has been banned until unbanned.`,
+        type: 'success',
+      });
+      setAccessOpen(false);
+      setSelectedAdmin(null);
+      fetchAdmins();
+    } catch (err) {
+      const message = getApiError(err, 'Failed to ban admin');
+      toaster.create({ title: 'Error', description: message, type: 'error' });
+      throw err;
+    }
+  };
+
+  const handleUnbanAdmin = async (target: AdminAccount) => {
+    try {
+      await adminService.unbanAdmin(target.id);
+      toaster.create({
+        title: 'Admin unbanned',
+        description: `${displayName(target)} has been unbanned.`,
+        type: 'success',
+      });
+      fetchAdmins();
+    } catch (err) {
+      const message = getApiError(err, 'Failed to unban admin');
+      toaster.create({ title: 'Error', description: message, type: 'error' });
+    }
+  };
+
+  const handleUnsuspendAdmin = async (target: AdminAccount) => {
+    try {
+      await adminService.unsuspendAdmin(target.id);
+      toaster.create({
+        title: 'Admin unsuspended',
+        description: `${displayName(target)} can access the admin dashboard again.`,
+        type: 'success',
+      });
+      fetchAdmins();
+    } catch (err) {
+      const message = getApiError(err, 'Failed to unsuspend admin');
+      toaster.create({ title: 'Error', description: message, type: 'error' });
+    }
+  };
+
   if (!user?.isSuperAdmin) {
     return (
       <div className="p-6 md:p-8">
@@ -248,6 +327,7 @@ export default function AdminAccountsPage() {
                 admins.map((admin) => {
                   const isCurrentUser = admin.id === user.id;
                   const canDelete = !admin.isSeededAdmin && !isCurrentUser;
+                  const canChangeAccess = !admin.isSeededAdmin && !isCurrentUser;
 
                   return (
                     <tr key={admin.id} className="hover:bg-gray-50">
@@ -262,7 +342,7 @@ export default function AdminAccountsPage() {
                         <AdminTypeBadge admin={admin} />
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={admin.status} />
+                        <StatusBadge admin={admin} />
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         {formatDate(admin.lastLoginAt)}
@@ -279,6 +359,50 @@ export default function AdminAccountsPage() {
                             title="Edit"
                           >
                             <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!canChangeAccess}
+                            onClick={() => {
+                              if (admin.status === 'suspended') {
+                                if (admin.adminBannedAt) {
+                                  void handleUnbanAdmin(admin);
+                                } else {
+                                  void handleUnsuspendAdmin(admin);
+                                }
+                                return;
+                              }
+                              setSelectedAdmin(admin);
+                              setAccessMode('suspend');
+                              setAccessOpen(true);
+                            }}
+                            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
+                            title={
+                              admin.status === 'suspended'
+                                ? admin.adminBannedAt
+                                  ? 'Unban'
+                                  : 'Unsuspend'
+                                : 'Suspend'
+                            }
+                          >
+                            {admin.status === 'suspended' ? (
+                              <Unlock className="h-4 w-4" />
+                            ) : (
+                              <Clock className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!canChangeAccess}
+                            onClick={() => {
+                              setSelectedAdmin(admin);
+                              setAccessMode('ban');
+                              setAccessOpen(true);
+                            }}
+                            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                            title="Ban"
+                          >
+                            <Ban className="h-4 w-4" />
                           </button>
                           <button
                             type="button"
@@ -331,6 +455,17 @@ export default function AdminAccountsPage() {
         }}
         admin={selectedAdmin}
         onConfirm={handleDelete}
+      />
+      <AdminAccessDialog
+        open={accessOpen}
+        mode={accessMode}
+        admin={selectedAdmin}
+        onOpenChange={(open) => {
+          setAccessOpen(open);
+          if (!open) setSelectedAdmin(null);
+        }}
+        onSuspend={handleSuspendAdmin}
+        onBan={handleBanAdmin}
       />
     </div>
   );
@@ -388,7 +523,8 @@ function AdminTypeBadge({ admin }: { admin: AdminAccount }) {
   );
 }
 
-function StatusBadge({ status }: { status: AdminAccount['status'] }) {
+function StatusBadge({ admin }: { admin: AdminAccount }) {
+  const status = admin.status;
   const icon =
     status === 'active' ? (
       <CheckCircle className="h-3.5 w-3.5" />
@@ -405,7 +541,14 @@ function StatusBadge({ status }: { status: AdminAccount['status'] }) {
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
       {icon}
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {admin.adminBannedAt
+        ? 'Banned'
+        : status.charAt(0).toUpperCase() + status.slice(1)}
+      {admin.adminSuspendedUntil && (
+        <span className="text-gray-500">
+          until {formatDate(admin.adminSuspendedUntil)}
+        </span>
+      )}
     </span>
   );
 }
@@ -641,6 +784,141 @@ function DeleteAdminDialog({
           >
             <Trash2 className="h-4 w-4 mr-2" />
             {submitting ? 'Deleting...' : 'Delete Admin'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AdminAccessDialog({
+  open,
+  mode,
+  admin,
+  onOpenChange,
+  onSuspend,
+  onBan,
+}: {
+  open: boolean;
+  mode: 'suspend' | 'ban';
+  admin: AdminAccount | null;
+  onOpenChange: (open: boolean) => void;
+  onSuspend: (
+    admin: AdminAccount,
+    data: SuspendAdminAccountDto,
+  ) => Promise<void> | void;
+  onBan: (
+    admin: AdminAccount,
+    data: BanAdminAccountDto,
+  ) => Promise<void> | void;
+}) {
+  const [days, setDays] = useState(7);
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setDays(7);
+    setReason('');
+  }, [open, mode]);
+
+  const handleConfirm = async () => {
+    if (!admin) return;
+    if (mode === 'suspend' && (!days || days < 1)) {
+      toaster.create({
+        title: 'Invalid duration',
+        description: 'Enter at least 1 day.',
+        type: 'error',
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      if (mode === 'suspend') {
+        await onSuspend(admin, { days, reason: reason.trim() || undefined });
+      } else {
+        await onBan(admin, { reason: reason.trim() || undefined });
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-gray-900">
+            {mode === 'suspend' ? 'Suspend Admin' : 'Ban Admin'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            {mode === 'suspend'
+              ? `Temporarily suspend ${admin ? displayName(admin) : 'this admin'} from accessing the admin dashboard.`
+              : `Ban ${admin ? displayName(admin) : 'this admin'} until a super admin unbans them.`}
+          </p>
+
+          {mode === 'suspend' && (
+            <div>
+              <Label htmlFor="admin-suspend-days">Days *</Label>
+              <Input
+                id="admin-suspend-days"
+                type="number"
+                min={1}
+                max={365}
+                value={days}
+                onChange={(event) => setDays(Number(event.target.value))}
+                className="mt-1"
+              />
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="admin-access-reason">Reason</Label>
+            <Textarea
+              id="admin-access-reason"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Optional internal reason"
+              rows={4}
+              className="mt-1"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="flex justify-end gap-2 pt-4 border-t">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            className={
+              mode === 'suspend'
+                ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                : 'bg-red-600 hover:bg-red-700 text-white'
+            }
+            disabled={submitting}
+            onClick={handleConfirm}
+          >
+            {mode === 'suspend' ? (
+              <Clock className="h-4 w-4 mr-2" />
+            ) : (
+              <Ban className="h-4 w-4 mr-2" />
+            )}
+            {submitting
+              ? mode === 'suspend'
+                ? 'Suspending...'
+                : 'Banning...'
+              : mode === 'suspend'
+                ? 'Suspend Admin'
+                : 'Ban Admin'}
           </Button>
         </DialogFooter>
       </DialogContent>

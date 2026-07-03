@@ -22,6 +22,7 @@ import {
   Bell,
   Search,
   ShieldCheck,
+  Newspaper,
 } from 'lucide-react';
 import {
   AdminHeaderProvider,
@@ -46,6 +47,7 @@ const adminSidebarItems = [
     label: 'Service Categories',
     href: '/admin/categories',
   },
+  { icon: Newspaper, label: 'Blog Management', href: '/admin/blogs' },
   { icon: Calendar, label: 'Bookings Management', href: '/admin/bookings' },
   { icon: CreditCard, label: 'Payment Management', href: '/admin/payments' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },

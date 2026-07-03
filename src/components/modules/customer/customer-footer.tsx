@@ -98,6 +98,11 @@ export function CustomerFooter() {
                                     Privacy Policy
                                 </Link>
                             </li>
+                            <li>
+                                <Link href="/terms" className="text-gray-300 hover:text-[#E89D24] text-sm transition">
+                                    Terms of Service
+                                </Link>
+                            </li>
                         </ul>
                     </div>
 

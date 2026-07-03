@@ -69,6 +69,11 @@ export interface AdminBusiness {
   coverImage?: string | null;
   registrationDate?: string;
   approvedAt?: string | null;
+  statusBeforeRestriction?: 'pending_approval' | 'approved' | 'rejected' | null;
+  suspendedUntil?: string | null;
+  suspensionReason?: string | null;
+  bannedAt?: string | null;
+  banReason?: string | null;
   owner?: BusinessOwner;
   services?: BusinessService[];
   operatingHours?: OperatingHours;
@@ -81,6 +86,7 @@ export interface BusinessStats {
   pendingApprovals: number;
   approved: number;
   rejected: number;
+  suspended?: number;
   allBusinesses: number;
 }
 
@@ -179,6 +185,10 @@ export interface AdminAccount {
   status: 'active' | 'suspended' | 'inactive';
   isSuperAdmin: boolean;
   isSeededAdmin: boolean;
+  adminSuspendedUntil?: string | null;
+  adminSuspensionReason?: string | null;
+  adminBannedAt?: string | null;
+  adminBanReason?: string | null;
   emailVerified: boolean;
   lastLoginAt?: string | null;
   createdAt: string;
@@ -200,6 +210,15 @@ export interface UpdateAdminAccountDto {
   lastName?: string;
   phone?: string | null;
   status?: 'active' | 'suspended' | 'inactive';
+}
+
+export interface SuspendAdminAccountDto {
+  days: number;
+  reason?: string;
+}
+
+export interface BanAdminAccountDto {
+  reason?: string;
 }
 
 // --- Dashboard (ADMIN_API.md §4) ---
@@ -623,6 +642,30 @@ export const adminService = {
       throw error;
     }
   },
+  suspendBusiness: async (
+    businessId: string,
+    body: { days: number; reason?: string },
+  ) => {
+    const response = await apiClient.post(
+      `/admin/spas/${businessId}/suspend`,
+      body,
+    );
+    return response.data;
+  },
+  unsuspendBusiness: async (businessId: string) => {
+    const response = await apiClient.post(
+      `/admin/spas/${businessId}/unsuspend`,
+    );
+    return response.data;
+  },
+  banBusiness: async (businessId: string, body: { reason?: string }) => {
+    const response = await apiClient.post(`/admin/spas/${businessId}/ban`, body);
+    return response.data;
+  },
+  unbanBusiness: async (businessId: string) => {
+    const response = await apiClient.post(`/admin/spas/${businessId}/unban`);
+    return response.data;
+  },
 
   // Get pending businesses (convenience endpoint)
   getPendingBusinesses: async (page: number = 1, limit: number = 50) => {
@@ -724,6 +767,32 @@ export const adminService = {
   deleteAdmin: async (id: string) => {
     const res = await apiClient.delete<{ message: string }>(
       `/admin/admins/${id}`,
+    );
+    return res.data;
+  },
+  suspendAdmin: async (id: string, body: SuspendAdminAccountDto) => {
+    const res = await apiClient.post<AdminAccount>(
+      `/admin/admins/${id}/suspend`,
+      body,
+    );
+    return res.data;
+  },
+  banAdmin: async (id: string, body: BanAdminAccountDto) => {
+    const res = await apiClient.post<AdminAccount>(
+      `/admin/admins/${id}/ban`,
+      body,
+    );
+    return res.data;
+  },
+  unbanAdmin: async (id: string) => {
+    const res = await apiClient.post<AdminAccount>(
+      `/admin/admins/${id}/unban`,
+    );
+    return res.data;
+  },
+  unsuspendAdmin: async (id: string) => {
+    const res = await apiClient.post<AdminAccount>(
+      `/admin/admins/${id}/unsuspend`,
     );
     return res.data;
   },

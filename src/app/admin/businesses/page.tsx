@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,6 +28,9 @@ import {
   RotateCcw,
   FileText,
   AlertCircle,
+  Ban,
+  Clock,
+  Unlock,
 } from 'lucide-react';
 import {
   Dialog,
@@ -98,6 +103,8 @@ export default function AdminBusinessesPage() {
   // Modals
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showAccessModal, setShowAccessModal] = useState(false);
+  const [accessMode, setAccessMode] = useState<'suspend' | 'ban'>('suspend');
   const [approveNotes, setApproveNotes] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [sendRejectionEmail, setSendRejectionEmail] = useState(true);
@@ -320,6 +327,15 @@ export default function AdminBusinessesPage() {
     setSendRejectionEmail(true);
   };
 
+  const handleAccessClick = (
+    business: AdminBusiness,
+    mode: 'suspend' | 'ban',
+  ) => {
+    setSelectedBusiness(business);
+    setAccessMode(mode);
+    setShowAccessModal(true);
+  };
+
   const handleApprove = async () => {
     if (!selectedBusiness) return;
 
@@ -385,6 +401,101 @@ export default function AdminBusinessesPage() {
       toaster.create({
         title: 'Error',
         description: getApiMessage(error, 'Failed to reject business'),
+        type: 'error',
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleSuspendBusiness = async (
+    business: AdminBusiness,
+    days: number,
+    reason?: string,
+  ) => {
+    setProcessingId(business.id);
+    try {
+      await adminService.suspendBusiness(business.id, { days, reason });
+      toaster.create({
+        title: 'Business suspended',
+        description: `${business.businessName} has been suspended for ${days} day(s).`,
+        type: 'success',
+      });
+      setShowAccessModal(false);
+      setSelectedBusiness(null);
+      fetchData();
+    } catch (error: unknown) {
+      toaster.create({
+        title: 'Error',
+        description: getApiMessage(error, 'Failed to suspend business'),
+        type: 'error',
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleBanBusiness = async (
+    business: AdminBusiness,
+    reason?: string,
+  ) => {
+    setProcessingId(business.id);
+    try {
+      await adminService.banBusiness(business.id, { reason });
+      toaster.create({
+        title: 'Business banned',
+        description: `${business.businessName} has been banned until unbanned.`,
+        type: 'success',
+      });
+      setShowAccessModal(false);
+      setSelectedBusiness(null);
+      fetchData();
+    } catch (error: unknown) {
+      toaster.create({
+        title: 'Error',
+        description: getApiMessage(error, 'Failed to ban business'),
+        type: 'error',
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleUnsuspendBusiness = async (business: AdminBusiness) => {
+    setProcessingId(business.id);
+    try {
+      await adminService.unsuspendBusiness(business.id);
+      toaster.create({
+        title: 'Business unsuspended',
+        description: `${business.businessName} can operate again.`,
+        type: 'success',
+      });
+      fetchData();
+    } catch (error: unknown) {
+      toaster.create({
+        title: 'Error',
+        description: getApiMessage(error, 'Failed to unsuspend business'),
+        type: 'error',
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleUnbanBusiness = async (business: AdminBusiness) => {
+    setProcessingId(business.id);
+    try {
+      await adminService.unbanBusiness(business.id);
+      toaster.create({
+        title: 'Business unbanned',
+        description: `${business.businessName} has been unbanned.`,
+        type: 'success',
+      });
+      fetchData();
+    } catch (error: unknown) {
+      toaster.create({
+        title: 'Error',
+        description: getApiMessage(error, 'Failed to unban business'),
         type: 'error',
       });
     } finally {
@@ -498,6 +609,7 @@ export default function AdminBusinessesPage() {
                   <option value="pending_approval">Pending Approval</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
+                  <option value="suspended">Suspended</option>
                 </Select>
               </div>
               <div className="min-w-[160px]">
@@ -691,6 +803,46 @@ export default function AdminBusinessesPage() {
                                 </button>
                               </>
                             )}
+                            {business.status === 'suspended' ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  business.bannedAt
+                                    ? handleUnbanBusiness(business)
+                                    : handleUnsuspendBusiness(business)
+                                }
+                                disabled={processingId === business.id}
+                                className="p-2 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50"
+                                title={business.bannedAt ? 'Unban' : 'Unsuspend'}
+                              >
+                                <Unlock className="h-4 w-4" />
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleAccessClick(business, 'suspend')
+                                  }
+                                  disabled={processingId === business.id}
+                                  className="p-2 rounded-lg text-amber-600 hover:bg-amber-50 disabled:opacity-50"
+                                  title="Suspend"
+                                >
+                                  <Clock className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleAccessClick(business, 'ban')
+                                  }
+                                  disabled={processingId === business.id}
+                                  className="p-2 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                  title="Ban"
+                                >
+                                  <Ban className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -762,7 +914,12 @@ export default function AdminBusinessesPage() {
 
       {/* Business Details Modal - centered like User Details */}
       <Dialog
-        open={!!selectedBusiness && !showApproveModal && !showRejectModal}
+        open={
+          !!selectedBusiness &&
+          !showApproveModal &&
+          !showRejectModal &&
+          !showAccessModal
+        }
         onOpenChange={(open) => !open && setSelectedBusiness(null)}
       >
         <DialogContent className="max-w-2xl w-[90vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto p-8">
@@ -821,7 +978,65 @@ export default function AdminBusinessesPage() {
                       </Button>
                     </div>
                   )}
+                  {selectedBusiness.status === 'suspended' ? (
+                    <Button
+                      onClick={() =>
+                        selectedBusiness.bannedAt
+                          ? handleUnbanBusiness(selectedBusiness)
+                          : handleUnsuspendBusiness(selectedBusiness)
+                      }
+                      disabled={processingId === selectedBusiness.id}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Unlock className="h-4 w-4 mr-1" />
+                      {selectedBusiness.bannedAt ? 'Unban' : 'Unsuspend'}
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2 shrink-0">
+                      <Button
+                        onClick={() =>
+                          handleAccessClick(selectedBusiness, 'suspend')
+                        }
+                        disabled={processingId === selectedBusiness.id}
+                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        <Clock className="h-4 w-4 mr-1" />
+                        Suspend
+                      </Button>
+                      <Button
+                        onClick={() =>
+                          handleAccessClick(selectedBusiness, 'ban')
+                        }
+                        disabled={processingId === selectedBusiness.id}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        <Ban className="h-4 w-4 mr-1" />
+                        Ban
+                      </Button>
+                    </div>
+                  )}
                 </div>
+                {selectedBusiness.status === 'suspended' && (
+                  <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    <p className="font-semibold">
+                      {selectedBusiness.bannedAt ? 'Business banned' : 'Business suspended'}
+                    </p>
+                    {selectedBusiness.suspendedUntil && (
+                      <p>
+                        Until:{' '}
+                        {new Date(selectedBusiness.suspendedUntil).toLocaleDateString()}
+                      </p>
+                    )}
+                    {(selectedBusiness.banReason ||
+                      selectedBusiness.suspensionReason) && (
+                      <p>
+                        Reason:{' '}
+                        {selectedBusiness.banReason ||
+                          selectedBusiness.suspensionReason}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-500">Business Type: </span>
@@ -1093,6 +1308,178 @@ export default function AdminBusinessesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <BusinessAccessDialog
+        open={showAccessModal}
+        mode={accessMode}
+        business={selectedBusiness}
+        processing={processingId === selectedBusiness?.id}
+        onOpenChange={(open) => {
+          setShowAccessModal(open);
+          if (!open) setSelectedBusiness(null);
+        }}
+        onSuspend={handleSuspendBusiness}
+        onBan={handleBanBusiness}
+      />
     </div>
+  );
+}
+
+function BusinessAccessDialog({
+  open,
+  mode,
+  business,
+  processing,
+  onOpenChange,
+  onSuspend,
+  onBan,
+}: {
+  open: boolean;
+  mode: 'suspend' | 'ban';
+  business: AdminBusiness | null;
+  processing: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuspend: (
+    business: AdminBusiness,
+    days: number,
+    reason?: string,
+  ) => void;
+  onBan: (business: AdminBusiness, reason?: string) => void;
+}) {
+  const [days, setDays] = useState(7);
+  const [reason, setReason] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    setDays(7);
+    setReason('');
+  }, [open, mode]);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!business) return;
+
+    if (mode === 'suspend') {
+      if (!days || days < 1) {
+        toaster.create({
+          title: 'Invalid duration',
+          description: 'Enter at least 1 day.',
+          type: 'error',
+        });
+        return;
+      }
+      onSuspend(business, days, reason.trim() || undefined);
+      return;
+    }
+
+    onBan(business, reason.trim() || undefined);
+  };
+
+  if (!business) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-gray-900 pr-8">
+            {mode === 'suspend' ? 'Suspend Business' : 'Ban Business'}
+          </DialogTitle>
+          <DialogClose
+            onClick={() => onOpenChange(false)}
+            className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
+          >
+            <XIcon className="h-4 w-4" />
+          </DialogClose>
+        </DialogHeader>
+
+        <div
+          className={cn(
+            'rounded-lg border p-3 flex gap-2 items-start',
+            mode === 'suspend'
+              ? 'bg-amber-50 border-amber-200'
+              : 'bg-red-50 border-red-200',
+          )}
+        >
+          {mode === 'suspend' ? (
+            <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          ) : (
+            <Ban className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          )}
+          <p
+            className={cn(
+              'text-sm',
+              mode === 'suspend' ? 'text-amber-800' : 'text-red-800',
+            )}
+          >
+            {mode === 'suspend'
+              ? `${business.businessName} will be hidden and unable to operate until the suspension ends or is manually removed.`
+              : `${business.businessName} will be hidden and unable to operate until an admin unbans it.`}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'suspend' && (
+            <div>
+              <Label htmlFor="business-suspend-days">Days *</Label>
+              <Input
+                id="business-suspend-days"
+                type="number"
+                min={1}
+                max={365}
+                value={days}
+                onChange={(event) => setDays(Number(event.target.value))}
+                className="mt-1"
+                required
+              />
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="business-access-reason">Reason</Label>
+            <Textarea
+              id="business-access-reason"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Optional internal reason"
+              className="mt-1 min-h-[100px]"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={processing}
+              className={cn(
+                'flex-1 text-white',
+                mode === 'suspend'
+                  ? 'bg-amber-600 hover:bg-amber-700'
+                  : 'bg-red-600 hover:bg-red-700',
+              )}
+            >
+              {mode === 'suspend' ? (
+                <Clock className="h-4 w-4 mr-1" />
+              ) : (
+                <Ban className="h-4 w-4 mr-1" />
+              )}
+              {processing
+                ? mode === 'suspend'
+                  ? 'Suspending...'
+                  : 'Banning...'
+                : mode === 'suspend'
+                  ? 'Suspend'
+                  : 'Ban'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
