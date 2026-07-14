@@ -32,6 +32,7 @@ function LoginContent() {
     const [isMfaStep, setIsMfaStep] = useState(false);
     const [mfaCode, setMfaCode] = useState<string[]>(Array(6).fill(""));
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const expiredToastShownRef = useRef(false);
 
     const handleMfaChange = (index: number, val: string) => {
         if (!/^\d*$/.test(val)) return;
@@ -73,10 +74,14 @@ function LoginContent() {
 
         // Check if redirected due to token expiration
         const expired = searchParams.get('expired');
-        if (expired === 'true') {
+        if (expired === 'true' && !expiredToastShownRef.current) {
+            expiredToastShownRef.current = true;
+            const reason = searchParams.get('reason');
             toaster.create({
                 title: "Session Expired",
-                description: "Your session has expired. Please log in again to continue.",
+                description: reason === 'inactivity'
+                    ? "You were logged out due to inactivity. Please log in again to continue."
+                    : "Your session has expired. Please log in again to continue.",
                 type: "warning"
             });
         }
