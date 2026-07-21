@@ -359,7 +359,7 @@ export function ApprovalContent() {
   };
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -377,12 +377,12 @@ export function ApprovalContent() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <button
           type="button"
           onClick={() => setApprovalType('business')}
           className={cn(
-            'flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm',
+            'flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 rounded-lg font-medium text-sm',
             approvalType === 'business'
               ? 'bg-[#9333EA] text-white'
               : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200',
@@ -400,7 +400,7 @@ export function ApprovalContent() {
           type="button"
           onClick={() => setApprovalType('service')}
           className={cn(
-            'flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm',
+            'flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 rounded-lg font-medium text-sm',
             approvalType === 'service'
               ? 'bg-[#9333EA] text-white'
               : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200',
@@ -418,7 +418,8 @@ export function ApprovalContent() {
         <>
           {/* Status tabs + search in white background (match design) */}
           <div className="bg-white border border-gray-300 rounded-md p-4 mb-4 shadow-sm">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center gap-y-2">
+              <div className="flex flex-wrap items-center gap-2">
               {(
                 [
                   ['ALL', 'All', stats.allBusinesses],
@@ -436,7 +437,7 @@ export function ApprovalContent() {
                   type="button"
                   onClick={() => setStatusFilter(value)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium',
+                    'flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium',
                     statusFilter === value && value === 'ALL'
                       ? 'bg-blue-600 text-white'
                       : statusFilter === value
@@ -449,11 +450,12 @@ export function ApprovalContent() {
                   )}
                   {value === 'approved' && <CheckCircle2 className="h-4 w-4" />}
                   {value === 'rejected' && <XCircle className="h-4 w-4" />}
-                  {label}
+                  <span className="whitespace-nowrap">{label}</span>
                   <span className="text-xs opacity-90">{count}</span>
                 </button>
               ))}
-              <div className="ml-auto flex-1 min-w-[200px] max-w-xs">
+              </div>
+              <div className="w-full sm:ml-auto sm:flex-1 sm:min-w-[200px] sm:max-w-xs">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -534,12 +536,12 @@ export function ApprovalContent() {
                       )}
                     </div>
                   )}
-                  <div className="flex items-center gap-2 mt-auto pt-2">
+                  <div className="flex flex-wrap items-center gap-2 mt-auto pt-2">
                     {b.status === 'pending_approval' && (
                       <>
                         <Button
                           size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                          className="bg-green-600 hover:bg-green-700 text-white flex-1 min-w-[100px]"
                           onClick={() => handleApproveClick(b)}
                           disabled={processingId === b.id}
                         >
@@ -549,7 +551,7 @@ export function ApprovalContent() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          className="bg-red-600 hover:bg-red-700 text-white flex-1"
+                          className="bg-red-600 hover:bg-red-700 text-white flex-1 min-w-[100px]"
                           onClick={() => handleRejectClick(b)}
                           disabled={processingId === b.id}
                         >
@@ -561,7 +563,7 @@ export function ApprovalContent() {
                     {b.status === 'approved' && (
                       <Button
                         size="sm"
-                        className="bg-amber-500 hover:bg-amber-600 text-white flex-1"
+                        className="bg-amber-500 hover:bg-amber-600 text-white flex-1 min-w-[100px]"
                       >
                         Suspend
                       </Button>
@@ -644,7 +646,7 @@ export function ApprovalContent() {
       {approvalType === 'service' && (
         <>
           <div className="bg-white border border-gray-300 rounded-md p-4 mb-4 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               <div>
                 <p className="text-sm font-medium text-gray-900">
                   Pending service submissions
@@ -653,7 +655,7 @@ export function ApprovalContent() {
                   Services attached to businesses still awaiting admin approval.
                 </p>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <p className="text-xs uppercase tracking-wide text-gray-500">
                   Total
                 </p>

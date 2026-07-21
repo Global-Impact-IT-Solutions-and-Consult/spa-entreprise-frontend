@@ -170,9 +170,9 @@ export default function AdminCategoriesPage() {
   const totalPages = Math.max(1, pagination.totalPages);
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       {/* Title/subtitle left, summary cards right */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Service Categories
@@ -182,20 +182,20 @@ export default function AdminCategoriesPage() {
           </p>
         </div>
         {/* Summary cards: bordered container (no extra white bg), white cards inside */}
-        <div className="border border-gray-200 rounded-lg p-4 shrink-0">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="border border-gray-200 rounded-lg p-3 sm:p-4 shrink-0 w-full sm:w-auto">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
-              <CardContent className="p-4">
-                <p className="text-sm text-gray-500">Total Categories</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <CardContent className="p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-gray-500">Total Categories</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
                   {stats.total}
                 </p>
               </CardContent>
             </Card>
             <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
-              <CardContent className="p-4">
-                <p className="text-sm text-gray-500">Active</p>
-                <p className="text-2xl font-bold text-green-600">
+              <CardContent className="p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-gray-500">Active</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-600">
                   {stats.active}
                 </p>
               </CardContent>
@@ -206,8 +206,8 @@ export default function AdminCategoriesPage() {
 
       {/* Filters: white background, bordered strip; Reset Filters = purple icon + text */}
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
             <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
               Status
             </span>
@@ -218,10 +218,10 @@ export default function AdminCategoriesPage() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-[120px] bg-white border border-gray-300 rounded"
+              className="w-full sm:w-[120px] bg-white border border-gray-300 rounded"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
             <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
               Sort By
             </span>
@@ -229,14 +229,14 @@ export default function AdminCategoriesPage() {
               options={SORT_OPTIONS}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-[140px] bg-white border border-gray-300 rounded"
+              className="w-full sm:w-[140px] bg-white border border-gray-300 rounded"
             />
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={resetFilters}
-            className="text-[#9333EA] hover:text-[#7e22ce] hover:bg-[#9333EA]/10 p-0 h-auto font-medium"
+            className="text-[#9333EA] hover:text-[#7e22ce] hover:bg-[#9333EA]/10 sm:p-0 sm:h-auto font-medium w-full sm:w-auto justify-center"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset Filters
@@ -246,7 +246,7 @@ export default function AdminCategoriesPage() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[640px] text-sm text-left">
             <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
               <tr>
                 <th className="px-4 py-3">Name</th>
@@ -337,13 +337,13 @@ export default function AdminCategoriesPage() {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
           <p className="text-sm text-gray-600">
             Showing {(page - 1) * PAGE_SIZE + 1} to{' '}
             {Math.min(page * PAGE_SIZE, pagination.total)} of {pagination.total}{' '}
             categories
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <Button
               variant="outline"
               size="icon"

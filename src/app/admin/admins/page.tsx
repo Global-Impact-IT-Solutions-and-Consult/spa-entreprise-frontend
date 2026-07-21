@@ -273,14 +273,14 @@ export default function AdminAccountsPage() {
   }
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-6">
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Admin Management
           </h1>
         </div>
-        <div className="grid grid-cols-3 gap-4 shrink-0">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 shrink-0 w-full sm:w-auto">
           <StatCard label="Total" value={stats.total} />
           <StatCard label="Active" value={stats.active} tone="green" />
           <StatCard label="Super" value={stats.superAdmins} tone="purple" />
@@ -289,7 +289,7 @@ export default function AdminAccountsPage() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[720px] text-sm text-left">
             <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
               <tr>
                 <th className="px-4 py-3">Name</th>
@@ -489,9 +489,9 @@ function StatCard({
 
   return (
     <Card className="bg-white border-gray-200 shadow-sm">
-      <CardContent className="p-4">
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className={`text-2xl font-bold ${toneClass}`}>{value}</p>
+      <CardContent className="p-3 sm:p-4">
+        <p className="text-xs sm:text-sm text-gray-500">{label}</p>
+        <p className={`text-xl sm:text-2xl font-bold ${toneClass}`}>{value}</p>
       </CardContent>
     </Card>
   );

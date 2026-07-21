@@ -284,8 +284,8 @@ export default function AdminDashboardPage() {
   const totalBookings = metrics?.totalBookings ?? 0;
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-8">
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
           Dashboard Overview
         </h1>
@@ -363,9 +363,9 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Platform Growth</h3>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap gap-1">
                 {(['7d', '30d', '90d'] as const).map((p) => (
                   <button
                     key={p}
@@ -507,8 +507,9 @@ export default function AdminDashboardPage() {
                 registrations.slice(0, 5).map((r) => (
                   <div
                     key={r.id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
                   >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className="h-10 w-10 rounded-full bg-[#9333EA] text-white flex items-center justify-center text-sm font-medium shrink-0">
                       {initialsFromEmail(r.email)}
                     </div>
@@ -523,7 +524,8 @@ export default function AdminDashboardPage() {
                         {roleLabel(r.role) ? ' • ' + roleLabel(r.role) : ''}
                       </p>
                     </div>
-                    <div className="shrink-0 text-right flex flex-col items-end gap-1">
+                    </div>
+                    <div className="shrink-0 text-left sm:text-right flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1 pl-12 sm:pl-0">
                       <p className="text-xs text-gray-500">
                         {formatRelativeTime(r.createdAt)}
                       </p>

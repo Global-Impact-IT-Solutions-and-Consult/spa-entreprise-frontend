@@ -283,8 +283,8 @@ export default function AdminSettingsPage() {
       .toUpperCase() || 'AW';
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl">
-      <div className="mb-8">
+    <div className="p-4 sm:p-6 md:p-8 max-w-4xl">
+      <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
           Settings
         </h1>
@@ -294,11 +294,11 @@ export default function AdminSettingsPage() {
       </div>
 
       <Card className="mb-6">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Profile Information
           </h2>
-          <div className="flex items-start gap-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-6">
             <div className="relative">
               <Avatar className="h-20 w-20 rounded-full bg-[#9333EA] text-white text-2xl">
                 {user?.profilePicture ? (
@@ -443,7 +443,7 @@ export default function AdminSettingsPage() {
               </Button>
             </form>
           </div>
-          <div className="flex items-center justify-between py-3 border-t">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 border-t">
             <div>
               <p className="font-medium text-gray-900">
                 Two-Factor Authentication
@@ -471,20 +471,20 @@ export default function AdminSettingsPage() {
                 sessions.map((s) => (
                   <div
                     key={s.id}
-                    className="flex items-center justify-between p-3 rounded-lg border border-gray-200"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-lg border border-gray-200"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {s.current ? (
-                        <Monitor className="h-5 w-5 text-gray-400" />
+                        <Monitor className="h-5 w-5 text-gray-400 shrink-0" />
                       ) : (
-                        <Smartphone className="h-5 w-5 text-gray-400" />
+                        <Smartphone className="h-5 w-5 text-gray-400 shrink-0" />
                       )}
-                      <div>
-                        <p className="font-medium text-gray-900">{s.device}</p>
-                        <p className="text-sm text-gray-500">{s.location}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{s.device}</p>
+                        <p className="text-sm text-gray-500 truncate">{s.location}</p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right pl-8 sm:pl-0">
                       {s.current ? (
                         <span className="text-sm text-green-600 font-medium">
                           Active Now
@@ -546,9 +546,9 @@ export default function AdminSettingsPage() {
             ].map(({ key, label, desc }) => (
               <div
                 key={key}
-                className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                className="flex items-start sm:items-center justify-between gap-3 py-2 border-b border-gray-100 last:border-0"
               >
-                <div>
+                <div className="min-w-0">
                   <p className="font-medium text-gray-900">{label}</p>
                   <p className="text-sm text-gray-500">{desc}</p>
                 </div>
@@ -557,6 +557,7 @@ export default function AdminSettingsPage() {
                   onCheckedChange={(c) =>
                     setNotifications((n) => ({ ...n, [key]: c }))
                   }
+                  className="shrink-0"
                 />
               </div>
             ))}

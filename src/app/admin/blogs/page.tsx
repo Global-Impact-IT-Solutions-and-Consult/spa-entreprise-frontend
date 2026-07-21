@@ -182,8 +182,8 @@ export default function AdminBlogsPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-6">
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Blog Management
@@ -192,14 +192,14 @@ export default function AdminBlogsPage() {
             Create and publish customer-facing blog posts.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-4 shrink-0">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 shrink-0 w-full sm:w-auto">
           <StatCard label="Total" value={stats.total} />
           <StatCard label="Published" value={stats.published} tone="green" />
           <StatCard label="Drafts" value={stats.drafts} tone="amber" />
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-4">
         <Select
           options={STATUS_OPTIONS}
           value={status}
@@ -207,9 +207,9 @@ export default function AdminBlogsPage() {
             setStatus(event.target.value);
             setPage(1);
           }}
-          className="w-[150px]"
+          className="w-full sm:w-[150px]"
         />
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search blogs..."
@@ -218,13 +218,13 @@ export default function AdminBlogsPage() {
             onKeyDown={(event) => {
               if (event.key === 'Enter') handleSearch();
             }}
-            className="pl-9 w-64"
+            className="pl-9 w-full sm:w-64"
           />
         </div>
-        <Button variant="outline" size="sm" onClick={handleSearch}>
+        <Button variant="outline" size="sm" onClick={handleSearch} className="w-full sm:w-auto">
           Search
         </Button>
-        <Button variant="outline" size="sm" onClick={resetFilters}>
+        <Button variant="outline" size="sm" onClick={resetFilters} className="w-full sm:w-auto">
           <RotateCcw className="h-4 w-4 mr-2" />
           Reset
         </Button>
@@ -232,7 +232,7 @@ export default function AdminBlogsPage() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[640px] text-sm text-left">
             <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
               <tr>
                 <th className="px-4 py-3">Post</th>
@@ -329,7 +329,7 @@ export default function AdminBlogsPage() {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
           <p className="text-sm text-gray-600">
             Showing {blogs.length ? (page - 1) * PAGE_SIZE + 1 : 0} to{' '}
             {Math.min(page * PAGE_SIZE, total)} of {total} posts
@@ -400,9 +400,9 @@ function StatCard({
 
   return (
     <Card className="bg-white border-gray-200 shadow-sm">
-      <CardContent className="p-4">
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className={`text-2xl font-bold ${toneClass}`}>{value}</p>
+      <CardContent className="p-3 sm:p-4">
+        <p className="text-xs sm:text-sm text-gray-500">{label}</p>
+        <p className={`text-xl sm:text-2xl font-bold ${toneClass}`}>{value}</p>
       </CardContent>
     </Card>
   );

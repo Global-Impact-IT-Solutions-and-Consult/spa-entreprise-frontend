@@ -49,7 +49,7 @@ export function DialogContent({
     <div
       onClick={(e) => e.stopPropagation()}
       className={cn(
-        'relative z-[101] grid w-full gap-4 border bg-white p-6 shadow-lg duration-200 sm:rounded-lg animate-in zoom-in-95 slide-in-from-bottom-5',
+        'relative z-[101] grid w-full max-h-[90vh] gap-4 overflow-y-auto border bg-white p-4 sm:p-6 shadow-lg duration-200 rounded-lg sm:rounded-lg animate-in zoom-in-95 slide-in-from-bottom-5',
         className,
       )}
     >

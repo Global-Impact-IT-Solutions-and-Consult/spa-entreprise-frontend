@@ -432,9 +432,9 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       {/* Header left, stat cards right */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             User Management
@@ -443,25 +443,25 @@ export default function AdminUsersPage() {
             Manage all users across the platform.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-4 shrink-0">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 shrink-0 w-full sm:w-auto">
           <Card className="bg-white border-gray-200 shadow-sm">
-            <CardContent className="p-4">
-              <p className="text-sm text-gray-500">Total users</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            <CardContent className="p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-gray-500">Total users</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total}</p>
             </CardContent>
           </Card>
           <Card className="bg-white border-gray-200 shadow-sm">
-            <CardContent className="p-4">
-              <p className="text-sm text-gray-500">Active</p>
-              <p className="text-2xl font-bold text-green-600">
+            <CardContent className="p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-gray-500">Active</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">
                 {stats.active}
               </p>
             </CardContent>
           </Card>
           <Card className="bg-white border-gray-200 shadow-sm">
-            <CardContent className="p-4">
-              <p className="text-sm text-gray-500">Suspended</p>
-              <p className="text-2xl font-bold text-red-600">
+            <CardContent className="p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-gray-500">Suspended</p>
+              <p className="text-xl sm:text-2xl font-bold text-red-600">
                 {stats.suspended}
               </p>
             </CardContent>
@@ -471,19 +471,19 @@ export default function AdminUsersPage() {
 
       {/* Filter/sort in white panel */}
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm p-4 mb-6">
-        <div className="flex flex-wrap items-end gap-4">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3 sm:gap-4">
           <input
             type="search"
             placeholder="Search by name, email…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submitSearch()}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-[#9333EA]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-[#9333EA]"
           />
-          <Button variant="outline" size="sm" onClick={submitSearch}>
+          <Button variant="outline" size="sm" onClick={submitSearch} className="w-full sm:w-auto">
             Search
           </Button>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 w-full sm:w-auto">
             <span className="text-sm font-medium text-gray-700">Status</span>
             <Select
               options={STATUS_OPTIONS}
@@ -492,23 +492,23 @@ export default function AdminUsersPage() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-[140px]"
+              className="w-full sm:w-[140px]"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 w-full sm:w-auto">
             <span className="text-sm font-medium text-gray-700">Sort By</span>
             <Select
               options={SORT_OPTIONS}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-[160px]"
+              className="w-full sm:w-[160px]"
             />
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={resetFilters}
-            className="text-[#9333EA] hover:text-[#7e22ce] hover:bg-[#9333EA]/10 ml-auto"
+            className="text-[#9333EA] hover:text-[#7e22ce] hover:bg-[#9333EA]/10 sm:ml-auto w-full sm:w-auto justify-center"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset Filters
@@ -518,7 +518,7 @@ export default function AdminUsersPage() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[720px] text-sm text-left">
             <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
               <tr>
                 <th className="px-4 py-3">User ID</th>
@@ -638,12 +638,12 @@ export default function AdminUsersPage() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
           <p className="text-sm text-gray-600">
             Showing {(page - 1) * PAGE_SIZE + 1} to{' '}
             {Math.min(page * PAGE_SIZE, totalFromApi)} of {totalFromApi} users
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <Button
               variant="outline"
               size="icon"

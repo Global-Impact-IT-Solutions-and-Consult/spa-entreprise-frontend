@@ -108,8 +108,8 @@ export default function AdminLogsPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-8">
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
           Activity Logs
         </h1>
@@ -118,8 +118,8 @@ export default function AdminLogsPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           <span className="text-sm font-medium text-gray-700">Action Type</span>
           <Select
             options={ACTION_OPTIONS}
@@ -128,37 +128,37 @@ export default function AdminLogsPage() {
               setActionType(e.target.value);
               setPage(1);
             }}
-            className="w-[160px]"
+            className="w-full sm:w-[160px]"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           <Label className="text-sm font-medium text-gray-700">Date From</Label>
           <Input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-[140px]"
+            className="w-full sm:w-[140px]"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           <Label className="text-sm font-medium text-gray-700">Date To</Label>
           <Input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="w-[140px]"
+            className="w-full sm:w-[140px]"
           />
         </div>
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 w-48"
+            className="pl-9 w-full sm:w-48"
           />
         </div>
-        <Button variant="outline" size="sm" onClick={resetFilters}>
+        <Button variant="outline" size="sm" onClick={resetFilters} className="w-full sm:w-auto justify-center">
           <RotateCcw className="h-4 w-4 mr-2" />
           Reset Filters
         </Button>
@@ -166,7 +166,7 @@ export default function AdminLogsPage() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[720px] text-sm text-left">
             <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
               <tr>
                 <th className="px-4 py-3">Timestamp</th>
@@ -227,12 +227,12 @@ export default function AdminLogsPage() {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
           <p className="text-sm text-gray-600">
             Showing {(page - 1) * PAGE_SIZE + 1} to{' '}
             {Math.min(page * PAGE_SIZE, total)} of {total} logs
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <Button
               variant="outline"
               size="icon"

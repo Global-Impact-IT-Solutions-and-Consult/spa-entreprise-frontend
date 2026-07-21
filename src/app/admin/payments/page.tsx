@@ -175,8 +175,8 @@ export default function AdminPaymentsPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-8">
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
           Payments Management
         </h1>
@@ -282,9 +282,9 @@ export default function AdminPaymentsPage() {
             <h3 className="font-semibold text-gray-900 mb-3">
               Payment Methods
             </h3>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               <div
-                className="h-24 w-24 rounded-full border-8 border-gray-200 flex items-center justify-center"
+                className="h-24 w-24 rounded-full border-8 border-gray-200 flex items-center justify-center shrink-0"
                 style={{
                   borderColor: `conic-gradient(#14b8a6 0% ${methods?.card ?? 0}%, #f97316 ${methods?.card ?? 0}% ${(methods?.card ?? 0) + (methods?.bank_transfer ?? 0)}%, #3b82f6 ${(methods?.card ?? 0) + (methods?.bank_transfer ?? 0)}% 100%)`,
                 }}
@@ -312,8 +312,8 @@ export default function AdminPaymentsPage() {
         </Card>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           <span className="text-sm font-medium text-gray-700">Status</span>
           <Select
             options={STATUS_OPTIONS}
@@ -322,24 +322,28 @@ export default function AdminPaymentsPage() {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="w-[140px]"
+            className="w-full sm:w-[140px]"
           />
         </div>
-        <Label className="text-sm font-medium text-gray-700">Date From</Label>
-        <Input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          className="w-[140px]"
-        />
-        <Label className="text-sm font-medium text-gray-700">Date To</Label>
-        <Input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          className="w-[140px]"
-        />
-        <Button variant="outline" size="sm" onClick={resetFilters}>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+          <Label className="text-sm font-medium text-gray-700">Date From</Label>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-full sm:w-[140px]"
+          />
+        </div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+          <Label className="text-sm font-medium text-gray-700">Date To</Label>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-full sm:w-[140px]"
+          />
+        </div>
+        <Button variant="outline" size="sm" onClick={resetFilters} className="w-full sm:w-auto justify-center">
           <RotateCcw className="h-4 w-4 mr-2" />
           Reset Filters
         </Button>
@@ -347,7 +351,7 @@ export default function AdminPaymentsPage() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[800px] text-sm text-left">
             <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
               <tr>
                 <th className="px-4 py-3">Transaction ID</th>
@@ -419,12 +423,12 @@ export default function AdminPaymentsPage() {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50">
           <p className="text-sm text-gray-600">
             Showing {(page - 1) * PAGE_SIZE + 1} to{' '}
             {Math.min(page * PAGE_SIZE, total)} of {total} transactions
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <Button
               variant="outline"
               size="icon"
