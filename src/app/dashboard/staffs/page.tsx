@@ -146,13 +146,13 @@ export default function StaffsPage() {
     return (
         <div className="animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Manage Business Staffs</h1>
-                    <p className="text-gray-500 mt-1">Create new staff, edit existing staff or delete staff</p>
+                <div className="my-5 md:my-0">
+                    <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Manage Business Staffs</h1>
+                    <p className="text-gray-500 mt-1 text-sm  sm:text-base">Create new staff, edit existing staff or delete staff</p>
                 </div>
                 <Button
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold h-12 px-6 rounded-xl shadow-lg shadow-[#F59E0B]/20 flex items-center gap-2"
+                    className="bg-[#F59E0B] hover:bg-[#D97706] text-white gap-2 h-11 px-6 font-bold w-fit"
                 >
                     <Plus className="h-5 w-5" />
                     Add Staff

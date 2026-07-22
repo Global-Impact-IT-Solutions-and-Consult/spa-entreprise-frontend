@@ -273,7 +273,7 @@ export default function CancellationPage() {
                     </ul>
                 </div>
 
-                <div className="w-full max-w-sm flex items-center gap-2">
+                <div className="w-full max-w-sm flex flex-col sm:flex-row items-center gap-2">
                     <Button
                         onClick={() => router.push("/")}
                         className="w-full h-12 bg-[#E89D24] hover:bg-[#D97706] text-white font-medium rounded-md shadow-lg shadow-orange-100"
@@ -311,7 +311,7 @@ export default function CancellationPage() {
 
                 <div className="text-gray-500 text-sm font-normal max-w-md mx-auto mb-10 leading-relaxed bg-[#F5F4EC] p-4 py-2 rounded-lg">You'll receive a notification and email once they respond.</div>
 
-                <div className="w-full max-w-sm flex items-center gap-2">
+                <div className="w-full max-w-sm flex flex-col sm:flex-row items-center gap-2">
                     <Button
                         onClick={() => router.push("/")}
                         className="w-full h-12 bg-[#E89D24] hover:bg-[#D97706] text-white font-medium rounded-md shadow-lg shadow-orange-100"
@@ -327,7 +327,7 @@ export default function CancellationPage() {
                     </Button>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                     <div className="mt-12 p-4 border-l-4 border-[#E89D24] bg-white rounded-md w-full max-w-sm text-left">
                         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-4">Next Steps</h3>
                         <ul className="space-y-4">
@@ -423,7 +423,7 @@ export default function CancellationPage() {
                         <p className="text-lg font-semibold text-[#E89D24] mb-4">Appointment Details</p>
                         <div className="flex items-center gap-4">
                             {/* Staff/Service Image */}
-                            <div className="w-full md:w-14 h-14 relative rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+                            <div className="w-14 h-14 relative rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
                                 <Image
                                     src={staff?.profilePicture || getFallbackImage(staff?.name || booking.staffName || booking.serviceName)}
                                     alt={staff?.name || booking.staffName || booking.serviceName}

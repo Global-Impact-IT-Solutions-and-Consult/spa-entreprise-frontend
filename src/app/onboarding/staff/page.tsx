@@ -38,10 +38,10 @@ const StaffCard = ({ staff, onEdit, onDelete }: StaffCardProps) => {
                         }
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={onEdit} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                        <button onClick={onEdit} className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
                             <FiEdit2 size={14} />
                         </button>
-                        <button onClick={onDelete} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <button onClick={onDelete} className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                             <FiTrash2 size={14} />
                         </button>
                     </div>

@@ -2,6 +2,7 @@
 
 import { useAuthStore } from '@/store/auth.store';
 import { Sidebar } from '@/components/modules/Sidebar';
+import { MobileBottomNav } from '@/components/modules/MobileBottomNav';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, Clock, X, Info, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -11,6 +12,7 @@ import { authService, UserNotification } from '@/services/auth.service';
 import { businessService } from '@/services/business.service';
 import { notificationService } from '@/services/notification.service';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function DashboardLayout({
   children,
@@ -132,8 +134,11 @@ export default function DashboardLayout({
       {/* Main Content */}
       <div className="flex flex-1 flex-col h-full overflow-hidden">
         {/* Header */}
-        <header className="flex h-20 min-h-[5rem] items-center justify-between border-b bg-white px-8 shrink-0">
-          <div>
+        <header className="flex h-16 lg:h-20 min-h-[4rem] lg:min-h-[5rem] items-center justify-between border-b bg-white px-4 lg:px-8 shrink-0">
+          <Link href="/" target="_blank" rel="noopener noreferrer" className="lg:hidden inline-block hover:opacity-80 transition-opacity">
+            <Image src="/Logo.svg" alt="iBookam Logo" width={110} height={36} />
+          </Link>
+          <div className="hidden lg:block">
             <h1 className="text-xl font-bold text-gray-900 leading-tight">
               Dashboard
             </h1>
@@ -148,7 +153,7 @@ export default function DashboardLayout({
               <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 className={cn(
-                  'relative p-2.5 bg-gray-50 text-[#192131] hover:text-gray-900 rounded-xl transition-all duration-200 cursor-pointer',
+                  'relative h-11 w-11 flex items-center justify-center bg-gray-50 text-[#192131] hover:text-gray-900 rounded-xl transition-all duration-200 cursor-pointer',
                   isNotificationsOpen && 'bg-amber-50 text-amber-600',
                 )}
               >
@@ -173,10 +178,10 @@ export default function DashboardLayout({
                 className="fixed inset-0 z-40 bg-transparent"
                 onClick={() => setIsNotificationsOpen(false)}
               />
-              <div className="absolute top-20 right-8 w-[440px] max-h-[700px] bg-white rounded-md shadow-2xl shadow-black/10 border border-gray-100 z-50 animate-in fade-in slide-in-from-top-2 flex flex-col overflow-hidden">
-                <div className="p-8 pb-4">
+              <div className="fixed inset-x-0 bottom-0 lg:absolute lg:inset-x-auto lg:bottom-auto top-auto lg:top-20 right-0 lg:right-8 w-full lg:w-[440px] max-h-[85vh] lg:max-h-[700px] bg-white rounded-t-2xl lg:rounded-md shadow-2xl shadow-black/10 border border-gray-100 z-50 flex flex-col overflow-hidden">
+                <div className="p-4 sm:p-6 lg:p-8 pb-4">
                   <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-2xl font-bold text-gray-900">
+                    <h3 className="text-xl lg:text-2xl font-bold text-gray-900">
                       Notifications
                     </h3>
                     <div className="flex items-center gap-3">
@@ -184,7 +189,7 @@ export default function DashboardLayout({
                         <button
                           onClick={handleMarkAllAsRead}
                           disabled={markingAll}
-                          className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1.5"
+                          className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1.5 p-2 -m-2"
                         >
                           {markingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                           Mark all as read
@@ -192,7 +197,7 @@ export default function DashboardLayout({
                       )}
                       <button
                         onClick={() => setIsNotificationsOpen(false)}
-                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors"
+                        className="h-10 w-10 flex items-center justify-center hover:bg-gray-100 rounded-lg text-gray-400 transition-colors"
                       >
                         <X className="h-5 w-5" strokeWidth={2.5} />
                       </button>
@@ -206,7 +211,7 @@ export default function DashboardLayout({
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={cn(
-                          'px-5 py-2.5 text-sm font-bold transition-all',
+                          'px-5 py-3 min-h-[44px] text-sm font-bold transition-all',
                           activeTab === tab
                             ? 'text-[#F59E0B] border-b-2 border-[#F59E0B]'
                             : 'text-gray-500 hover:bg-gray-50',
@@ -220,7 +225,7 @@ export default function DashboardLayout({
 
                 <div className="h-[1px] w-full bg-gray-50 mb-4" />
 
-                <div className="max-h-[520px] overflow-y-auto px-6 py-2 custom-scrollbar">
+                <div className="flex-1 lg:max-h-[520px] overflow-y-auto px-6 py-2 custom-scrollbar">
                   <div className="space-y-4 pb-6">
                     {isFetchingNotifications ? (
                       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -291,7 +296,7 @@ export default function DashboardLayout({
                                     e.stopPropagation();
                                     handleMarkAsRead(notif.id);
                                   }}
-                                  className="text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors z-10"
+                                  className="text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors z-10 p-2 -m-2"
                                 >
                                   Dismiss
                                 </button>
@@ -323,27 +328,29 @@ export default function DashboardLayout({
         </header>
 
         {isPending && (
-          <div className="bg-amber-50 border-b border-amber-100 flex items-center justify-between px-8 py-2 animate-in slide-in-from-top duration-300">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-[#F59E0B]" />
+          <div className="bg-amber-50 border-b border-amber-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 lg:px-8 py-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Clock className="h-4 w-4 text-[#F59E0B] shrink-0" />
               <span className="text-sm font-bold text-amber-700">
                 Account Pending Verification
               </span>
-              <span className="text-xs text-amber-600/80 font-medium ml-2">
+              <span className="text-xs text-amber-600/80 font-medium sm:ml-2">
                 Some features will be available once your business is verified.
               </span>
             </div>
             <Link
               href="/dashboard/contact-support"
-              className="h-8 rounded-lg border border-amber-200 bg-white text-amber-700 hover:bg-amber-50 hover:text-amber-800 font-bold text-xs px-3 flex items-center"
+              className="h-8 rounded-lg border border-amber-200 bg-white text-amber-700 hover:bg-amber-50 hover:text-amber-800 font-bold text-xs px-3 flex items-center w-fit"
             >
               Contact Support
             </Link>
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8">{children}</main>
       </div>
+
+      <MobileBottomNav />
     </div>
   );
 }

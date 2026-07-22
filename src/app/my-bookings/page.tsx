@@ -98,12 +98,12 @@ function MyBookingsContent() {
                 </div>
 
                 {/* Tabs */}
-                <div className="bg-gray-50 p-1.5 rounded-2xl inline-flex w-full md:w-auto mb-8">
+                <div className="bg-gray-50 p-1.5 rounded-2xl flex w-full md:w-auto mb-8 overflow-x-auto no-scrollbar">
                     {tabs.map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
-                            className={`flex-1 md:flex-none px-6 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === tab
+                            className={`shrink-0 whitespace-nowrap px-6 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === tab
                                 ? "bg-[#E89D24] text-white shadow-sm"
                                 : "text-gray-500 hover:text-gray-700"
                                 }`}

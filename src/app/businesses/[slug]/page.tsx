@@ -222,12 +222,12 @@ export default function BusinessDetailsPage() {
                     {/* Main Content Area */}
                     <div className="flex-1 min-w-0">
                         {/* Tabs */}
-                        <div className="bg-gray-100/50 p-1.5 rounded-md flex gap-1 mb-10 w-fit w-full overflow-auto">
+                        <div className="bg-gray-100/50 p-1.5 rounded-md flex gap-1 mb-10 w-full overflow-x-auto no-scrollbar">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`px-8 py-3 rounded-md text-sm font-bold transition-all ${activeTab === tab
+                                    className={`shrink-0 whitespace-nowrap px-8 py-3 rounded-md text-sm font-bold transition-all ${activeTab === tab
                                         ? "bg-[#E89D24] text-white shadow-lg shadow-yellow-500/20"
                                         : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
                                         }`}

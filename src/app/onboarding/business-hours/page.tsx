@@ -147,10 +147,12 @@ export default function BusinessHoursPage() {
                                 {/* Day name + open/closed toggle */}
                                 <div className="flex items-center justify-between border-b border-gray-200 p-5">
                                     <span className="text-base font-bold text-gray-900">{day.label}</span>
-                                    <Switch
-                                        checked={!dayData.closed}
-                                        onCheckedChange={(checked) => handleDayToggle(day.id, checked)}
-                                    />
+                                    <label className="p-2 -m-2 inline-flex items-center cursor-pointer">
+                                        <Switch
+                                            checked={!dayData.closed}
+                                            onCheckedChange={(checked) => handleDayToggle(day.id, checked)}
+                                        />
+                                    </label>
                                 </div>
 
                                 {/* From */}
@@ -183,11 +185,13 @@ export default function BusinessHoursPage() {
                                         <FiClock className="h-4 w-4" />
                                         <span className="text-xs font-medium">Available 24/hours</span>
                                     </div>
-                                    <Switch
-                                        checked={dayData.allDay}
-                                        disabled={dayData.closed}
-                                        onCheckedChange={(checked) => handle24hrToggle(day.id, checked)}
-                                    />
+                                    <label className="p-2 -m-2 inline-flex items-center cursor-pointer">
+                                        <Switch
+                                            checked={dayData.allDay}
+                                            disabled={dayData.closed}
+                                            onCheckedChange={(checked) => handle24hrToggle(day.id, checked)}
+                                        />
+                                    </label>
                                 </div>
                             </div>
                         );

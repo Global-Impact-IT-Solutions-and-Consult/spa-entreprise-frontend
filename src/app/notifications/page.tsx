@@ -44,7 +44,7 @@ export default function NotificationsPage() {
                 <div className="flex items-center gap-3 mt-1">
                     <button 
                         onClick={() => router.push(`/reviews/${notif.metadata.bookingId}`)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E89D24] hover:bg-[#D97706] text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                        className="flex items-center gap-1.5 px-3 py-2.5 bg-[#E89D24] hover:bg-[#D97706] text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
                     >
                         <Star className="w-3.5 h-3.5 fill-current" />
                         Leave a Review
@@ -52,7 +52,7 @@ export default function NotificationsPage() {
                     {notif.metadata?.bookingId && (
                         <button 
                             onClick={() => router.push(`/bookings/${notif.metadata.bookingId}/cancel`)}
-                            className="px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-bold rounded-lg transition-colors"
+                            className="px-3 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-bold rounded-lg transition-colors"
                         >
                             Cancel Booking
                         </button>
@@ -64,9 +64,9 @@ export default function NotificationsPage() {
         if (notif.read) return null;
 
         return (
-            <button 
+            <button
                 onClick={() => handleMarkAsRead(notif.id)}
-                className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-2 -m-2 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
             >
                 Dismiss
             </button>
@@ -228,7 +228,7 @@ export default function NotificationsPage() {
                                 variant="outline" 
                                 onClick={handleMarkAllAsRead}
                                 disabled={markingAll}
-                                className="sm:self-end h-10 px-4 rounded-xl text-xs font-bold border-gray-200 hover:border-amber-500 hover:text-amber-600 transition-all shadow-sm flex items-center gap-2"
+                                className="sm:self-end h-11 px-4 rounded-xl text-xs font-bold border-gray-200 hover:border-amber-500 hover:text-amber-600 transition-all shadow-sm flex items-center gap-2"
                             >
                                 {markingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                                 Mark all as read

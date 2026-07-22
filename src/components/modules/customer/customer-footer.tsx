@@ -151,7 +151,7 @@ export function CustomerFooter() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 disabled={isLoading}
-                                className="flex-1 px-4 py-2 rounded-md text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E89D24] disabled:opacity-50 disabled:bg-gray-100"
+                                className="flex-1 min-w-0 px-4 py-2 rounded-md text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#E89D24] disabled:opacity-50 disabled:bg-gray-100"
                             />
                             <Button
                                 type="submit"

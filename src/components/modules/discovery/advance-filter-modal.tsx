@@ -62,7 +62,7 @@ export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: A
 
     return (
         <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-            <DialogContent className="sm:max-w-[480px] m-auto p-6 rounded-[24px] border border-gray-100 shadow-xl bg-white focus:outline-none">
+            <DialogContent className="sm:max-w-[480px] m-auto p-6 rounded-[24px] border border-gray-100 shadow-xl bg-white focus:outline-none max-h-[90vh] overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-1">
                     <h2 className="text-xl font-bold font-playfair text-[#1F2937]">Advance Filter</h2>
@@ -78,7 +78,7 @@ export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: A
                         <div className="pt-2">
                             <div className="flex items-center gap-4">
                                 <span className="text-sm font-medium text-gray-400">₦2k</span>
-                                <div className="relative flex-1 h-1.5 flex items-center">
+                                <div className="relative flex-1 h-10 flex items-center">
                                     <input
                                         type="range"
                                         min={minPrice}
@@ -86,17 +86,17 @@ export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: A
                                         step={1000}
                                         value={filters.maxPrice}
                                         onChange={(e) => setFilters({ ...filters, maxPrice: parseInt(e.target.value) })}
-                                        className="absolute w-full h-full opacity-0 cursor-pointer z-10"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     />
                                     {/* Custom Track */}
-                                    <div className="absolute w-full h-full bg-gray-200 rounded-full" />
+                                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-gray-200 rounded-full" />
                                     <div
-                                        className="absolute h-full bg-[#3B82F6] rounded-full"
+                                        className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-[#3B82F6] rounded-full"
                                         style={{ width: `${progressPercent}%` }}
                                     />
                                     {/* Custom Thumb */}
                                     <div
-                                        className="absolute w-4 h-4 bg-gray-500 border-2 border-white rounded-full shadow-sm -ml-2 pointer-events-none"
+                                        className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-gray-500 border-2 border-white rounded-full shadow-sm -ml-2 pointer-events-none"
                                         style={{ left: `${progressPercent}%` }}
                                     />
                                 </div>
@@ -159,7 +159,7 @@ export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: A
                                 <button
                                     key={option.value}
                                     onClick={() => setFilters({ ...filters, rating: option.value })}
-                                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filters.rating === option.value
+                                    className={`px-3 py-2.5 rounded-full text-xs font-medium transition-colors ${filters.rating === option.value
                                         ? "bg-[#FFF6ED] text-[#E89D24]"
                                         : "bg-gray-50 text-gray-500 hover:bg-gray-100"
                                         }`}

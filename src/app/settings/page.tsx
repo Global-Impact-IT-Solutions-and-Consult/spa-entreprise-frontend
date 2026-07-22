@@ -301,7 +301,7 @@ export default function SettingsPage() {
 
                             <div className="space-y-4">
                                 {/* Password */}
-                                <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-xl border border-gray-100">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 bg-gray-50/50 rounded-xl border border-gray-100">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-100">
                                             <Lock className="w-4 h-4 text-gray-400" />
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                                 </div>
 
                                 {/* Two-Factor Auth */}
-                                <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-xl border border-gray-100">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 bg-gray-50/50 rounded-xl border border-gray-100">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-100">
                                             <Shield className="w-4 h-4 text-gray-400" />
@@ -337,13 +337,15 @@ export default function SettingsPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <Switch
-                                        checked={securitySettings?.mfaEnabled || false}
-                                        onCheckedChange={(checked) => {
-                                            setMfaMode(checked ? "enable" : "disable");
-                                            setIsMfaModalOpen(true);
-                                        }}
-                                    />
+                                    <label className="p-2 -m-2 inline-flex items-center cursor-pointer self-start sm:self-auto">
+                                        <Switch
+                                            checked={securitySettings?.mfaEnabled || false}
+                                            onCheckedChange={(checked) => {
+                                                setMfaMode(checked ? "enable" : "disable");
+                                                setIsMfaModalOpen(true);
+                                            }}
+                                        />
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -362,23 +364,25 @@ export default function SettingsPage() {
                                 <p className="text-sm text-gray-500">Configure how and when you receive notifications</p>
 
                                 <div className="space-y-6 pt-2">
-                                    <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4 border-b border-gray-100">
                                         <div>
                                             <p className="font-bold text-gray-900">Email Notifications</p>
                                             <p className="text-sm text-gray-400">Receive updates and alerts via email</p>
                                         </div>
-                                        <Switch
-                                            checked={preferences.emailNotifications}
-                                            onCheckedChange={(val) => handleToggle("emailNotifications", val)}
-                                            disabled={updating === "emailNotifications"}
-                                            className="data-[state=checked]:bg-emerald-500"
-                                        />
+                                        <label className="p-2 -m-2 inline-flex items-center cursor-pointer self-start sm:self-auto">
+                                            <Switch
+                                                checked={preferences.emailNotifications}
+                                                onCheckedChange={(val) => handleToggle("emailNotifications", val)}
+                                                disabled={updating === "emailNotifications"}
+                                                className="data-[state=checked]:bg-emerald-500"
+                                            />
+                                        </label>
                                     </div>
 
                                     {/* Granular Settings */}
                                     <div className="space-y-4">
                                         {/* Up Coming Booking */}
-                                        <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-100 shadow-sm">
                                                     <Calendar className="w-5 h-5 text-gray-400" />
@@ -388,16 +392,18 @@ export default function SettingsPage() {
                                                     <p className="text-sm text-gray-400">Let you know your next boking</p>
                                                 </div>
                                             </div>
-                                            <Switch
-                                                checked={preferences.upcomingBooking}
-                                                onCheckedChange={(val) => handleToggle("upcomingBooking", val)}
-                                                disabled={updating === "upcomingBooking"}
-                                                className="data-[state=checked]:bg-emerald-500"
-                                            />
+                                            <label className="p-2 -m-2 inline-flex items-center cursor-pointer self-start sm:self-auto">
+                                                <Switch
+                                                    checked={preferences.upcomingBooking}
+                                                    onCheckedChange={(val) => handleToggle("upcomingBooking", val)}
+                                                    disabled={updating === "upcomingBooking"}
+                                                    className="data-[state=checked]:bg-emerald-500"
+                                                />
+                                            </label>
                                         </div>
 
                                         {/* Payment Notifications */}
-                                        <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-100 shadow-sm">
                                                     <CreditCard className="w-5 h-5 text-gray-400" />
@@ -407,16 +413,18 @@ export default function SettingsPage() {
                                                     <p className="text-sm text-gray-400">When payments are received or released</p>
                                                 </div>
                                             </div>
-                                            <Switch
-                                                checked={preferences.paymentNotifications}
-                                                onCheckedChange={(val) => handleToggle("paymentNotifications", val)}
-                                                disabled={updating === "paymentNotifications"}
-                                                className="data-[state=checked]:bg-emerald-500"
-                                            />
+                                            <label className="p-2 -m-2 inline-flex items-center cursor-pointer self-start sm:self-auto">
+                                                <Switch
+                                                    checked={preferences.paymentNotifications}
+                                                    onCheckedChange={(val) => handleToggle("paymentNotifications", val)}
+                                                    disabled={updating === "paymentNotifications"}
+                                                    className="data-[state=checked]:bg-emerald-500"
+                                                />
+                                            </label>
                                         </div>
 
                                         {/* System Alerts */}
-                                        <div className="flex items-center justify-between p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-100 shadow-sm">
                                                     <Info className="w-5 h-5 text-gray-400" />
@@ -426,12 +434,14 @@ export default function SettingsPage() {
                                                     <p className="text-sm text-gray-400">Important platform updates and maintenance</p>
                                                 </div>
                                             </div>
-                                            <Switch
-                                                checked={preferences.systemAlerts}
-                                                onCheckedChange={(val) => handleToggle("systemAlerts", val)}
-                                                disabled={updating === "systemAlerts"}
-                                                className="data-[state=checked]:bg-emerald-500"
-                                            />
+                                            <label className="p-2 -m-2 inline-flex items-center cursor-pointer self-start sm:self-auto">
+                                                <Switch
+                                                    checked={preferences.systemAlerts}
+                                                    onCheckedChange={(val) => handleToggle("systemAlerts", val)}
+                                                    disabled={updating === "systemAlerts"}
+                                                    className="data-[state=checked]:bg-emerald-500"
+                                                />
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -449,7 +459,7 @@ export default function SettingsPage() {
                                 <h2 className="text-xl font-bold text-gray-900 font-serif">Danger Zone</h2>
                             </div>
 
-                            <div className="p-6 bg-red-50/50 rounded-xl border border-red-100 flex items-center justify-between">
+                            <div className="p-6 bg-red-50/50 rounded-xl border border-red-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-red-100">
                                         <Trash2 className="w-4 h-4 text-red-400" />

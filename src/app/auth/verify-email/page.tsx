@@ -161,7 +161,7 @@ function VerifyEmailContent() {
                                 className="text-left"
                             />
 
-                            <div className="flex items-center justify-between text-[11px] font-medium">
+                            <div className="flex items-center justify-between text-xs font-medium">
                                 <div className="flex items-center gap-1.5 text-gray-400">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                                     {formatTime(timeLeft)}

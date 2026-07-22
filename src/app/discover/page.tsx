@@ -265,7 +265,7 @@ function DiscoverContent() {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
                 {/* Header Section */}
                 <div className="mb-10">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight font-playfair">Discover services</h1>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight font-playfair">Discover services</h1>
                     <p className="text-gray-600 max-w-2xl leading-relaxed">
                         Browse wellness services from trusted businesses. Book in-store or home services at your convenience.
                     </p>
@@ -333,7 +333,7 @@ function DiscoverContent() {
                         </div>
                         <Button
                             onClick={handleSearchClick}
-                            className="h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold rounded-xl shadow-lg shadow-yellow-500/20"
+                            className="h-12 px-8 w-full md:w-auto bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold rounded-xl shadow-lg shadow-yellow-500/20"
                         >
                             Search
                         </Button>

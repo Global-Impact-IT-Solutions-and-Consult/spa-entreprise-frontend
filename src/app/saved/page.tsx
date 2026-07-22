@@ -111,11 +111,11 @@ export default function SavedPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex items-center gap-8 mb-8 border-b border-gray-100">
+                <div className="flex items-center gap-8 mb-8 border-b border-gray-100 overflow-x-auto no-scrollbar">
                     <button
                         onClick={() => setActiveTab("businesses")}
                         className={cn(
-                            "pb-4 text-sm font-bold transition-all relative",
+                            "shrink-0 whitespace-nowrap pb-4 text-sm font-bold transition-all relative",
                             activeTab === "businesses" ? "text-[#E89D24]" : "text-gray-400 hover:text-gray-600"
                         )}
                     >
@@ -127,7 +127,7 @@ export default function SavedPage() {
                     <button
                         onClick={() => setActiveTab("services")}
                         className={cn(
-                            "pb-4 text-sm font-bold transition-all relative",
+                            "shrink-0 whitespace-nowrap pb-4 text-sm font-bold transition-all relative",
                             activeTab === "services" ? "text-[#E89D24]" : "text-gray-400 hover:text-gray-600"
                         )}
                     >

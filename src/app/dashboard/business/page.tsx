@@ -513,7 +513,7 @@ export default function BusinessProfilePage() {
             <div className="relative mb-8">
                 {/* Cover Image — clickable to upload */}
                 <div
-                    className="relative w-full h-[360px] rounded-2xl overflow-hidden bg-gray-100 cursor-pointer group"
+                    className="relative w-full h-[220px] sm:h-[280px] md:h-[360px] rounded-2xl overflow-hidden bg-gray-100 cursor-pointer group"
                     onClick={() => coverImageInputRef.current?.click()}
                 >
                     {isLoadingCoverImage ? (
@@ -548,7 +548,7 @@ export default function BusinessProfilePage() {
                     )}
 
                     {/* Overlay badges at bottom of cover */}
-                    <div className="absolute bottom-4 left-[240px] md:left-[260px] flex items-center gap-3" onClick={e => e.stopPropagation()}>
+                    <div className="absolute bottom-2 sm:bottom-4 left-28 sm:left-40 md:left-[240px] lg:left-[260px] right-2 sm:right-4 flex flex-wrap items-center gap-2 sm:gap-3" onClick={e => e.stopPropagation()}>
                         {business?.status?.toLowerCase() == 'pending_approval' ? <div className="flex items-center gap-2 bg-[#F59E0B] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
                             <FaInfoCircle className="h-4 w-4" />
                             Pending Approval
@@ -565,7 +565,7 @@ export default function BusinessProfilePage() {
 
                 {/* Profile Image — absolutely positioned, overlapping bottom-left, clickable to upload */}
                 <div
-                    className="absolute bottom-0 left-6 translate-y-1/2 w-[200px] h-[200px] rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-gray-100 z-10 cursor-pointer group"
+                    className="absolute bottom-0 left-4 sm:left-6 translate-y-1/2 w-20 h-20 sm:w-32 sm:h-32 md:w-[200px] md:h-[200px] rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-gray-100 z-10 cursor-pointer group"
                     onClick={() => profileImageInputRef.current?.click()}
                 >
                     {isLoadingProfileImage ? (
@@ -609,9 +609,9 @@ export default function BusinessProfilePage() {
             </div>
 
             {/* Business Info — sits below cover, padded left to clear overlapping primary image */}
-            <div className="flex items-end justify-between gap-6 mb-8 pl-[240px] pt-4">
+            <div className="flex flex-col items-start sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-8 pl-24 sm:pl-32 md:pl-[240px] pt-4">
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
                         {business?.businessName}
                     </h2>
 
@@ -674,8 +674,8 @@ export default function BusinessProfilePage() {
             </div>
 
             {/* Tabs Navigation */}
-            <div className="border-b border-gray-100 mb-8">
-                <nav className="flex gap-8">
+            <div className="border-b border-gray-100 mb-8 overflow-x-auto no-scrollbar">
+                <nav className="flex gap-6 sm:gap-8 w-max min-w-full">
                     {tabs.filter(t => t.label !== "Settings").map((tab) => {
                         const isActive = activeTab === tab.label;
                         return (
@@ -683,7 +683,7 @@ export default function BusinessProfilePage() {
                                 key={tab.label}
                                 onClick={() => setActiveTab(tab.label)}
                                 className={cn(
-                                    "flex items-center gap-2 px-2 py-4 text-sm font-bold transition-all relative",
+                                    "flex items-center gap-2 px-2 py-4 text-sm font-bold whitespace-nowrap transition-all relative",
                                     isActive
                                         ? "text-[#F59E0B]"
                                         : "text-gray-400 hover:text-gray-600"
@@ -705,7 +705,7 @@ export default function BusinessProfilePage() {
                 <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-10 space-y-10 animate-in fade-in duration-300 mb-8">
                     <form className="space-y-10" onSubmit={handleSaveProfile}>
                         <section className="space-y-8">
-                            <h3 className="text-2xl font-bold text-gray-900">Business Information</h3>
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Business Information</h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                 <div className="md:col-span-2">

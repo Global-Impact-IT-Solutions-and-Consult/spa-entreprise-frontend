@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Bell, CreditCard, User, Loader2, Camera, X, Calendar, CheckCircle, CheckCircle2, Clock, Star } from 'lucide-react';
+import { Bell, CreditCard, User, Loader2, Camera, X, Calendar, CheckCircle, CheckCircle2, Clock, Star, Save } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/auth.store";
@@ -39,112 +39,43 @@ export default function SettingsPage() {
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto pb-20 animate-in fade-in duration-300">
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900 leading-tight">Settings</h1>
+            <div className='my-5 md:my-0'>
+                <h1 className="text-2xl sm:text-2xl font-bold text-gray-900 leading-tight">Settings</h1>
                 <p className="text-sm text-gray-500 font-medium">Change settings</p>
             </div>
 
             {/* Tabs Navigation & Save Button — Sticky Container */}
             <div className="sticky top-[-2rem] z-30 bg-gray-50/95 backdrop-blur-md py-4 transition-all -mx-8 px-8 border-b border-gray-200/50">
                 <div className="max-w-5xl mx-auto flex items-center justify-between">
-                    <div className="bg-gray-100/70 p-1.5 rounded-xl inline-flex gap-1 shadow-sm border border-gray-200/20">
-                        {tabs.map((tab) => {
-                            const isActive = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as TabType)}
-                                    className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${isActive
-                                        ? 'bg-[#F59E0B] text-white shadow-md'
-                                        : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'
-                                        }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            );
-                        })}
+                    <div className="overflow-x-auto no-scrollbar">
+                        <div className="bg-gray-100/70 p-1.5 rounded-xl inline-flex gap-1 shadow-sm border border-gray-200/20 w-max">
+                            {tabs.map((tab) => {
+                                const isActive = activeTab === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id as TabType)}
+                                        className={`px-5 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 ${isActive
+                                            ? 'bg-[#F59E0B] text-white shadow-md'
+                                            : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'
+                                            }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-
-                    {/* Save Changes pinned to top-right of tab bar — only for profile */}
-                    {activeTab === 'profile' && <SaveProfileButton user={user} onUpdate={updateUser} />}
                 </div>
             </div>
 
             {/* Tab Content */}
-            <div className="bg-white rounded-[2rem] p-10 shadow-xl shadow-black/5 border border-gray-100 min-h-[600px] animate-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white rounded p-5 shadow-xl shadow-black/5 border border-gray-100 min-h-[600px] animate-in slide-in-from-bottom-4 duration-500">
                 {activeTab === 'profile' && <UserProfileTab user={user} onUpdate={updateUser} />}
                 {activeTab === 'company' && <CompanySettingTab />}
                 {activeTab === 'notifications' && <NotificationsTab />}
             </div>
         </div>
-    );
-}
-
-// ─── Shared save button hoisted to tab bar ─────────────────────────────────────
-function SaveProfileButton({ user, onUpdate }: { user: any; onUpdate: (u: any) => void }) {
-    const [isSaving, setIsSaving] = useState(false);
-    const businessId = user?.businesses?.[0]?.id;
-
-    useEffect(() => {
-        const handler = async (e: any) => {
-            const { profileData, timezone, businessProfile } = e.detail as { profileData: UpdateProfileDto; timezone: string; businessProfile: any };
-            setIsSaving(true);
-            try {
-                // 1. Save user profile (name, phone)
-                const updated = await userService.updateProfile(profileData);
-                onUpdate(updated);
-
-                // 2. Save business profile (merge with existing to satisfy validation)
-                if (businessId && businessProfile) {
-                    const updateData = {
-                        ...businessProfile,
-                        timezone: timezone || businessProfile.timezone,
-                    };
-
-                    // Extract address fields from addressDetails or addressRelation if top-level fields are missing
-                    const ad = updateData.addressDetails || updateData.addressRelation;
-
-                    // Ensure we only send fields UpdateProfileDto expects (omit id, timestamps etc)
-                    const cleanData: any = {
-                        businessTypeCode: updateData.businessTypeCode,
-                        businessName: updateData.businessName,
-                        phone: updateData.phone,
-                        description: updateData.description,
-                        country: updateData.country || ad?.country,
-                        state: updateData.state || ad?.state,
-                        city: updateData.city || ad?.city,
-                        address: updateData.address || ad?.address,
-                        timezone: updateData.timezone,
-                        cacNumber: updateData.cacNumber,
-                        addressNote: updateData.addressNote || ad?.note,
-                        amenities: updateData.amenities,
-                        operatingHours: updateData.operatingHours,
-                        coverImage: updateData.coverImage
-                    };
-                    await businessService.updateProfile(businessId, cleanData);
-                }
-                toaster.create({ title: 'Profile Updated', type: 'success' });
-            } catch (err: any) {
-                const message = err.response?.data?.message || 'Please try again.';
-                toaster.create({ title: 'Update Failed', description: message, type: 'error' });
-                console.error('Update Profile Error:', err.response?.data);
-            } finally {
-                setIsSaving(false);
-            }
-        };
-        window.addEventListener('settings:save-profile', handler);
-        return () => window.removeEventListener('settings:save-profile', handler);
-    }, [onUpdate, businessId]);
-
-    return (
-        <button
-            disabled={isSaving}
-            onClick={() => window.dispatchEvent(new CustomEvent('settings:trigger-save'))}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50"
-        >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Save Changes
-        </button>
     );
 }
 
@@ -180,16 +111,53 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, businessId]);
 
-    // Listen for save trigger — pass profileData + timezone + full businessProfile
-    useEffect(() => {
-        const handler = () => {
-            window.dispatchEvent(new CustomEvent('settings:save-profile', {
-                detail: { profileData: formData, timezone, businessProfile },
-            }));
-        };
-        window.addEventListener('settings:trigger-save', handler);
-        return () => window.removeEventListener('settings:trigger-save', handler);
-    }, [formData, timezone]);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            // 1. Save user profile (name, phone)
+            const updated = await userService.updateProfile(formData);
+            onUpdate(updated);
+
+            // 2. Save business profile (merge with existing to satisfy validation)
+            if (businessId && businessProfile) {
+                const updateData = {
+                    ...businessProfile,
+                    timezone: timezone || businessProfile.timezone,
+                };
+
+                // Extract address fields from addressDetails or addressRelation if top-level fields are missing
+                const ad = updateData.addressDetails || updateData.addressRelation;
+
+                // Ensure we only send fields UpdateProfileDto expects (omit id, timestamps etc)
+                const cleanData: any = {
+                    businessTypeCode: updateData.businessTypeCode,
+                    businessName: updateData.businessName,
+                    phone: updateData.phone,
+                    description: updateData.description,
+                    country: updateData.country || ad?.country,
+                    state: updateData.state || ad?.state,
+                    city: updateData.city || ad?.city,
+                    address: updateData.address || ad?.address,
+                    timezone: updateData.timezone,
+                    cacNumber: updateData.cacNumber,
+                    addressNote: updateData.addressNote || ad?.note,
+                    amenities: updateData.amenities,
+                    operatingHours: updateData.operatingHours,
+                    coverImage: updateData.coverImage
+                };
+                await businessService.updateProfile(businessId, cleanData);
+            }
+            toaster.create({ title: 'Profile Updated', type: 'success' });
+        } catch (err: any) {
+            const message = err.response?.data?.message || 'Please try again.';
+            toaster.create({ title: 'Update Failed', description: message, type: 'error' });
+            console.error('Update Profile Error:', err.response?.data);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -220,7 +188,7 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
     const initials = `${formData.firstName?.[0] || ''}${formData.lastName?.[0] || ''}`.toUpperCase() || 'U';
 
     return (
-        <div className="space-y-8 max-w-3xl">
+        <div className="space-y-8 max-w-3xl pb-24">
             {/* Header */}
             <div className="flex items-center gap-3">
                 <div className="h-11 w-11 rounded-xl bg-amber-50 flex items-center justify-center">
@@ -272,7 +240,7 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
             <div className="space-y-5">
                 <h4 className="text-sm font-bold text-gray-900">Personal Information</h4>
 
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <CustomInput
                         label="First Name"
                         value={formData.firstName}
@@ -289,7 +257,7 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <CustomInput
                         label="Email Address"
                         value={user?.email || ''}
@@ -306,7 +274,7 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* Job Title — hardcoded for business owners */}
                     <CustomInput
                         label="Job Title"
@@ -340,7 +308,7 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
                     </div>
                     <Button
                         onClick={() => setShowPasswordForm(v => !v)}
-                        className="h-9 px-5 bg-[#F59E0B] hover:bg-[#D97706] text-white text-sm font-semibold rounded-xl"
+                        className="h-9 px-5 bg-[#F59E0B] hover:bg-[#D97706] text-white text-sm font-semibold rounded"
                     >
                         {showPasswordForm ? 'Cancel' : 'Change Password'}
                     </Button>
@@ -349,6 +317,16 @@ function UserProfileTab({ user, onUpdate }: { user: any; onUpdate: (user: any) =
                 {showPasswordForm && (
                     <PasswordForm onClose={() => setShowPasswordForm(false)} />
                 )}
+            </div>
+            <div className="fixed inset-x-0 bottom-20 lg:bottom-6 right-5 lg:right-20 lg:left-64 z-20 flex justify-end px-4 lg:px-8 pointer-events-none">
+                <Button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="pointer-events-auto bg-[#F59E0B] hover:bg-[#D97706] text-white gap-2 h-11 px-6 font-bold w-fit disabled:opacity-60"
+                >
+                    {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                    {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
             </div>
         </div>
     );
@@ -386,7 +364,7 @@ function PasswordForm({ onClose }: { onClose: () => void }) {
                 placeholder="Enter current password"
                 className="h-[50px] rounded-xl bg-white"
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <CustomInput
                     type="password"
                     label="New Password"
@@ -409,13 +387,13 @@ function PasswordForm({ onClose }: { onClose: () => void }) {
                 <p className="text-xs text-red-500">{error}</p>
             )}
             <div className="flex justify-end gap-3 pt-1">
-                <button onClick={onClose} className="px-5 py-2 text-sm font-semibold text-gray-500 rounded-xl border border-gray-200 hover:bg-gray-100">
+                <button onClick={onClose} className="px-5 py-2 text-sm font-semibold text-gray-500 rounded border border-gray-200 hover:bg-gray-100">
                     Cancel
                 </button>
                 <Button
                     onClick={handleSave}
                     disabled={isSaving || !passwords.currentPassword || !passwords.newPassword || !passwords.confirmPassword}
-                    className="h-9 px-5 bg-[#F59E0B] hover:bg-[#D97706] text-white text-sm font-semibold rounded-xl"
+                    className="h-9 px-5 bg-[#F59E0B] hover:bg-[#D97706] text-white text-sm font-semibold rounded"
                 >
                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update Password'}
                 </Button>
@@ -543,7 +521,7 @@ function CompanySettingTab() {
             {header}
 
             <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <CustomInput
                         label="Bank Name"
                         value={paymentData.bankName}

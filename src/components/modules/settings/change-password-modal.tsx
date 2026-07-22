@@ -141,14 +141,14 @@ export function ChangePasswordModal({ open, onClose, mfaEnabled = false }: Chang
                             <button
                                 type="button"
                                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 p-3 text-gray-400 hover:text-gray-600 focus:outline-none"
                             >
                                 {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-[#374151]">New Password</label>
                             <input
@@ -184,13 +184,13 @@ export function ChangePasswordModal({ open, onClose, mfaEnabled = false }: Chang
                                 <div className="h-px bg-gray-200 flex-1"></div>
                             </div>
 
-                            <div className="bg-[#F8FAFC] p-6 rounded-xl border border-gray-100 flex flex-col items-center">
+                            <div className="bg-[#F8FAFC] p-4 sm:p-6 rounded-xl border border-gray-100 flex flex-col items-center w-full">
                                 <h3 className="text-[15px] font-bold text-[#1F2937] mb-1">Verification Code</h3>
                                 <p className="text-sm text-gray-500 mb-4 text-center">
                                     Enter the 6-digit code from your authenticator app.
                                 </p>
-                                
-                                <div className="flex items-center justify-center gap-2">
+
+                                <div className="flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar max-w-full px-1">
                                     {[0, 1, 2].map((i) => (
                                         <input
                                             key={i}
@@ -202,10 +202,10 @@ export function ChangePasswordModal({ open, onClose, mfaEnabled = false }: Chang
                                             onChange={(e) => handleMfaChange(i, e.target.value)}
                                             onKeyDown={(e) => handleMfaKeyDown(i, e)}
                                             onPaste={handleMfaPaste}
-                                            className="w-12 h-14 text-center text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
+                                            className="w-9 h-11 sm:w-12 sm:h-14 shrink-0 text-center text-base sm:text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
                                         />
                                     ))}
-                                    <span className="text-gray-300 font-bold mx-1">-</span>
+                                    <span className="text-gray-300 font-bold mx-1 shrink-0">-</span>
                                     {[3, 4, 5].map((i) => (
                                         <input
                                             key={i}
@@ -217,7 +217,7 @@ export function ChangePasswordModal({ open, onClose, mfaEnabled = false }: Chang
                                             onChange={(e) => handleMfaChange(i, e.target.value)}
                                             onKeyDown={(e) => handleMfaKeyDown(i, e)}
                                             onPaste={handleMfaPaste}
-                                            className="w-12 h-14 text-center text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
+                                            className="w-9 h-11 sm:w-12 sm:h-14 shrink-0 text-center text-base sm:text-xl font-bold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all bg-white"
                                         />
                                     ))}
                                 </div>

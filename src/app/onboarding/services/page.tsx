@@ -34,10 +34,10 @@ const ServiceCard = ({ service, categoryName, onDelete, onEdit }: ServiceCardPro
                     {categoryName}
                 </span>
                 <div className="flex gap-2">
-                    <button onClick={onEdit} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                    <button onClick={onEdit} className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
                         <FiEdit2 size={14} />
                     </button>
-                    <button onClick={onDelete} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <button onClick={onDelete} className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                         <FiTrash2 size={14} />
                     </button>
                 </div>
@@ -61,7 +61,7 @@ const ServiceCard = ({ service, categoryName, onDelete, onEdit }: ServiceCardPro
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-y-4 gap-x-2 pt-4 border-t border-gray-50 mt-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-2 pt-4 border-t border-gray-50 mt-auto">
                 <div className="flex items-center gap-2 text-gray-400 border-r border-gray-300">
                     <FiClock className="h-4 w-4" />
                     <span className="text-xs font-bold text-gray-800">{service.duration}min</span>
@@ -477,14 +477,14 @@ export default function ServicesPage() {
                     setImagePreview(null);
                 }
             }}>
-                <DialogContent className='bg-white sm:max-w-2xl rounded-2xl p-0 overflow-hidden border-none h-[calc(100vh-4rem)]'>
-                    <div className="p-6">
-                        <DialogHeader className="mb-8">
+                <DialogContent className='bg-white sm:max-w-2xl rounded-2xl p-0 overflow-hidden border-none flex flex-col max-h-[calc(100vh-4rem)]'>
+                    <div className="p-6 flex flex-col flex-1 min-h-0">
+                        <DialogHeader className="mb-8 shrink-0">
                             <DialogTitle className="text-xl font-bold text-gray-900">Add New Service</DialogTitle>
                             <p className="text-xs font-normal text-gray-500">Add new services being offered by your business</p>
                         </DialogHeader>
 
-                        <div className="space-y-6 h-[calc(100vh-20rem)] overflow-y-auto">
+                        <div className="space-y-6 flex-1 min-h-0 overflow-y-auto">
                             <div className="space-y-2">
                                 <Label className="text-sm font-medium text-gray-400">Category</Label>
                                 <Select
@@ -516,7 +516,7 @@ export default function ServicesPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-400">Duration</Label>
                                     <Select
@@ -573,7 +573,7 @@ export default function ServicesPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-gray-400">On Site Amount</Label>
                                     <div className="relative">
@@ -665,7 +665,7 @@ export default function ServicesPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-center gap-4 mt-10">
+                        <div className="flex items-center justify-center gap-4 mt-10 shrink-0">
                             <Button
                                 variant="outline"
                                 onClick={() => setOpen(false)}
