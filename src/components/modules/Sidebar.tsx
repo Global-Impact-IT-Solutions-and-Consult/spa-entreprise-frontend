@@ -5,14 +5,7 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-    LayoutDashboard,
-    Store,
-    Briefcase,
-    Calendar,
-    Users,
     Home,
-    Clock,
-    Settings,
     Headset,
     LogOut,
     Loader2
@@ -21,16 +14,7 @@ import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { toaster } from "@/components/ui/toaster";
 import Image from "next/image";
-
-const sidebarItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: Calendar, label: "Bookings", href: "/dashboard/bookings" },
-    { icon: Store, label: "Business", href: "/dashboard/business" },
-    { icon: Briefcase, label: "Services", href: "/dashboard/services" },
-    { icon: Users, label: "Staffs", href: "/dashboard/staffs" },
-    { icon: Clock, label: "Working Hours", href: "/dashboard/working-hours" },
-    { icon: Settings, label: "Settings", href: "/dashboard/settings" },
-];
+import { dashboardNavItems } from "@/lib/dashboard-nav";
 
 export function Sidebar() {
     const pathname = usePathname();
@@ -64,15 +48,17 @@ export function Sidebar() {
     const isPending = status === "pending_approval" || status === "pending";
 
     return (
-        <div className="flex h-screen w-64 flex-col bg-[#1A1F2C] text-gray-400">
+        <div className="hidden lg:flex h-screen w-64 shrink-0 flex-col bg-[#1A1F2C] text-gray-400">
             {/* Logo Section */}
             <div className="p-6">
-                <Image src="/Logo_White.svg" alt="iBookam Logo" width={150} height={50} />
+                <Link href="/" target="_blank" rel="noopener noreferrer" className="inline-block opacity-100 hover:opacity-80 transition-opacity">
+                    <Image src="/Logo_White.svg" alt="iBookam Logo" width={150} height={50} />
+                </Link>
             </div>
 
             {/* Navigation Items */}
             <nav className="flex-1 space-y-1 px-3 py-4">
-                {sidebarItems.map((item) => {
+                {dashboardNavItems.map((item) => {
                     const isActive = pathname === item.href;
                     const isDisabled = isPending && item.label === "Bookings";
 

@@ -203,7 +203,7 @@ export default function DashboardNotificationsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 font-serif mb-2">Notifications</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 font-serif mb-2">Notifications</h1>
                     <p className="text-gray-500">Manage and track your business updates and alerts.</p>
                 </div>
                 {notifications.some(n => !n.read) && (

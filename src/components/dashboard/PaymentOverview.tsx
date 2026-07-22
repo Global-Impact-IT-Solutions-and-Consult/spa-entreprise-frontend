@@ -19,7 +19,7 @@ export const PaymentOverview: React.FC<PaymentOverviewProps> = ({ data }) => {
 
     return (
         <Card className="border-none shadow-sm bg-white overflow-hidden rounded-xl">
-            <CardContent className="p-8">
+            <CardContent className="p-4 sm:p-6 lg:p-8">
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Payment Overview</h2>
@@ -32,7 +32,7 @@ export const PaymentOverview: React.FC<PaymentOverviewProps> = ({ data }) => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Pending Card */}
-                    <div className="bg-[#FEF9EE] rounded-xl p-8 relative overflow-hidden">
+                    <div className="bg-[#FEF9EE] rounded-xl p-5 sm:p-6 lg:p-8 relative overflow-hidden">
                         <div className="flex items-center justify-between mb-4">
                             <div className='flex items-center gap-1'>
                                 <div className="h-10 w-10 bg-[#F59E0B1A] rounded-md flex items-center justify-center">
@@ -79,7 +79,7 @@ export const PaymentOverview: React.FC<PaymentOverviewProps> = ({ data }) => {
                     </div>
 
                     {/* Completed Card */}
-                    <div className="bg-[#F0FDF4] rounded-xl p-8 relative overflow-hidden">
+                    <div className="bg-[#F0FDF4] rounded-xl p-5 sm:p-6 lg:p-8 relative overflow-hidden">
                         <div className="flex items-center justify-between mb-4">
                             <div className='flex items-center gap-1'>
                                 <div className="h-10 w-10 bg-[#22C55E1A] rounded-md flex items-center justify-center">

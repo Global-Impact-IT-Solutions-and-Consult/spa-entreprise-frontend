@@ -137,9 +137,9 @@ export default function WorkingHoursPage() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 pb-24">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Manage Working Hours</h1>
-                <p className="text-gray-500 mt-1">Set days of the week you will be open for business and time for bookings</p>
+            <div className="my-5 md:my-0">
+                <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Manage Working Hours</h1>
+                <p className="text-gray-500 mt-1 text-sm  sm:text-base">Set days of the week you will be open for business and time for bookings</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -152,10 +152,12 @@ export default function WorkingHoursPage() {
                             {/* Day name + open/closed toggle */}
                             <div className="flex items-center justify-between border-b border-gray-200 p-5">
                                 <span className="text-base font-bold text-gray-900">{day.label}</span>
-                                <Switch
-                                    checked={!dayData.closed}
-                                    onCheckedChange={(checked) => handleDayToggle(day.id, checked)}
-                                />
+                                <label className="p-2 -m-2 inline-flex items-center cursor-pointer">
+                                    <Switch
+                                        checked={!dayData.closed}
+                                        onCheckedChange={(checked) => handleDayToggle(day.id, checked)}
+                                    />
+                                </label>
                             </div>
 
                             {/* From */}
@@ -200,11 +202,11 @@ export default function WorkingHoursPage() {
             </div>
 
             {/* Sticky Save Bar */}
-            <div className="fixed bottom-8 left-[calc(256px+2rem)] right-8 z-10 flex justify-end animate-in slide-in-from-bottom-5">
+            <div className="fixed inset-x-0 bottom-20 lg:bottom-6 lg:left-64 z-20 flex justify-end px-4 lg:px-8 pointer-events-none">
                 <Button
                     onClick={handleSaveHours}
                     disabled={isSaving}
-                    className="h-16 px-12 bg-[#F59E0B] hover:bg-[#D97706] text-white font-extrabold text-lg rounded-2xl shadow-2xl shadow-[#F59E0B]/40 flex items-center gap-3 transition-all hover:scale-105 active:scale-95"
+                    className="pointer-events-auto bg-[#F59E0B] hover:bg-[#D97706] text-white gap-2 h-11 px-6 font-bold w-fit disabled:opacity-60"
                 >
                     {isSaving ? <Loader2 className="h-6 w-6 animate-spin" /> : <Save className="h-6 w-6" />}
                     {isSaving ? "Saving..." : "Save Changes"}

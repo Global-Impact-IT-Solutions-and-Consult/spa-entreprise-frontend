@@ -58,7 +58,7 @@ export default function ContactSupportPage() {
                         <div className="p-3 bg-blue-50 rounded-xl mb-4">
                             <Mail className="h-7 w-7 text-blue-500" />
                         </div>
-                        <h1 className="text-2xl font-bold text-gray-900">Contact Support</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Contact Support</h1>
                         <p className="text-sm text-gray-500 mt-1">
                             Your account is currently pending verification.<br />
                             Have questions? We're here to help.

@@ -153,6 +153,12 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
+            {/* Greeting — mobile/tablet only, desktop shows this in the header */}
+            <div className="lg:hidden my-5 lg:my-0">
+                <h1 className="text-xl font-bold text-gray-900 leading-tight">Dashboard</h1>
+                <p className="text-xs text-gray-500">Welcome Back {user?.firstName}!</p>
+            </div>
+
             {/* Stats Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {statsData.map((stat, i) => (
@@ -161,7 +167,7 @@ export default function DashboardPage() {
                             <div className="flex items-start justify-between">
                                 <div>
                                     <p className="text-xs font-medium text-gray-400">{stat.label}</p>
-                                    <h3 className="mt-2 text-3xl font-bold text-gray-900 tracking-tight">{stat.value}</h3>
+                                    <h3 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{stat.value}</h3>
                                 </div>
                                 <div className={cn("rounded-lg p-2.5", stat.iconBg)}>
                                     <stat.icon className={cn("h-4 w-4", stat.iconColor)} strokeWidth={2.5} />
@@ -181,7 +187,7 @@ export default function DashboardPage() {
                 {/* Weekly Revenue Chart */}
                 <div className="lg:col-span-2 space-y-6">
                     <Card className="border-none shadow-sm overflow-hidden bg-white hover:shadow-md transition-all">
-                        <CardContent className="p-8">
+                        <CardContent className="p-4 sm:p-6 lg:p-8">
                             <div className="flex items-center justify-between mb-8">
                                 <h2 className="text-xl font-bold text-gray-900">Weekly Revenue</h2>
                                 <div className="relative w-fit">
@@ -224,7 +230,7 @@ export default function DashboardPage() {
 
                                 {/* Y-axis Labels */}
                                 {dashboardData?.weeklyRevenue && dashboardData.weeklyRevenue.length > 0 && (
-                                    <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] text-gray-300 -ml-12 pointer-events-none">
+                                    <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] text-gray-300 -ml-8 sm:-ml-10 lg:-ml-12 pointer-events-none">
                                         <span>{(maxRevenue / 1000).toFixed(0)}k</span>
                                         <span>{(maxRevenue * 0.75 / 1000).toFixed(0)}k</span>
                                         <span>{(maxRevenue * 0.5 / 1000).toFixed(0)}k</span>

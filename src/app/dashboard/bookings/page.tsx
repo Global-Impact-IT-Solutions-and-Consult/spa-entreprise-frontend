@@ -365,11 +365,11 @@ export default function BookingsPage() {
     };
 
     return (
-        <div className="p-8">
+        <div className="">
             <div className="flex items-end justify-between mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Bookings Management</h1>
-                    <p className="text-gray-500 mt-1">Manage appointments, track bookings, and handle scheduling for your business</p>
+                <div className="my-5 md:my-0">
+                    <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Bookings Management</h1>
+                    <p className="text-gray-500 mt-1 text-sm  sm:text-base">Manage appointments, track bookings, and handle scheduling for your business</p>
                 </div>
                 {/* <Button
                     onClick={() => setIsCreateModalOpen(true)}
@@ -401,13 +401,13 @@ export default function BookingsPage() {
 
             {/* Tabs & Filters */}
             <div className="space-y-6 mb-8">
-                <div className="flex items-center gap-8 border-b border-gray-200">
+                <div className="flex items-center gap-6 sm:gap-8 border-b border-gray-200 overflow-x-auto no-scrollbar">
                     {["Upcoming", "Completed", "Pending Cancellations", "Canceled"].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={cn(
-                                "pb-4 text-sm font-semibold transition-colors relative flex items-center gap-1",
+                                "pb-4 text-sm font-semibold whitespace-nowrap transition-colors relative flex items-center gap-1 shrink-0",
                                 activeTab === tab
                                     ? "text-[#F59E0B]"
                                     : "text-gray-400 hover:text-gray-600"
@@ -585,7 +585,7 @@ export default function BookingsPage() {
                         )}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                         {filteredBookings.map((booking) => (
                             <Card key={booking.id} className="border-none shadow-sm ring-1 ring-gray-100 overflow-hidden group">
                                 <CardContent className="p-0 h-full">

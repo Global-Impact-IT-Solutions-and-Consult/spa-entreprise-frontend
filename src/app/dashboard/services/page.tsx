@@ -101,14 +101,14 @@ export default function ManageServicesPage() {
 
     return (
         <div className="">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Manage Business Services</h1>
-                    <p className="text-gray-500 mt-1">Create new service, edit exiting service or delete services</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between">
+                <div className="my-5 md:my-0">
+                    <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Manage Business Services</h1>
+                    <p className="text-gray-500 mt-1 text-sm  sm:text-base">Create new service, edit exiting service or delete services</p>
                 </div>
                 <Button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-[#F59E0B] hover:bg-[#D97706] text-white gap-2 h-11 px-6 font-bold"
+                    className="bg-[#F59E0B] hover:bg-[#D97706] text-white gap-2 h-11 px-6 font-bold w-fit"
                 >
                     <Plus className="h-5 w-5" />
                     Create Service
