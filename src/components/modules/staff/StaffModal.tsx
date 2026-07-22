@@ -207,25 +207,25 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
                                 onDrop={handleDrop}
                                 onClick={() => fileInputRef.current?.click()}
                                 className={cn(
-                                    "relative border-2 border-dashed rounded flex items-center justify-center cursor-pointer transition-colors h-20",
+                                    "relative border-2 border-dashed rounded flex items-center justify-center cursor-pointer transition-colors min-h-[80px] py-3",
                                     isDragging ? "border-[#E59622] bg-amber-50" : "border-gray-200 hover:border-gray-300 bg-white"
                                 )}
                             >
                                 {imagePreview ? (
                                     <>
-                                        <img src={imagePreview} alt="Preview" className="h-full w-full object-cover rounded-xl" />
+                                        <img src={imagePreview} alt="Preview" className="h-20 w-full object-cover rounded-xl" />
                                         <button
                                             type="button"
                                             onClick={(e) => { e.stopPropagation(); setImageFile(null); setImagePreview(null); }}
-                                            className="absolute top-2 right-2 h-6 w-6 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50"
+                                            className="absolute top-2 right-2 h-8 w-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50"
                                         >
-                                            <X className="h-3 w-3 text-gray-500" />
+                                            <X className="h-3.5 w-3.5 text-gray-500" />
                                         </button>
                                     </>
                                 ) : (
-                                    <div className="flex flex-col items-center gap-2 text-gray-400">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 bg-gray-50 rounded-lg flex items-center justify-center">
+                                    <div className="flex flex-col items-center gap-2 text-gray-400 px-2">
+                                        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                                            <div className="h-10 w-10 bg-gray-50 rounded-lg flex items-center justify-center shrink-0">
                                                 <Upload className="h-5 w-5 text-gray-400" />
                                             </div>
                                             <span className="text-xs text-gray-500">Drag and Drop Here</span>
@@ -336,7 +336,7 @@ export const StaffModal = ({ businessId, staff, services, businessTypeIcon, isOp
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
                         <Button
                             variant="outline"
                             onClick={onClose}

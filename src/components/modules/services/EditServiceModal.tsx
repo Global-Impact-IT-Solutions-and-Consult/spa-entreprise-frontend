@@ -155,14 +155,14 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
 
     return (
         <Dialog open={isOpen} onOpenChange={(val) => { if (!val) onClose(); }}>
-            <DialogContent className='bg-white sm:max-w-2xl rounded-2xl p-0 overflow-hidden border-none h-[calc(100vh-4rem)]'>
-                <div className="p-6 pb-32 h-full flex flex-col">
+            <DialogContent className='bg-white sm:max-w-2xl rounded-2xl p-0 overflow-hidden border-none flex flex-col max-h-[calc(100vh-4rem)]'>
+                <div className="p-6 flex flex-col flex-1 min-h-0">
                     <DialogHeader className="mb-6 shrink-0">
                         <DialogTitle className="text-xl font-bold text-gray-900">Edit Service</DialogTitle>
                         <p className="text-xs font-normal text-gray-500">Update the details of your service</p>
                     </DialogHeader>
 
-                    <div className="space-y-5 h-[calc(100vh-17rem)] overflow-y-scroll">
+                    <div className="space-y-5 flex-1 min-h-0 overflow-y-auto">
                         {/* Category */}
                         <div className="space-y-2">
                             <Label className="text-sm font-medium text-gray-400">Category</Label>
@@ -198,7 +198,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                         </div>
 
                         {/* Duration + Buffer */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-sm font-medium text-gray-400">Duration</Label>
                                 <Select
@@ -257,7 +257,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                         </div>
 
                         {/* Prices */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-sm font-medium text-gray-400">On Site Amount</Label>
                                 <div className="relative">
@@ -318,7 +318,7 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                                     <button
                                         onClick={handleRemoveImage}
                                         type="button"
-                                        className="absolute top-5 right-5 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                        className="absolute top-5 right-5 p-2.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                                     >
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -337,19 +337,19 @@ export const EditServiceModal = ({ businessId, service, isOpen, onClose, onSucce
                         </div>
                     </div>
 
-                    {/* Footer buttons — fixed at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-4">
+                    {/* Footer buttons */}
+                    <div className="shrink-0 -mx-6 -mb-6 mt-6 p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row items-center gap-4">
                         <Button
                             variant="outline"
                             onClick={onClose}
-                            className="h-[52px] flex-1 rounded-lg border-gray-200 text-gray-500 font-bold text-base"
+                            className="h-[52px] w-full sm:flex-1 rounded-lg border-gray-200 text-gray-500 font-bold text-base"
                         >
                             Cancel
                         </Button>
                         <Button
                             onClick={handleUpdateService}
                             disabled={isSubmitting}
-                            className="h-[52px] flex-1 rounded-lg bg-[#E59622] hover:bg-[#d48a1f] text-white font-bold text-base"
+                            className="h-[52px] w-full sm:flex-1 rounded-lg bg-[#E59622] hover:bg-[#d48a1f] text-white font-bold text-base"
                         >
                             {isSubmitting ? "Updating..." : "Update Service"}
                         </Button>

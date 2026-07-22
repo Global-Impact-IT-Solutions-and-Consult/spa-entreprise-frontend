@@ -87,9 +87,9 @@ export function MFAModal({ open, onClose, mode, onSuccess }: MFAModalProps) {
 
     return (
         <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-            <DialogContent className="sm:max-w-[480px] p-8 rounded-[24px] border border-gray-100 shadow-xl bg-white">
+            <DialogContent className="sm:max-w-[480px] p-8 rounded-[24px] border border-gray-100 shadow-xl bg-white flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="space-y-4 mb-2">
+                <div className="space-y-4 mb-2 shrink-0">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-[#FFF6ED] rounded-full flex items-center justify-center">
@@ -100,15 +100,15 @@ export function MFAModal({ open, onClose, mode, onSuccess }: MFAModalProps) {
                             </h2>
                         </div>
                         <p className="text-gray-500 text-sm">
-                            {mode === "enable" 
-                                ? "Scan the QR code with your authenticator app to get started." 
+                            {mode === "enable"
+                                ? "Scan the QR code with your authenticator app to get started."
                                 : "Enter the 6-digit code from your app to disable MFA."}
                         </p>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="space-y-6 mt-4">
+                <div className="space-y-6 mt-4 flex-1 min-h-0 overflow-y-auto">
                     {mode === "enable" && (
                         <>
                             <div className="flex justify-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
@@ -133,9 +133,9 @@ export function MFAModal({ open, onClose, mode, onSuccess }: MFAModalProps) {
                                     <code className="text-sm font-mono text-gray-700 flex-1 break-all">
                                         {setupData?.secret || "••••••••••••••••"}
                                     </code>
-                                    <button 
+                                    <button
                                         onClick={copyToClipboard}
-                                        className="p-1.5 hover:bg-white rounded-md transition-colors text-gray-400 hover:text-[#E89D24]"
+                                        className="p-2.5 hover:bg-white rounded-md transition-colors text-gray-400 hover:text-[#E89D24]"
                                     >
                                         {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                                     </button>
@@ -155,29 +155,30 @@ export function MFAModal({ open, onClose, mode, onSuccess }: MFAModalProps) {
                             className="w-full h-14 text-center text-2xl font-bold tracking-[0.5em] rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#E89D24]/20 focus:border-[#E89D24] transition-all placeholder:text-gray-200"
                         />
                     </div>
+                </div>
 
-                    <div className="pt-4 flex flex-col gap-3">
-                        <Button
-                            onClick={mode === "enable" ? handleVerifyAndEnable : handleDisable}
-                            disabled={isLoading || otp.length !== 6}
-                            className="w-full h-[56px] bg-[#E89D24] hover:bg-[#D58C1B] text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-all text-lg"
-                        >
-                            {isLoading ? (
-                                <Loader2 className="w-6 h-6 animate-spin" />
-                            ) : (
-                                <>
-                                    <CheckCircle2 className="w-6 h-6" />
-                                    {mode === "enable" ? "Verify & Activate" : "Confirm Disable"}
-                                </>
-                            )}
-                        </Button>
-                        <button
-                            onClick={onClose}
-                            className="w-full h-12 font-medium text-gray-500 hover:text-gray-800 transition-colors text-base"
-                        >
-                            Cancel
-                        </button>
-                    </div>
+                {/* Footer buttons */}
+                <div className="pt-4 flex flex-col gap-3 shrink-0">
+                    <Button
+                        onClick={mode === "enable" ? handleVerifyAndEnable : handleDisable}
+                        disabled={isLoading || otp.length !== 6}
+                        className="w-full h-[56px] bg-[#E89D24] hover:bg-[#D58C1B] text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-all text-lg"
+                    >
+                        {isLoading ? (
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : (
+                            <>
+                                <CheckCircle2 className="w-6 h-6" />
+                                {mode === "enable" ? "Verify & Activate" : "Confirm Disable"}
+                            </>
+                        )}
+                    </Button>
+                    <button
+                        onClick={onClose}
+                        className="w-full h-12 font-medium text-gray-500 hover:text-gray-800 transition-colors text-base"
+                    >
+                        Cancel
+                    </button>
                 </div>
             </DialogContent>
         </Dialog>

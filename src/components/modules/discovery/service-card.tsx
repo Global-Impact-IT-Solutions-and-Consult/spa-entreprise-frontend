@@ -125,7 +125,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                 <button
                     onClick={handleFavoriteToggle}
                     disabled={isLoading}
-                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm hover:bg-white transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-sm hover:bg-white transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                     <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'} ${isLoading ? 'animate-pulse' : ''}`} />
                 </button>

@@ -119,15 +119,15 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl bg-white p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl">
-                <DialogHeader className="p-6 border-b border-gray-50 flex flex-row items-center justify-between">
+            <DialogContent className="max-w-2xl bg-white p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
+                <DialogHeader className="p-6 border-b border-gray-50 flex flex-row items-center justify-between shrink-0">
                     <DialogTitle className="text-2xl font-bold text-gray-900">Create New Booking</DialogTitle>
-                    <DialogClose className="rounded-full p-2 hover:bg-gray-100 transition-colors">
+                    <DialogClose className="rounded-full p-2.5 hover:bg-gray-100 transition-colors">
                         <X className="h-5 w-5 text-gray-400" />
                     </DialogClose>
                 </DialogHeader>
 
-                <div className="p-8 space-y-8 max-h-[80vh] overflow-y-auto">
+                <div className="p-8 space-y-8 flex-1 min-h-0 overflow-y-auto">
                     {isLoading ? (
                         <div className="flex h-64 items-center justify-center">
                             <Loader2 className="h-8 w-8 animate-spin text-[#F59E0B]" />
@@ -262,18 +262,18 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
                     )}
                 </div>
 
-                <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+                <div className="p-6 bg-gray-50 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 shrink-0">
                     <Button
                         variant="ghost"
                         onClick={onClose}
-                        className="h-12 px-8 text-gray-500 font-bold hover:bg-gray-100 rounded-xl"
+                        className="h-12 px-8 w-full sm:w-auto text-gray-500 font-bold hover:bg-gray-100 rounded-xl"
                     >
                         Cancel
                     </Button>
                     <Button
                         onClick={handleCreate}
                         disabled={isSubmitting || isLoading}
-                        className="h-12 px-8 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl shadow-lg transition-all active:scale-95"
+                        className="h-12 px-8 w-full sm:w-auto bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl shadow-lg transition-all active:scale-95"
                     >
                         {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Booking"}
                     </Button>

@@ -75,7 +75,7 @@ export function HeroSearch() {
                     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-1">
 
                         {/* State Dropdown */}
-                        <div className="flex items-center flex-1 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none transition-all relative">
+                        <div className="flex items-center flex-1 min-w-0 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none transition-all relative">
                             <MapPin className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
                             <select
                                 value={selectedState}
@@ -94,7 +94,7 @@ export function HeroSearch() {
                         </div>
 
                         {/* City Dropdown */}
-                        <div className={`flex items-center flex-1 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none transition-all relative ${!selectedState ? 'opacity-50' : ''}`}>
+                        <div className={`flex items-center flex-1 min-w-0 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none transition-all relative ${!selectedState ? 'opacity-50' : ''}`}>
                             <MapPin className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
                             <select
                                 value={city}
@@ -111,7 +111,7 @@ export function HeroSearch() {
                         </div>
 
                         {/* Business Type Dropdown */}
-                        <div className="flex items-center flex-1 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none transition-all relative">
+                        <div className="flex items-center flex-1 min-w-0 px-4 py-3 border md:border-r md:border-0 border-gray-200 rounded-lg md:rounded-none transition-all relative">
                             <Scissors className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
                             <select
                                 value={category}
@@ -127,7 +127,7 @@ export function HeroSearch() {
                         </div>
 
                         {/* Date Input */}
-                        <div className="flex items-center flex-1 px-4 py-3 border border-gray-200 rounded-lg md:rounded-none md:border-0 transition-all">
+                        <div className="flex items-center flex-1 min-w-0 px-4 py-3 border border-gray-200 rounded-lg md:rounded-none md:border-0 transition-all">
                             <Calendar className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
                             <input
                                 type={date ? "date" : "text"}

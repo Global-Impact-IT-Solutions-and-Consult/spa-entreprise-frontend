@@ -101,11 +101,11 @@ export default function HistoryPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex items-center gap-8 mb-10 border-b border-gray-100">
+                <div className="flex items-center gap-8 mb-10 border-b border-gray-100 overflow-x-auto no-scrollbar">
                     <button
                         onClick={() => setActiveTab("businesses")}
                         className={cn(
-                            "pb-4 text-xs md:text-sm font-black uppercase tracking-widest transition-all relative",
+                            "shrink-0 whitespace-nowrap pb-4 text-xs md:text-sm font-black uppercase tracking-widest transition-all relative",
                             activeTab === "businesses" ? "text-orange-400" : "text-gray-300 hover:text-gray-400"
                         )}
                     >
@@ -117,7 +117,7 @@ export default function HistoryPage() {
                     <button
                         onClick={() => setActiveTab("services")}
                         className={cn(
-                            "pb-4 text-xs md:text-sm font-black uppercase tracking-widest transition-all relative",
+                            "shrink-0 whitespace-nowrap pb-4 text-xs md:text-sm font-black uppercase tracking-widest transition-all relative",
                             activeTab === "services" ? "text-orange-400" : "text-gray-300 hover:text-gray-400"
                         )}
                     >
@@ -154,7 +154,7 @@ export default function HistoryPage() {
                 ) : (
                     <div className={cn(
                         "grid gap-6",
-                        activeTab === "services" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-1 lg:grid-cols-1"
+                        activeTab === "services" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
                     )}>
                         {activeTab === "services" ? (
                             historyServices.map((booking) => (

@@ -84,8 +84,11 @@ export function AddToCalendarModal({ isOpen, onClose, booking }: AddToCalendarMo
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-white p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
+            <DialogContent className="bg-white p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-[2rem] sm:max-w-md">
                 <div className="px-8 py-2 text-center relative">
+                    <DialogClose className="absolute top-4 right-4 rounded-full p-2.5 hover:bg-gray-100 transition-colors">
+                        <X className="h-4 w-4 text-gray-400" />
+                    </DialogClose>
                     <div className="flex flex-col items-center gap-2 mt-4">
                         <div className="flex items-center gap-2">
                             <CalendarCheck className="w-5 h-5 text-gray-900" />
@@ -96,7 +99,7 @@ export function AddToCalendarModal({ isOpen, onClose, booking }: AddToCalendarMo
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mt-8">
                         {calendarOptions.map((option) => (
                             <button
                                 key={option.name}

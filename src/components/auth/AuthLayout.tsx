@@ -52,7 +52,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
                 {/* Right Side: Form Card */}
                 <div className="w-full md:w-[600px] flex flex-col justify-center items-center">
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-10 md:p-12 w-full max-w-lg min-h-[500px] md:h-[700px] overflow-y-auto">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-10 md:p-12 w-full max-w-lg min-h-[500px] md:min-h-[700px] overflow-y-auto">
                         {children}
                     </div>
                 </div>
