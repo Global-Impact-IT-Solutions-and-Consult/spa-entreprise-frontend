@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Calendar, Search } from 'lucide-react';
 import { CustomerFooter } from '@/components/modules/customer/customer-footer';
 import { CustomerHeader } from '@/components/modules/customer/customer-header';
+import { CustomerBottomNav } from '@/components/modules/customer/customer-bottom-nav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { blogService, type BlogPost } from '@/services/blog.service';
@@ -147,6 +148,7 @@ export default function BlogPage() {
         </section>
       </main>
       <CustomerFooter />
+      <CustomerBottomNav />
     </div>
   );
 }

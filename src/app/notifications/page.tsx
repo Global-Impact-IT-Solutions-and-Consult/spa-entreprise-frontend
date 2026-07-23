@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Bell, CalendarPlus, ClipboardCheck, Tag, Zap, Loader2, Calendar, Star, CheckCircle2, CreditCard, Clock, XCircle } from "lucide-react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notificationService, UserNotification } from "@/services/notification.service";
@@ -330,6 +331,7 @@ export default function NotificationsPage() {
             </main>
 
             <CustomerFooter />
+            <CustomerBottomNav />
         </div>
     );
 }

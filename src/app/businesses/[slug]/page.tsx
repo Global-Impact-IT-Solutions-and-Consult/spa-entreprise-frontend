@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { BusinessHeader } from "@/components/modules/discovery/business-header";
 import { BusinessInfoSidebar } from "@/components/modules/discovery/business-info-sidebar";
 import { ServiceCard } from "@/components/modules/discovery/service-card";
@@ -122,6 +123,7 @@ export default function BusinessDetailsPage() {
                     </div>
                 </div>
                 <CustomerFooter />
+                <CustomerBottomNav />
             </div>
         );
     }
@@ -144,6 +146,7 @@ export default function BusinessDetailsPage() {
                     </div>
                 </main>
                 <CustomerFooter />
+                <CustomerBottomNav />
             </div>
         );
     }
@@ -300,6 +303,7 @@ export default function BusinessDetailsPage() {
             </main>
 
             <CustomerFooter />
+            <CustomerBottomNav />
 
             {/* Share Modal */}
             <ShareBusinessModal

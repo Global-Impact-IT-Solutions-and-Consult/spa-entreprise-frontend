@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { CustomerFooter } from '@/components/modules/customer/customer-footer';
 import { CustomerHeader } from '@/components/modules/customer/customer-header';
+import { CustomerBottomNav } from '@/components/modules/customer/customer-bottom-nav';
 import { blogService, type BlogPost } from '@/services/blog.service';
 
 function formatDate(value?: string | null) {
@@ -110,6 +111,7 @@ export default function BlogDetailPage() {
         )}
       </main>
       <CustomerFooter />
+      <CustomerBottomNav />
     </div>
   );
 }

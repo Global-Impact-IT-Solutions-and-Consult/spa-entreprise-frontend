@@ -5,6 +5,7 @@ import { User, Camera, Lock, Shield, AlertTriangle, Trash2, ChevronRight, Loader
 import Image from "next/image";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/auth.store";
@@ -482,6 +483,7 @@ export default function SettingsPage() {
             </main>
 
             <CustomerFooter />
+            <CustomerBottomNav />
 
             <ChangePasswordModal
                 open={isPasswordModalOpen}

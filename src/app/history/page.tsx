@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { HistoryServiceCard, HistoryServiceSkeleton } from "@/components/modules/customer/history-service-card";
 import { HistoryBusinessCard, HistoryBusinessSkeleton } from "@/components/modules/customer/history-business-card";
 import { bookingService, Booking } from "@/services/booking.service";
@@ -172,6 +173,7 @@ export default function HistoryPage() {
             </main>
 
             <CustomerFooter />
+            <CustomerBottomNav />
         </div>
     );
 }

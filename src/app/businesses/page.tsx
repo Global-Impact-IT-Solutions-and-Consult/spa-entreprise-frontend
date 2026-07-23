@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { State, City, IState, ICity } from "country-state-city";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
 import { businessService, BusinessType, isBusinessOpen } from "@/services/business.service";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -458,6 +459,7 @@ function BusinessDirectoryContent() {
             </main >
  
             <CustomerFooter />
+            <CustomerBottomNav />
         </div >
     );
 }

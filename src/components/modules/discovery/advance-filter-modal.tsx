@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
 export interface AdvancedFiltersState {
@@ -61,17 +60,29 @@ export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: A
     const progressPercent = ((filters.maxPrice - minPrice) / (maxPriceLimit - minPrice)) * 100;
 
     return (
-        <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-            <DialogContent className="sm:max-w-[480px] m-auto p-6 rounded-[24px] border border-gray-100 shadow-xl bg-white focus:outline-none max-h-[90vh] overflow-y-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-1">
-                    <h2 className="text-xl font-bold font-playfair text-[#1F2937]">Advance Filter</h2>
-                    <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-gray-600 focus:outline-none">
-                        <X className="w-5 h-5" />
-                    </button>
+        <Sheet
+            open={open}
+            onClose={onClose}
+            title="Advance Filter"
+            footer={
+                <div className="flex gap-4">
+                    <Button
+                        variant="outline"
+                        onClick={handleReset}
+                        className="flex-1 h-[52px] rounded font-bold text-gray-700 border-gray-100 hover:bg-gray-50"
+                    >
+                        Reset
+                    </Button>
+                    <Button
+                        onClick={handleApply}
+                        className="flex-1 h-[52px] rounded bg-[#E89D24] hover:bg-[#D58C1B] text-white font-bold shadow-lg shadow-yellow-500/20"
+                    >
+                        Apply Filters
+                    </Button>
                 </div>
-
-                <div className="space-y-3">
+            }
+        >
+                <div className="space-y-3 p-6">
                     {/* Price Range */}
                     <div className="space-y-4">
                         <h3 className="text-[15px] font-semibold text-gray-800">Price Range</h3>
@@ -170,24 +181,6 @@ export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: A
                         </div>
                     </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex gap-4 mt-5">
-                    <Button
-                        variant="outline"
-                        onClick={handleReset}
-                        className="flex-1 h-[52px] rounded font-bold text-gray-700 border-gray-100 hover:bg-gray-50"
-                    >
-                        Reset
-                    </Button>
-                    <Button
-                        onClick={handleApply}
-                        className="flex-1 h-[52px] rounded bg-[#E89D24] hover:bg-[#D58C1B] text-white font-bold shadow-lg shadow-yellow-500/20"
-                    >
-                        Apply Filters
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        </Sheet>
     );
 }

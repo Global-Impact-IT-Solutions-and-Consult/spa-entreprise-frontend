@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { BookingCard } from "@/components/modules/bookings/booking-card";
 import { Booking, bookingService } from "@/services/booking.service";
 import { Loader2, CalendarX, Lock, Check } from "lucide-react";
@@ -163,6 +164,7 @@ function MyBookingsContent() {
             </main>
 
             <CustomerFooter />
+            <CustomerBottomNav />
 
             {/* Payment Success Modal */}
             {showPaymentSuccess && (

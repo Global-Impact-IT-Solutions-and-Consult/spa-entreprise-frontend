@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { SavedBusinessCard, SavedBusinessSkeleton } from "@/components/modules/customer/saved-business-card";
 import { ServiceCard, ServiceSkeleton } from "@/components/modules/discovery/service-card";
 import { favoritesService } from "@/services/favorites.service";
@@ -185,6 +186,7 @@ export default function SavedPage() {
             </main>
 
             <CustomerFooter />
+            <CustomerBottomNav />
         </div>
     );
 }

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { State, City, IState, ICity } from "country-state-city";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { ServiceCard, ServiceSkeleton } from "@/components/modules/discovery/service-card";
 import { Search, MapPin, SlidersHorizontal, Heart, Store, Home, ChevronDown, Loader2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -452,6 +453,7 @@ function DiscoverContent() {
             </main>
 
             <CustomerFooter />
+            <CustomerBottomNav />
         </div>
     );
 }

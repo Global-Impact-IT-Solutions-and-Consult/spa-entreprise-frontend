@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { PublicPageConfig } from "@/lib/public-pages";
 
 type PublicInfoPageProps = {
@@ -82,6 +83,7 @@ export function PublicInfoPage({ page }: PublicInfoPageProps) {
                 </section>
             </main>
             <CustomerFooter />
+            <CustomerBottomNav />
         </div>
     );
 }

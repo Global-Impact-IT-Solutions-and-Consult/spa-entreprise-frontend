@@ -1,6 +1,7 @@
 import { Mail, MapPin } from "lucide-react";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { ContactUsForm } from "@/components/modules/customer/contact-us-form";
 
 export default function ContactPage() {
@@ -62,6 +63,7 @@ export default function ContactPage() {
                 </section>
             </main>
             <CustomerFooter />
+            <CustomerBottomNav />
         </div>
     );
 }

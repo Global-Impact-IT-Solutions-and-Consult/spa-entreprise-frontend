@@ -5,6 +5,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { PwaRegister } from '@/components/pwa-register';
+import { PageTransition } from '@/components/page-transition';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -44,7 +45,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} antialiased`}>
         <Providers>
-          {children}
+          <PageTransition>{children}</PageTransition>
           <Toaster />
           <PwaRegister />
         </Providers>

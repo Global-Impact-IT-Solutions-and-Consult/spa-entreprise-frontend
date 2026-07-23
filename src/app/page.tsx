@@ -9,6 +9,7 @@ import { PremiumWellness } from "@/components/modules/customer/premium-wellness"
 import { TrustFeatures } from "@/components/modules/customer/trust-features";
 import { CityListings } from "@/components/modules/customer/city-listings";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { FeaturedBusinesses } from "@/components/modules/customer/featured-businesses";
 
 export default function Home() {
@@ -31,6 +32,7 @@ export default function Home() {
         <CityListings />
       </main>
       <CustomerFooter />
+      <CustomerBottomNav />
     </div>
   );
 }

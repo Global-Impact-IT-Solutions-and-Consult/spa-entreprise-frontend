@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MapPin, User, Home, Calendar, Compass, Building2, Menu, X, Settings, Bell, LogOut, Loader2, Bookmark, History, ChevronDown, LayoutDashboard } from "lucide-react";
+import { MapPin, User, Home, Calendar, Compass, Building2, Settings, Bell, LogOut, Loader2, Bookmark, History, ChevronDown, LayoutDashboard } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { notificationService } from "@/services/notification.service";
@@ -22,7 +22,6 @@ const NIGERIAN_STATES = [
 ];
 
 export function CustomerHeader() {
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
@@ -135,7 +134,6 @@ export function CustomerHeader() {
             setIsLoggingOut(false);
         }
         setProfileDropdownOpen(false);
-        setMobileMenuOpen(false);
     };
 
     const userInitials = user
@@ -152,19 +150,19 @@ export function CustomerHeader() {
                             <Image src="/Logo.svg" alt="iBookam Logo" width={120} height={100} />
                         </Link>
 
-                        {/* Desktop: City Selector / Location */}
-                        <div className="hidden md:flex items-center space-x-2 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100 min-w-[160px]">
+                        {/* City Selector / Location — visible at all widths now that mobile nav lives in the bottom bar */}
+                        <div className="flex items-center space-x-2 bg-gray-50 px-2 sm:px-3 py-1 rounded-lg border border-gray-100 min-w-[110px] sm:min-w-[160px]">
                             <MapPin className="w-4 h-4 text-[#E89D24] shrink-0" />
                             {loading ? (
                                 <span className="text-sm text-gray-500 flex items-center gap-2">
-                                    <Loader2 className="w-3 h-3 animate-spin" /> Detecting...
+                                    <Loader2 className="w-3 h-3 animate-spin" /> <span className="hidden sm:inline">Detecting...</span>
                                 </span>
                             ) : (
-                                <div className="relative flex items-center w-full">
-                                    <select 
+                                <div className="relative flex items-center w-full min-w-0">
+                                    <select
                                         value={selectedState}
                                         onChange={handleStateChange}
-                                        className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer w-full appearance-none pr-5"
+                                        className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer w-full appearance-none pr-5 truncate"
                                     >
                                         <option value="Undetected" disabled>Undetected</option>
                                         {NIGERIAN_STATES.map(s => (
@@ -287,144 +285,16 @@ export function CustomerHeader() {
                         </div>
                     </div>
 
-                    {/* Mobile: Hamburger Menu Button */}
-                    <button
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="md:hidden p-2 rounded-md hover:bg-gray-100 relative"
-                    >
-                        {mobileMenuOpen ? (
-                            <X className="w-6 h-6 text-gray-700" />
-                        ) : (
-                            <div className="relative">
-                                <Menu className="w-6 h-6 text-gray-700" />
-                                {unreadCount > 0 && (
-                                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
-                                )}
-                            </div>
-                        )}
-                    </button>
-                </div>
-            </div>
-
-            {/* Mobile Menu Overlay */}
-            {mobileMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-                    onClick={() => setMobileMenuOpen(false)}
-                />
-            )}
-
-            {/* Mobile Menu Drawer - Slides from Left */}
-            <div
-                className={`fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out md:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-                    }`}
-            >
-                {/* Drawer Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                    <div className="flex items-center space-x-2">
-                        <Image src="/Logo.svg" alt="iBookam Logo" width={120} height={100} />
-                    </div>
-                    <button
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="p-2 rounded-md hover:bg-gray-100"
-                    >
-                        <X className="w-6 h-6 text-gray-700" />
-                    </button>
-                </div>
-
-                {/* Location in Drawer */}
-                <div className="p-4 border-b border-gray-200 bg-gray-50/50">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Current Location</label>
-                    <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-                        <MapPin className="w-4 h-4 text-[#E89D24] shrink-0" />
-                        {loading ? (
-                            <span className="text-sm text-gray-500 flex items-center gap-2">
-                                <Loader2 className="w-3 h-3 animate-spin" /> Detecting...
-                            </span>
-                        ) : (
-                            <div className="relative flex items-center w-full">
-                                <select 
-                                    value={selectedState}
-                                    onChange={handleStateChange}
-                                    className="bg-transparent text-sm font-bold text-gray-700 outline-none cursor-pointer w-full appearance-none pr-5"
-                                >
-                                    <option value="Undetected" disabled>Undetected</option>
-                                    {NIGERIAN_STATES.map(s => (
-                                        <option key={s} value={s}>{s} State</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-0 pointer-events-none" />
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Navigation Links */}
-                <nav className="flex flex-col p-4 space-y-1">
-                    {navLinks.map((link) => (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            className={`flex items-center space-x-3 rounded-lg px-3 py-3 transition font-medium ${isActive(link.href)
-                                ? "text-[#E89D24] bg-gray-50"
-                                : "text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
-                                }`}
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
-                            <link.icon className="w-5 h-5" />
-                            <span>{link.label}</span>
-                        </Link>
-                    ))}
-
-                    {/* Settings & Notification links for logged-in mobile users */}
+                    {/* Mobile: quick notification shortcut — primary nav now lives in the bottom tab bar */}
                     {isAuthenticated && user && (
-                        <>
-                            <div className="border-t border-gray-100 my-2" />
-                            <Link
-                                href="/settings"
-                                className="flex items-center space-x-3 rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <Settings className="w-5 h-5" />
-                                <span>Settings</span>
-                            </Link>
-                            <Link
-                                href="/notifications"
-                                className="flex items-center justify-between rounded-lg px-3 py-3 transition font-medium text-gray-700 hover:text-[#E89D24] hover:bg-gray-50"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <div className="flex items-center space-x-3">
-                                    <Bell className="w-5 h-5" />
-                                    <span>Notifications</span>
-                                </div>
-                                {unreadCount > 0 && (
-                                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                        {unreadCount > 9 ? "9+" : unreadCount}
-                                    </span>
-                                )}
-                            </Link>
-                        </>
-                    )}
-                </nav>
-
-                {/* Bottom Action */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
-                    {isAuthenticated && user ? (
-                        <Button
-                            onClick={handleLogout}
-                            disabled={isLoggingOut}
-                            variant="outline"
-                            className="w-full flex items-center justify-center space-x-2 py-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        <Link
+                            href="/notifications"
+                            className="md:hidden p-2 -m-1 rounded-md hover:bg-gray-100 relative"
                         >
-                            {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                            <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
-                        </Button>
-                    ) : (
-                        <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-                            <Button className="w-full bg-[#E89D24] hover:bg-[#E5A800] text-white flex items-center justify-center space-x-2 py-3">
-                                <User className="w-4 h-4" />
-                                <span>Sign in</span>
-                            </Button>
+                            <Bell className="w-6 h-6 text-gray-700" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
+                            )}
                         </Link>
                     )}
                 </div>
