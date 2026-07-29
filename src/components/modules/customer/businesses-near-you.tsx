@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
+import { BusinessRowCard } from "@/components/modules/discovery/business-row-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { businessService } from "@/services/business.service";
 import { useUserLocation } from "@/hooks/use-user-location";
@@ -61,13 +62,23 @@ export function BusinessesNearYou() {
 
     if (locationLoading || loading) {
         return (
-            <section className="py-12 md:py-16 bg-white">
+            <section className="py-6 md:py-16 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between mb-8 md:mb-10">
-                        <Skeleton className="h-10 w-64" />
-                        <Skeleton className="h-6 w-20" />
+                    <div className="mb-3 md:mb-10">
+                        <Skeleton className="h-5 w-40 md:h-10 md:w-64" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="md:hidden space-y-3">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center gap-3 bg-white rounded-2xl shadow-sm p-3">
+                                <Skeleton className="w-[76px] h-[76px] rounded-[14px] shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton className="h-4 w-2/3" />
+                                    <Skeleton className="h-3 w-1/3" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[1, 2, 3].map((i) => (
                             <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm p-4 h-[400px]">
                                 <Skeleton className="h-48 w-full rounded-xl mb-4" />
@@ -90,19 +101,19 @@ export function BusinessesNearYou() {
     }
 
     return (
-        <section className="py-12 md:py-16 bg-white border-t border-gray-100">
+        <section className="py-6 md:py-16 bg-white md:border-t border-gray-100">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 md:mb-10">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair mb-2 md:mb-0">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-3 md:mb-10">
+                    <h2 className="text-[17px] font-bold md:text-3xl text-gray-900 font-playfair mb-0 md:mb-0">
                         Businesses in {state && state !== "Location unavailable" && state !== "Nigeria" ? `${state} State` : "your location"}
                     </h2>
-                    <Link href={state && state !== "Location unavailable" && state !== "Nigeria" ? `/businesses?city=${encodeURIComponent(state)}` : "/businesses"} className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">
+                    <Link href={state && state !== "Location unavailable" && state !== "Nigeria" ? `/businesses?city=${encodeURIComponent(state)}` : "/businesses"} className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base hidden md:inline-block">
                         View All
                     </Link>
                 </div>
 
                 {businesses.length === 0 ? (
-                    <div className="bg-gray-50 rounded-2xl border border-gray-100 p-8 md:p-12 text-center shadow-sm max-w-2xl mx-auto">
+                    <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 md:p-12 text-center shadow-sm max-w-2xl mx-auto">
                         <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-[#E89D24]">
                             <MapPin className="w-6 h-6" />
                         </div>
@@ -117,11 +128,18 @@ export function BusinessesNearYou() {
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {businesses.map((business) => (
-                            <BusinessDirectoryCard key={business.id} business={business} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="md:hidden space-y-3">
+                            {businesses.map((business) => (
+                                <BusinessRowCard key={business.id} business={business} />
+                            ))}
+                        </div>
+                        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {businesses.map((business) => (
+                                <BusinessDirectoryCard key={business.id} business={business} />
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
         </section>

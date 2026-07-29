@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Info, Clock, Calendar as CalendarIcon, Loader2, CheckCircle2, ChevronLeft, AlertCircle, X, Check, FileClock, Verified } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet } from "@/components/ui/sheet";
 import { toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -495,66 +496,55 @@ export default function CancellationPage() {
                 </div>
             </main>
 
-            {/* Terms Modal */}
-            {isTermsModalOpen && (
-                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-6 lg:p-8 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-                        <div className="p-8 md:p-10">
-                            <div className="flex items-center justify-between mb-0">
-                                <h2 className="text-2xl font-bold text-[#E89D24] font-inter">Cancellation Terms</h2>
-                                <button onClick={() => setIsTermsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                                    <X className="w-6 h-6" />
-                                </button>
-                            </div>
-                            <div className="w-10 h-1 bg-gray-300 mb-4"></div>
+            {/* Terms Sheet */}
+            <Sheet
+                open={isTermsModalOpen}
+                onClose={() => setIsTermsModalOpen(false)}
+                title="Cancellation Terms"
+                footer={
+                    <div className="grid grid-cols-2 gap-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsTermsModalOpen(false)}
+                            className="h-12 rounded-md border-gray-200 text-gray-700 font-medium hover:bg-gray-50"
+                        >
+                            Go Back
+                        </Button>
+                        <Button
+                            onClick={handleConfirmCancellation}
+                            disabled={!hasAgreedToTerms || isSubmitting}
+                            className={cn(
+                                "h-12 rounded-md font-medium transition-all shadow-lg",
+                                hasAgreedToTerms
+                                    ? "bg-[#E89D24] text-white hover:bg-[#D97706] shadow-orange-100"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            )}
+                        >
+                            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Agree and Continue"}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="p-6 space-y-6">
+                    <p className="text-gray-600 font-medium leading-relaxed">
+                        {isBeforeStart
+                            ? "Since your appointment hasn't started yet, cancelling will immediately cancel the booking. A 10% cancellation fee applies and the remaining amount will be refunded to your payment method within 3–5 business days."
+                            : "Please note that all cancellation requests are subject to business approval. If your request is accepted, a 10% cancellation fee will be applied to your account."}
+                    </p>
 
-                            <div className="space-y-6">
-                                <div className="space-y-4">
-                                    <p className="text-gray-600 font-medium leading-relaxed">
-                                        {isBeforeStart
-                                            ? "Since your appointment hasn't started yet, cancelling will immediately cancel the booking. A 10% cancellation fee applies and the remaining amount will be refunded to your payment method within 3–5 business days."
-                                            : "Please note that all cancellation requests are subject to business approval. If your request is accepted, a 10% cancellation fee will be applied to your account."}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-start gap-4 cursor-pointer" onClick={() => setHasAgreedToTerms(!hasAgreedToTerms)}>
-                                    <div className={cn(
-                                        "w-6 h-6 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all",
-                                        hasAgreedToTerms ? "bg-[#E89D24] border-[#E89D24]" : "bg-white border-gray-200"
-                                    )}>
-                                        {hasAgreedToTerms && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
-                                    </div>
-                                    <p className="text-sm font-normal text-gray-700 leading-snug">
-                                        I understand that a 10% fee applies and I wish to continue with the cancellation.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 mt-10">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setIsTermsModalOpen(false)}
-                                    className="h-12 rounded-md border-gray-200 text-gray-700 font-medium hover:bg-gray-50"
-                                >
-                                    Go Back
-                                </Button>
-                                <Button
-                                    onClick={handleConfirmCancellation}
-                                    disabled={!hasAgreedToTerms || isSubmitting}
-                                    className={cn(
-                                        "h-12 rounded-md font-medium transition-all shadow-lg",
-                                        hasAgreedToTerms
-                                            ? "bg-[#E89D24] text-white hover:bg-[#D97706] shadow-orange-100"
-                                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                    )}
-                                >
-                                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Agree and Continue"}
-                                </Button>
-                            </div>
+                    <div className="flex items-start gap-4 cursor-pointer" onClick={() => setHasAgreedToTerms(!hasAgreedToTerms)}>
+                        <div className={cn(
+                            "w-6 h-6 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all",
+                            hasAgreedToTerms ? "bg-[#E89D24] border-[#E89D24]" : "bg-white border-gray-200"
+                        )}>
+                            {hasAgreedToTerms && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
                         </div>
+                        <p className="text-sm font-normal text-gray-700 leading-snug">
+                            I understand that a 10% fee applies and I wish to continue with the cancellation.
+                        </p>
                     </div>
                 </div>
-            )}
+            </Sheet>
         </div>
     );
 }

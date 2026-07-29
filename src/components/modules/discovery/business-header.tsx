@@ -114,7 +114,7 @@ export function BusinessHeader({ business, onShareClick }: BusinessHeaderProps) 
                             </div>
 
                             <div className="mt-10">
-                                <h1 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tight">
+                                <h1 className="text-[24px] md:text-5xl font-bold text-gray-900 tracking-tight">
                                     {name}
                                 </h1>
 

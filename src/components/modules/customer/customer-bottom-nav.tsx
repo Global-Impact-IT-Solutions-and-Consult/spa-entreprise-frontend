@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { MoreHorizontal, LogOut, LogIn, Loader2 } from "lucide-react";
+import { MoreHorizontal, LogOut, LogIn, Loader2, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
@@ -14,9 +14,14 @@ import { Sheet } from "@/components/ui/sheet";
 export function CustomerBottomNav() {
     const pathname = usePathname();
     const router = useRouter();
-    const { isAuthenticated, logout: logoutStore } = useAuthStore();
+    const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [isMoreOpen, setIsMoreOpen] = useState(false);
+
+    const userInitials = user
+        ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U"
+        : "U";
+    const fullName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "";
 
     const primaryItems = customerNavItems.filter((item) => item.mobilePrimary);
     const moreItems = customerNavItems.filter(
@@ -77,6 +82,23 @@ export function CustomerBottomNav() {
                 title="More"
                 className="md:hidden"
             >
+                {isAuthenticated && user && (
+                    <Link
+                        href="/settings"
+                        onClick={() => setIsMoreOpen(false)}
+                        className="mx-3 mt-1 mb-2 flex items-center gap-3 rounded-2xl bg-gray-50 p-3"
+                    >
+                        <span className="w-12 h-12 shrink-0 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-base font-bold">
+                            {userInitials}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[15px] font-bold text-gray-900 truncate">{fullName || "Profile"}</p>
+                            <p className="text-[12px] text-gray-400 truncate">{user.email}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
+                    </Link>
+                )}
+
                 <div className="px-3 pb-2 space-y-1">
                     {moreItems.map((item) => {
                         const active = isActive(item.href);

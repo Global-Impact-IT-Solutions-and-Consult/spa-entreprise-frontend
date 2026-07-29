@@ -30,7 +30,8 @@ const config: Config = {
             },
             fontFamily: {
                 inter: ["var(--font-inter)", "sans-serif"],
-                playfair: ["var(--font-playfair-display)", "serif"],
+                playfair: ["var(--font-playfair)", "serif"],
+                serif: ["var(--font-playfair)", "serif"],
             },
         },
     },

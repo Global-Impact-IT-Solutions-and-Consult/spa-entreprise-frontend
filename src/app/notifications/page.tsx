@@ -2,34 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CalendarPlus, ClipboardCheck, Tag, Zap, Loader2, Calendar, Star, CheckCircle2, CreditCard, Clock, XCircle } from "lucide-react";
+import { Bell, Star, CheckCircle2, Loader2 } from "lucide-react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { MobileFooterStrip } from "@/components/modules/customer/mobile-footer-strip";
 import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notificationService, UserNotification } from "@/services/notification.service";
+import { formatTimeAgo, getIconForType, getBgForType } from "@/lib/notification-utils";
 
 
 const TABS = ["All Notifications", "Bookings", "Offers", "System Updates"];
-
-function formatTimeAgo(dateString: string) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + " years ago";
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + " months ago";
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + " days ago";
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + (Math.floor(interval) === 1 ? " hour ago" : " hours ago");
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + "m ago";
-    return Math.floor(seconds) + "s ago";
-}
 
 export default function NotificationsPage() {
     const router = useRouter();
@@ -146,74 +130,8 @@ export default function NotificationsPage() {
         return true;
     });
 
-    const getIconForType = (type: string) => {
-        switch (type) {
-            case "service_completion":
-                return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-            case "appointment_reminder":
-                return <Clock className="w-5 h-5 text-amber-500" />;
-            case "payment_confirmation":
-            case "PAYMENT":
-            case "PAYMENT_SUCCESSFUL":
-                return <CreditCard className="w-5 h-5 text-emerald-500" />;
-            case "booking_confirmation":
-            case "BOOKING":
-            case "UPCOMING_BOOKING":
-                return <Calendar className="w-5 h-5 text-blue-500" />;
-            case "booking_cancelled":
-                return <XCircle className="w-5 h-5 text-red-500" />;
-            case "OFFER":
-            case "PROMO":
-                return <Tag className="w-5 h-5 text-green-500" />;
-            case "SYSTEM":
-            case "ALERT":
-                return <ClipboardCheck className="w-5 h-5 text-blue-500" />;
-            case "REVIEW":
-            case "NEW_REVIEW":
-                return <Star className="w-5 h-5 text-yellow-500" />;
-            case "ONBOARDING":
-            case "ONBOARDING_UPDATE":
-                return <Zap className="w-5 h-5 text-purple-500" />;
-            default:
-                return <Bell className="w-5 h-5 text-gray-500" />;
-        }
-    };
-
-    const getBgForType = (type: string) => {
-        switch (type) {
-            case "appointment_reminder":
-                return "bg-amber-50";
-            case "service_completion":
-                return "bg-green-100";
-            case "payment_confirmation":
-            case "PAYMENT":
-            case "PAYMENT_SUCCESSFUL":
-                return "bg-emerald-50";
-            case "booking_confirmation":
-            case "BOOKING":
-            case "UPCOMING_BOOKING":
-                return "bg-blue-50";
-            case "booking_cancelled":
-                return "bg-red-50";
-            case "OFFER":
-            case "PROMO":
-                return "bg-green-50";
-            case "SYSTEM":
-            case "ALERT":
-                return "bg-blue-50";
-            case "REVIEW":
-            case "NEW_REVIEW":
-                return "bg-yellow-50";
-            case "ONBOARDING":
-            case "ONBOARDING_UPDATE":
-                return "bg-purple-50";
-            default:
-                return "bg-gray-100";
-        }
-    };
-
     return (
-        <div className="min-h-screen bg-gray-50/50 flex flex-col">
+        <div className="min-h-screen flex flex-col bg-gray-50/50 pb-20 md:pb-0">
             <CustomerHeader />
 
             <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
@@ -330,7 +248,10 @@ export default function NotificationsPage() {
                 </div>
             </main>
 
-            <CustomerFooter />
+            <div className="hidden md:block">
+                <CustomerFooter />
+            </div>
+            <MobileFooterStrip />
             <CustomerBottomNav />
         </div>
     );

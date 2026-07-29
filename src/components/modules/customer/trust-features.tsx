@@ -39,9 +39,13 @@ const features = [
 
 export function TrustFeatures() {
     return (
-        <section className="py-12 md:py-16 bg-[#F5D5A8]">
+        <section className="py-6 md:py-16 bg-transparent md:bg-[#F5D5A8]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-10 md:mb-12">
+                {/* Mobile heading */}
+                <h2 className="md:hidden text-[17px] font-bold text-gray-900 mb-3">Why Choose iBookam</h2>
+
+                {/* Desktop heading */}
+                <div className="hidden md:block text-center mb-10 md:mb-12">
                     <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
                         Why Choose iBookam
                     </h2>
@@ -50,7 +54,29 @@ export function TrustFeatures() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {/* Mobile: one card, compact rows */}
+                <div className="md:hidden bg-white rounded-2xl shadow-sm p-4">
+                    {features.map((feature, i) => {
+                        const IconComponent = feature.icon;
+                        return (
+                            <div key={feature.id}>
+                                {i > 0 && <div className="h-px bg-gray-100 ml-[50px]" />}
+                                <div className="flex items-start gap-3 py-3">
+                                    <span className={`${feature.bgColor} w-[38px] h-[38px] rounded-xl flex items-center justify-center shrink-0`}>
+                                        <IconComponent className={`w-[18px] h-[18px] ${feature.iconColor}`} />
+                                    </span>
+                                    <div className="min-w-0">
+                                        <p className="text-[13px] font-semibold text-gray-900">{feature.title}</p>
+                                        <p className="text-[11px] text-gray-500 leading-snug mt-0.5">{feature.description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Desktop: unchanged grid */}
+                <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     {features.map((feature) => {
                         const IconComponent = feature.icon;
                         return (

@@ -9,6 +9,7 @@ import { AddToCalendarModal } from "./add-to-calendar-modal";
 import { toaster } from "@/components/ui/toaster";
 import { businessService } from "@/services/business.service";
 import { getFallbackImage } from "@/lib/image.utils";
+import { isPastOrCancelled } from "@/lib/booking-utils";
 import { formatDistanceToNow } from "date-fns";
 
 import { Booking, bookingService } from "@/services/booking.service";
@@ -24,7 +25,7 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
     const [serviceImage, setServiceImage] = useState<string | null>(null);
 
     const isCanceled = booking.status === "cancelled";
-    const isPastOrCancelled = booking.status === "completed" || booking.status === "cancelled" || booking.status === "cancellation_pending_approval";
+    const isDone = isPastOrCancelled(booking.status);
 
     useEffect(() => {
         const fetchServiceData = async () => {
@@ -106,7 +107,7 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
                 <div className="mt-6 flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                         <span className="text-xl font-bold text-gray-900">₦{booking.totalPrice.toLocaleString()}</span>
-                        {isPastOrCancelled ? (
+                        {isDone ? (
                             <span className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
                                 {formatDistanceToNow(new Date(booking.createdAt), { addSuffix: true })}
                             </span>
@@ -121,7 +122,7 @@ export function BookingCard({ booking, onCancelSuccess }: BookingCardProps) {
                         )}
                     </div>
 
-                    {!isPastOrCancelled && (
+                    {!isDone && (
                         <div className="grid grid-cols-3 gap-2">
                             <Button variant="outline" className="flex items-center gap-1 h-11 border-gray-200 hover:border-[#E89D24] hover:text-[#E89D24]">
                                 <Phone className="w-3 h-3" />

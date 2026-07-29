@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { City, type IState, type ICity } from "country-state-city";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
@@ -10,11 +11,30 @@ export interface AdvancedFiltersState {
     rating: string;
 }
 
+export interface LocationFilters {
+    state: string;
+    city: string;
+    category: string;
+}
+
 interface AdvanceFilterModalProps {
     open: boolean;
     onClose: () => void;
     initialFilters: AdvancedFiltersState;
     onApply: (filters: AdvancedFiltersState) => void;
+    // Optional: only supplied by mobile search bars (Discover, Businesses),
+    // which have no room for the desktop's separate State/City/Category
+    // dropdowns — folding them into this sheet gives mobile users the same
+    // filters back. When omitted (desktop's own call site), this block
+    // simply doesn't render.
+    locationFilters?: LocationFilters;
+    onLocationChange?: (next: LocationFilters) => void;
+    states?: IState[];
+    categories?: { id: string; name: string }[];
+    // Label/value for the "no category selected" option — callers use
+    // different sentinel strings ("All Categories" on Discover, "All
+    // Businesses" on the business directory) for their own filter state.
+    allCategoriesLabel?: string;
 }
 
 const DEFAULT_FILTERS: AdvancedFiltersState = {
@@ -23,16 +43,36 @@ const DEFAULT_FILTERS: AdvancedFiltersState = {
     rating: "any",
 };
 
-export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: AdvanceFilterModalProps) {
+export function AdvanceFilterModal({
+    open,
+    onClose,
+    initialFilters,
+    onApply,
+    locationFilters,
+    onLocationChange,
+    states,
+    categories,
+    allCategoriesLabel = "All Categories",
+}: AdvanceFilterModalProps) {
     const [filters, setFilters] = useState<AdvancedFiltersState>(initialFilters);
+    const [location, setLocation] = useState<LocationFilters>(
+        locationFilters ?? { state: "", city: "", category: allCategoriesLabel }
+    );
     const [prevOpen, setPrevOpen] = useState(open);
 
     if (open !== prevOpen) {
         setPrevOpen(open);
         if (open) {
             setFilters(initialFilters);
+            if (locationFilters) setLocation(locationFilters);
         }
     }
+
+    const localCities = useMemo<ICity[]>(() => {
+        if (!location.state || !states) return [];
+        const stateObj = states.find(s => s.name === location.state);
+        return stateObj ? City.getCitiesOfState("NG", stateObj.isoCode) : [];
+    }, [location.state, states]);
 
     const handleReset = () => {
         setFilters(DEFAULT_FILTERS);
@@ -40,6 +80,7 @@ export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: A
 
     const handleApply = () => {
         onApply(filters);
+        onLocationChange?.(location);
         onClose();
     };
 
@@ -83,6 +124,42 @@ export function AdvanceFilterModal({ open, onClose, initialFilters, onApply }: A
             }
         >
                 <div className="space-y-3 p-6">
+                    {locationFilters && onLocationChange && states && categories && (
+                        <div className="md:hidden space-y-3 pb-2">
+                            <h3 className="text-[15px] font-semibold text-gray-800">Location &amp; Category</h3>
+                            <select
+                                value={location.state}
+                                onChange={(e) => setLocation(prev => ({ ...prev, state: e.target.value, city: "" }))}
+                                className="w-full h-11 px-3 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700"
+                            >
+                                <option value="">Select State</option>
+                                {states.map(s => (
+                                    <option key={s.isoCode} value={s.name}>{s.name}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={location.city}
+                                onChange={(e) => setLocation(prev => ({ ...prev, city: e.target.value }))}
+                                disabled={!location.state}
+                                className="w-full h-11 px-3 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 disabled:opacity-50"
+                            >
+                                <option value="">Select City</option>
+                                {localCities.map((c, i) => (
+                                    <option key={`${c.name}-${i}`} value={c.name}>{c.name}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={location.category}
+                                onChange={(e) => setLocation(prev => ({ ...prev, category: e.target.value }))}
+                                className="w-full h-11 px-3 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700"
+                            >
+                                <option>{allCategoriesLabel}</option>
+                                {categories.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     {/* Price Range */}
                     <div className="space-y-4">
                         <h3 className="text-[15px] font-semibold text-gray-800">Price Range</h3>

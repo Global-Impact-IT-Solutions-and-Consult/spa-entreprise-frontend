@@ -12,6 +12,7 @@ import { toaster } from "@/components/ui/toaster";
 import Image from "next/image";
 import { useUserLocation } from "@/hooks/use-user-location";
 import { Select } from "@/components/ui/select";
+import { NotificationPreviewSheet } from "@/components/modules/customer/notification-preview-sheet";
 
 const NIGERIAN_STATES = [
     "Abia", "Abuja", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", 
@@ -31,6 +32,7 @@ export function CustomerHeader() {
     const { user, isAuthenticated, logout: logoutStore } = useAuthStore();
     const [unreadCount, setUnreadCount] = useState(0);
     const [selectedState, setSelectedState] = useState("");
+    const [notifSheetOpen, setNotifSheetOpen] = useState(false);
 
     useEffect(() => {
         if (!loading) {
@@ -142,7 +144,54 @@ export function CustomerHeader() {
 
     return (
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Mobile: slim bar — logo + location pill + notification bell */}
+            <div className="md:hidden h-14 px-4 flex items-center justify-between">
+                <Link href="/" className="flex items-center">
+                    <Image src="/Logo.svg" alt="iBookam Logo" width={100} height={40} />
+                </Link>
+                <div className="flex items-center gap-2">
+                    <div className="relative">
+                        <div className="inline-flex items-center gap-1.5 bg-gray-100 rounded-full px-3 h-9 text-xs font-medium text-gray-700 pointer-events-none">
+                            <MapPin className="w-3.5 h-3.5 text-[#E89D24] shrink-0" />
+                            {loading ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                                <span className="max-w-[90px] truncate">
+                                    {selectedState === "Undetected" ? "Set location" : selectedState}
+                                </span>
+                            )}
+                        </div>
+                        {!loading && (
+                            <select
+                                value={selectedState}
+                                onChange={handleStateChange}
+                                aria-label="Select location"
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            >
+                                <option value="Undetected" disabled>Undetected</option>
+                                {NIGERIAN_STATES.map(s => (
+                                    <option key={s} value={s}>{s} State</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+                    {isAuthenticated && user && (
+                        <button
+                            onClick={() => setNotifSheetOpen(true)}
+                            className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100"
+                        >
+                            <Bell className="w-5 h-5 text-gray-700" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full" />
+                            )}
+                        </button>
+                    )}
+                </div>
+            </div>
+            <NotificationPreviewSheet open={notifSheetOpen} onClose={() => setNotifSheetOpen(false)} />
+
+            {/* Desktop: full header, unchanged */}
+            <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex gap-5">
                         {/* Logo and Brand */}
@@ -284,19 +333,6 @@ export function CustomerHeader() {
                             )}
                         </div>
                     </div>
-
-                    {/* Mobile: quick notification shortcut — primary nav now lives in the bottom tab bar */}
-                    {isAuthenticated && user && (
-                        <Link
-                            href="/notifications"
-                            className="md:hidden p-2 -m-1 rounded-md hover:bg-gray-100 relative"
-                        >
-                            <Bell className="w-6 h-6 text-gray-700" />
-                            {unreadCount > 0 && (
-                                <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
-                            )}
-                        </Link>
-                    )}
                 </div>
             </div>
         </header>

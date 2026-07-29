@@ -37,6 +37,11 @@
 
     --safe-area-top: env(safe-area-inset-top);
     --safe-area-bottom: env(safe-area-inset-bottom);
+
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-fast: 150ms;
+    --duration-base: 200ms;
+    --duration-slow: 300ms;
   }
 
   .dark {
@@ -120,8 +125,30 @@
     display: none;
   }
 
+  .scroll-row {
+    display: flex;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scroll-row::-webkit-scrollbar {
+    display: none;
+  }
+
   .page-fade-in {
-    animation: page-fade-in 180ms ease-out;
+    animation: page-fade-in var(--duration-base) var(--ease-standard);
+  }
+
+  .page-slide-in {
+    animation: page-slide-in var(--duration-slow) var(--ease-standard);
+  }
+
+  .page-slide-back {
+    animation: page-slide-back var(--duration-base) var(--ease-standard);
   }
 }
 
@@ -136,8 +163,35 @@
   }
 }
 
+@keyframes page-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Only the incoming page ever mounts here (Next.js unmounts the outgoing one
+   immediately), so "going back" is approximated as the destination entering
+   from the left rather than the source sliding out to the right. */
+@keyframes page-slide-back {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .page-fade-in {
+  .page-fade-in,
+  .page-slide-in,
+  .page-slide-back {
     animation: none;
   }
 }

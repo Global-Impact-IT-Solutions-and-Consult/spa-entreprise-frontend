@@ -12,11 +12,11 @@ export function BusinessGalleryTab({ images }: BusinessGalleryTabProps) {
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
     return (
-        <div className="space-y-10">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Gallery</h2>
+        <div className="space-y-4 md:space-y-10">
+            <h2 className="text-[17px] md:text-3xl font-bold text-gray-900 tracking-tight">Gallery</h2>
 
             {images.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
                     {images.map((img, i) => (
                         <div
                             key={i}

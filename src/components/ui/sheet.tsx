@@ -39,6 +39,7 @@ export function Sheet({ open, onClose, title, children, footer, className }: She
             const id = requestAnimationFrame(() => setIsVisible(true));
             return () => cancelAnimationFrame(id);
         }
+        // Keep in sync with the duration-[var(--duration-base)] transition classes below.
         const timeout = setTimeout(() => setIsMounted(false), 200);
         return () => clearTimeout(timeout);
     }, [open, isMounted]);
@@ -49,14 +50,14 @@ export function Sheet({ open, onClose, title, children, footer, className }: She
         <>
             <div
                 className={cn(
-                    "fixed inset-0 z-40 bg-black/30 transition-opacity duration-200",
+                    "fixed inset-0 z-40 bg-black/30 transition-opacity duration-[var(--duration-base)]",
                     isVisible ? "opacity-100" : "opacity-0"
                 )}
                 onClick={onClose}
             />
             <div
                 className={cn(
-                    "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-2xl transition-transform duration-200 ease-out pb-[var(--safe-area-bottom)]",
+                    "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-2xl transition-transform duration-[var(--duration-base)] ease-[var(--ease-standard)] pb-[var(--safe-area-bottom)]",
                     isVisible ? "translate-y-0" : "translate-y-full",
                     className
                 )}

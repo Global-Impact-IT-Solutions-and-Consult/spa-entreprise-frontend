@@ -5,8 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { State, City, IState, ICity } from "country-state-city";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { MobileFooterStrip } from "@/components/modules/customer/mobile-footer-strip";
 import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { ServiceCard, ServiceSkeleton } from "@/components/modules/discovery/service-card";
+import { ServiceRowCard, ServiceRowSkeleton } from "@/components/modules/discovery/service-row-card";
 import { Search, MapPin, SlidersHorizontal, Heart, Store, Home, ChevronDown, Loader2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { businessService, EnrichedService, ServiceCategory, PaginationMeta, SearchServicesParams } from "@/services/business.service";
@@ -260,20 +262,61 @@ function DiscoverContent() {
     const hasMore = meta ? meta.page < meta.totalPages : false;
 
     return (
-        <div className="min-h-screen bg-[#F9FAFB]">
+        <div className="min-h-screen flex flex-col bg-[#F9FAFB] pb-20 md:pb-0">
             <CustomerHeader />
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-12 w-full">
                 {/* Header Section */}
-                <div className="mb-10">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight font-playfair">Discover services</h1>
-                    <p className="text-gray-600 max-w-2xl leading-relaxed">
+                <div className="mb-4 md:mb-10">
+                    <h1 className="text-[24px] sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 md:mb-4 tracking-tight font-playfair">Discover services</h1>
+                    <p className="text-gray-600 max-w-2xl leading-relaxed hidden md:block">
                         Browse wellness services from trusted businesses. Book in-store or home services at your convenience.
                     </p>
                 </div>
 
-                {/* Search & Filter Container */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-12">
+                {/* Mobile: search bar + filter icon + single-line pills */}
+                <div className="md:hidden mb-6">
+                    <div className="flex gap-2">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search services"
+                                value={tempFilters.search}
+                                onChange={(e) => setTempFilters(prev => ({ ...prev, search: e.target.value }))}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSearchClick()}
+                                onBlur={() => tempFilters.search !== filters.search && handleSearchClick()}
+                                className="w-full h-11 pl-10 pr-3 rounded-[14px] bg-white shadow-sm text-sm focus:outline-none"
+                            />
+                        </div>
+                        <button
+                            onClick={() => setShowAdvanced(true)}
+                            className="w-11 h-11 rounded-[14px] bg-white shadow-sm grid place-items-center shrink-0"
+                        >
+                            <SlidersHorizontal className="w-4 h-4 text-gray-600" />
+                        </button>
+                    </div>
+                    <div className="scroll-row gap-6 -mx-4 px-4 mt-3 border-b border-gray-200">
+                        {deliveryFilters.map((filter) => (
+                            <button
+                                key={filter.id}
+                                onClick={() => setActiveFilter(filter.id)}
+                                className={`shrink-0 whitespace-nowrap pb-3 text-sm font-bold transition-colors relative ${activeFilter === filter.id
+                                    ? "text-[#E89D24]"
+                                    : "text-gray-500 hover:text-gray-700"
+                                    }`}
+                            >
+                                {filter.label}
+                                {activeFilter === filter.id && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E89D24] rounded-t-full" />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Search & Filter Container — desktop */}
+                <div className="hidden md:block bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-12">
                     {/* Search Bar */}
                     <div className="flex flex-col md:flex-row gap-4 mb-8 border border-gray-200 rounded-xl p-2 focus-within:ring-2 focus-within:ring-[#E89D24] transition-all">
                         <div className="flex-1 relative">
@@ -368,8 +411,8 @@ function DiscoverContent() {
                 </div>
 
                 {/* Results Info */}
-                <div className="mb-8 flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-500">
+                <div className="mb-3 md:mb-8 flex items-center justify-between">
+                    <p className="text-[11px] md:text-sm font-medium text-gray-500">
                         {isSearching ? (
                             <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-[#E89D24]" /> Searching...</span>
                         ) : meta ? (
@@ -378,28 +421,43 @@ function DiscoverContent() {
                     </p>
                 </div>
 
-                {/* Services Grid */}
+                {/* Services — mobile compact rows */}
                 {isSearching && results.length === 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                    <div className="md:hidden space-y-2.5 mb-8">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <ServiceRowSkeleton key={i} />
+                        ))}
+                    </div>
+                ) : results.length > 0 ? (
+                    <div className="md:hidden space-y-2.5 mb-8">
+                        {results.map((service) => (
+                            <ServiceRowCard key={service.id} service={service} />
+                        ))}
+                    </div>
+                ) : null}
+
+                {/* Services — desktop grid */}
+                {isSearching && results.length === 0 ? (
+                    <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
                         {[1, 2, 3, 4, 5, 6].map((i) => (
                             <ServiceSkeleton key={i} />
                         ))}
                     </div>
                 ) : results.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                    <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
                         {results.map((service) => (
                             <ServiceCard key={service.id} service={service} />
                         ))}
                     </div>
                 ) : (
-                    <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
-                        <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    <div className="py-10 md:py-20 mb-8 md:mb-0 text-center bg-white rounded-2xl border border-dashed border-gray-200 px-4">
+                        <Building2 className="w-10 h-10 md:w-16 md:h-16 text-gray-300 mx-auto mb-3 md:mb-4" />
+                        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1.5 md:mb-2">
                             {activeFilter === "Favorite" ? (
                                 !isAuthenticated ? "Sign in to view favorites" : "No favorite services yet"
                             ) : "No services found"}
                         </h3>
-                        <p className="text-gray-500">
+                        <p className="text-[13px] md:text-base text-gray-500">
                             {activeFilter === "Favorite" ? (
                                 !isAuthenticated
                                     ? "Log in to your account so you can save and access your favorite services here."
@@ -408,7 +466,7 @@ function DiscoverContent() {
                         </p>
                         {activeFilter === "Favorite" && !isAuthenticated ? (
                             <Link href="/auth/login">
-                                <Button className="mt-6 rounded-xl h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold shadow-lg shadow-yellow-500/20">
+                                <Button className="mt-6 rounded-xl h-11 w-full md:w-auto md:h-12 md:px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold shadow-lg shadow-yellow-500/20">
                                     Login to Account
                                 </Button>
                             </Link>
@@ -430,7 +488,7 @@ function DiscoverContent() {
                         <Button
                             variant="outline"
                             onClick={handleLoadMore}
-                            className="h-12 px-10 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition-colors min-w-[200px]"
+                            className="h-11 w-full md:h-12 md:w-auto md:px-10 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition-colors md:min-w-[200px]"
                         >
                             Load More Services
                         </Button>
@@ -449,10 +507,24 @@ function DiscoverContent() {
                     onApply={(newFilters) => {
                         setAdvancedFilters(newFilters);
                     }}
+                    locationFilters={{
+                        state: tempFilters.state,
+                        city: tempFilters.city,
+                        category: tempFilters.category,
+                    }}
+                    onLocationChange={(next) => {
+                        setTempFilters(prev => ({ ...prev, state: next.state, city: next.city, category: next.category }));
+                        setFilters(prev => ({ ...prev, state: next.state, city: next.city, category: next.category }));
+                    }}
+                    states={states}
+                    categories={categories}
                 />
             </main>
 
-            <CustomerFooter />
+            <div className="hidden md:block">
+                <CustomerFooter />
+            </div>
+            <MobileFooterStrip />
             <CustomerBottomNav />
         </div>
     );
