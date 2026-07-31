@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, UpdateProfileDto } from '@/services/business.service';
+import { OnboardingCtaBar } from '@/components/modules/onboarding/onboarding-cta-bar';
 
 // Define the option type for the Select component
 interface SelectOption {
@@ -344,6 +345,21 @@ export default function BusinessInfoPage() {
         }
     };
 
+    // Mirrors handleSubmit's existing guards exactly — no new rules. Used only
+    // to drive the mobile CTA bar's disabled state; the desktop button keeps
+    // its own behaviour (always enabled, validation via toast).
+    const isStepValid = Boolean(
+        formData.businessName &&
+        formData.businessTypeCode &&
+        formData.phone &&
+        formData.description &&
+        formData.address &&
+        selectedCountry &&
+        selectedState &&
+        selectedCity &&
+        businessId
+    );
+
     if (isLoadingBusiness) {
         return (
             <div className="w-full max-w-[900px] flex items-center justify-center min-h-[400px]">
@@ -354,18 +370,18 @@ export default function BusinessInfoPage() {
 
     return (
         <div className="w-full max-w-[900px]">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 md:p-12">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 md:p-12">
                 <div className="mb-10">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Add Business Information</h1>
+                    <h1 className="text-[22px] md:text-3xl font-bold text-gray-900 mb-2">Add Business Information</h1>
                     <p className="text-gray-500 font-medium">Please fill in the correct information of your business</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     {/* Business Type */}
                     <div className="flex flex-col gap-1.5">
-                        <Label className="text-sm font-medium text-gray-400">Business Type *</Label>
+                        <Label className="text-[13px] font-medium text-gray-400">Business Type *</Label>
                         <Select
-                            className="h-[56px] rounded-lg border-gray-200 focus:border-[#E59622] transition-colors"
+                            className="h-12 md:h-[56px] rounded-lg border-gray-200 focus:border-[#E59622] transition-colors"
                             options={businessTypes}
                             value={formData.businessTypeCode}
                             onChange={(e) => setFormData({ ...formData, businessTypeCode: e.target.value })}
@@ -381,6 +397,8 @@ export default function BusinessInfoPage() {
                         name="businessName"
                         value={formData.businessName}
                         onChange={handleInputChange}
+                        className="h-12 md:h-[56px]"
+                        labelClassName="text-[13px]"
                     />
 
                     {/* Phone Number */}
@@ -390,6 +408,7 @@ export default function BusinessInfoPage() {
                         value={formData.phone}
                         onChange={handleInputChange}
                         required
+                        labelClassName="text-[13px]"
                     />
 
                     {/* CAC Number - Optional */}
@@ -399,11 +418,13 @@ export default function BusinessInfoPage() {
                         name="cacNumber"
                         value={formData.cacNumber}
                         onChange={handleInputChange}
+                        className="h-12 md:h-[56px]"
+                        labelClassName="text-[13px]"
                     />
 
                     {/* Business Description */}
                     <div className="md:col-span-2 flex flex-col gap-1.5">
-                        <Label className="text-sm font-medium text-gray-400">Business Description *</Label>
+                        <Label className="text-[13px] font-medium text-gray-400">Business Description *</Label>
                         <textarea
                             name="description"
                             className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-300 focus:border-[#E59622] focus:ring-1 focus:ring-[#E59622] transition-all outline-none"
@@ -415,9 +436,9 @@ export default function BusinessInfoPage() {
 
                     {/* Country */}
                     <div className="flex flex-col gap-1.5">
-                        <Label className="text-sm font-medium text-gray-400">Country *</Label>
+                        <Label className="text-[13px] font-medium text-gray-400">Country *</Label>
                         <Select
-                            className="h-[56px] rounded-lg border-gray-200 focus:border-[#E59622] transition-colors"
+                            className="h-12 md:h-[56px] rounded-lg border-gray-200 focus:border-[#E59622] transition-colors"
                             options={countryOptions}
                             value={selectedCountryCode}
                             onChange={(e) => handleCountryChange(e.target.value)}
@@ -427,9 +448,9 @@ export default function BusinessInfoPage() {
 
                     {/* State */}
                     <div className="flex flex-col gap-1.5">
-                        <Label className="text-sm font-medium text-gray-400">State *</Label>
+                        <Label className="text-[13px] font-medium text-gray-400">State *</Label>
                         <Select
-                            className="h-[56px] rounded-lg border-gray-200 focus:border-[#E59622] transition-colors"
+                            className="h-12 md:h-[56px] rounded-lg border-gray-200 focus:border-[#E59622] transition-colors"
                             options={stateOptions}
                             value={selectedStateCode}
                             onChange={(e) => handleStateChange(e.target.value)}
@@ -440,9 +461,9 @@ export default function BusinessInfoPage() {
 
                     {/* City */}
                     <div className="flex flex-col gap-1.5">
-                        <Label className="text-sm font-medium text-gray-400">City *</Label>
+                        <Label className="text-[13px] font-medium text-gray-400">City *</Label>
                         <Select
-                            className="h-[56px] rounded-lg border-gray-200 focus:border-[#E59622] transition-colors"
+                            className="h-12 md:h-[56px] rounded-lg border-gray-200 focus:border-[#E59622] transition-colors"
                             options={cityOptions}
                             value={selectedCityName}
                             onChange={(e) => handleCityChange(e.target.value)}
@@ -458,22 +479,25 @@ export default function BusinessInfoPage() {
                         name="address"
                         value={formData.address}
                         onChange={handleInputChange}
+                        className="h-12 md:h-[56px]"
+                        labelClassName="text-[13px]"
                     />
 
                     {/* Address Note - Optional */}
                     <div className="md:col-span-2 flex flex-col gap-1.5">
-                        <Label className="text-sm font-medium text-gray-400">Address Note</Label>
+                        <Label className="text-[13px] font-medium text-gray-400">Address Note</Label>
                         <CustomInput
                             placeholder="Additional address information (e.g., Floor, Building name) - Optional"
                             name="addressNote"
                             value={formData.addressNote}
                             onChange={handleInputChange}
+                            className="h-12 md:h-[56px]"
                         />
                     </div>
                 </div>
             </div>
 
-            <div className="flex justify-end mt-12">
+            <div className="hidden md:flex justify-end mt-12">
                 <Button
                     className="h-[60px] rounded-lg bg-[#E59622] px-10 text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white flex items-center gap-2"
                     onClick={handleSubmit}
@@ -483,6 +507,13 @@ export default function BusinessInfoPage() {
                     {!isLoading && <FiArrowRight className="h-5 w-5" />}
                 </Button>
             </div>
+
+            <OnboardingCtaBar
+                label="Continue"
+                onClick={handleSubmit}
+                disabled={!isStepValid}
+                isLoading={isLoading}
+            />
         </div>
     );
 }

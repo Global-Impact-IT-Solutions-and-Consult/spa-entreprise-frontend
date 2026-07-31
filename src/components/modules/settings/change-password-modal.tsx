@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Lock, Eye, EyeOff, CheckCircle2, Loader2, RefreshCcw } from "lucide-react";
-import { Sheet } from "@/components/ui/sheet";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { Button } from "@/components/ui/button";
 import { userService } from "@/services/user.service";
 import { toaster } from "@/components/ui/toaster";
@@ -107,10 +107,35 @@ export function ChangePasswordModal({ open, onClose, mfaEnabled = false }: Chang
     };
 
     return (
-        <Sheet
+        <ResponsiveModal
             open={open}
             onClose={onClose}
             title="Security Settings"
+            // Desktop tree restored verbatim from the pre-Sheet-migration
+            // Dialog markup (db9961e^) — desktop must be byte-identical to
+            // what shipped before the mobile rebuild.
+            desktopContentClassName="sm:max-w-[480px] p-8 rounded-[24px] border border-gray-100 shadow-xl bg-white"
+            desktopHeader={
+                <div className="space-y-4 mb-2">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-[#FFF6ED] rounded-md flex items-center justify-center relative">
+                                <RefreshCcw className="w-6 h-6 text-[#E89D24] absolute" />
+                                <Lock className="w-3 h-3 text-[#E89D24] absolute z-10 fill-current bg-[#FFF6ED]" />
+                            </div>
+                            <h2 className="text-xl font-bold text-[#1F2937]">Security Settings</h2>
+                        </div>
+                        <p className="text-gray-500 text-sm">
+                            Update your password and provide your 2FA code to secure your account.
+                        </p>
+                    </div>
+                </div>
+            }
+            // Originally the action block sat inside the form's `space-y-6`
+            // stack with its own `pt-2` (24px + 8px above the button). As a
+            // sibling of the form under `DialogContent`'s `grid gap-4` it
+            // gets 16px, so `pt-4` restores the same 32px gap.
+            desktopFooterClassName="pt-4"
             footer={
                 <div className="flex flex-col gap-2">
                     <Button
@@ -136,8 +161,13 @@ export function ChangePasswordModal({ open, onClose, mfaEnabled = false }: Chang
                 </div>
             }
         >
-            <div className="p-6 space-y-6">
-                <div className="flex items-center gap-3">
+            {/* `md:contents` dissolves this mobile padding wrapper on the
+                desktop branch so the form sits directly in `DialogContent`'s
+                grid, exactly as it did pre-migration. */}
+            <div className="p-6 md:contents">
+                {/* Mobile-only intro — on desktop this copy lives in the
+                    restored `desktopHeader` block above instead. */}
+                <div className="md:hidden flex items-center gap-3 mb-6">
                     <div className="w-8 h-8 bg-[#FFF6ED] rounded-md flex items-center justify-center relative">
                         <RefreshCcw className="w-6 h-6 text-[#E89D24] absolute" />
                         <Lock className="w-3 h-3 text-[#E89D24] absolute z-10 fill-current bg-[#FFF6ED]" />
@@ -248,6 +278,6 @@ export function ChangePasswordModal({ open, onClose, mfaEnabled = false }: Chang
                     )}
                 </div>
             </div>
-        </Sheet>
+        </ResponsiveModal>
     );
 }

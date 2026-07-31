@@ -31,6 +31,9 @@ const TIME_SLOTS = Array.from({ length: 24 * 2 }).map((_, i) => {
     return { value, label: time };
 });
 
+// 24h value ("14:30") -> display label ("02:30PM"), for the mobile summary line.
+const timeLabel = (value: string) => TIME_SLOTS.find(slot => slot.value === value)?.label ?? value;
+
 interface DaySchedule {
     open: string;
     close: string;
@@ -142,6 +145,7 @@ export default function WorkingHoursPage() {
                 <p className="text-gray-500 mt-1 text-sm  sm:text-base">Set days of the week you will be open for business and time for bookings</p>
             </div>
 
+            <div className="hidden lg:block">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {DAYS.map((day) => {
                     const dayData = schedule[day.id] ?? { open: '09:00', close: '21:00', closed: false, allDay: false };
@@ -196,6 +200,72 @@ export default function WorkingHoursPage() {
                                     onCheckedChange={(checked) => handle24hrToggle(day.id, checked)}
                                 />
                             </div>
+                        </div>
+                    );
+                })}
+            </div>
+            </div>
+
+            {/* Mobile: one compact row per day — same fields, inline */}
+            <div className="lg:hidden overflow-hidden rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100">
+                {DAYS.map((day) => {
+                    const dayData = schedule[day.id] ?? { open: '09:00', close: '21:00', closed: false, allDay: false };
+                    const isDisabled = dayData.closed || dayData.allDay;
+
+                    return (
+                        <div key={day.id} className="p-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-[14px] font-bold text-gray-900">{day.label}</p>
+                                    <p className="mt-0.5 text-[11px] text-gray-400">
+                                        {dayData.closed
+                                            ? "Closed"
+                                            : dayData.allDay
+                                                ? "Open 24 hours"
+                                                : `${timeLabel(dayData.open)} – ${timeLabel(dayData.close)}`}
+                                    </p>
+                                </div>
+                                <label className="p-2 -m-2 inline-flex items-center cursor-pointer">
+                                    <Switch
+                                        checked={!dayData.closed}
+                                        onCheckedChange={(checked) => handleDayToggle(day.id, checked)}
+                                    />
+                                </label>
+                            </div>
+
+                            {!dayData.closed && (
+                                <>
+                                    <div className="mt-3 flex items-center gap-2">
+                                        <Select
+                                            disabled={isDisabled}
+                                            value={dayData.open}
+                                            onChange={(e) => handleTimeChange(day.id, 'open', e.target.value)}
+                                            options={TIME_SLOTS}
+                                            className="h-11 flex-1 rounded-xl border-gray-200 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        />
+                                        <span className="text-gray-300">–</span>
+                                        <Select
+                                            disabled={isDisabled}
+                                            value={dayData.close}
+                                            onChange={(e) => handleTimeChange(day.id, 'close', e.target.value)}
+                                            options={TIME_SLOTS}
+                                            className="h-11 flex-1 rounded-xl border-gray-200 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        />
+                                    </div>
+
+                                    <div className="mt-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5 text-gray-400">
+                                            <FiClock className="h-3.5 w-3.5" />
+                                            <span className="text-[11px] font-medium">Available 24/hours</span>
+                                        </div>
+                                        <Switch
+                                            checked={dayData.allDay}
+                                            disabled={dayData.closed}
+                                            onCheckedChange={(checked) => handle24hrToggle(day.id, checked)}
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
                     );
                 })}

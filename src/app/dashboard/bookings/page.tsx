@@ -15,12 +15,12 @@ import {
     AlertCircle,
     CalendarCheck,
     Banknote,
-    Users,
-    Loader2
+    Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { CreateBookingModal } from "@/components/modules/bookings/CreateBookingModal";
@@ -29,7 +29,9 @@ import { bookingService, Booking } from "@/services/booking.service";
 import { businessService, Service, Staff } from "@/services/business.service";
 import { FiBell } from "react-icons/fi";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { toaster } from "@/components/ui/toaster";
+import { useBookingOwnerActions } from "@/hooks/use-booking-owner-actions";
+import { Sheet } from "@/components/ui/sheet";
+import { BookingRowMobile } from "@/components/dashboard/booking-row-mobile";
 
 export default function BookingsPage() {
     const { user } = useAuthStore();
@@ -37,6 +39,8 @@ export default function BookingsPage() {
 
     const [activeTab, setActiveTab] = useState("Upcoming");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    // Mobile-only: the desktop filter card becomes a bottom sheet.
+    const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
     const [allBookings, setAllBookings] = useState<Booking[]>([]);
     const [businessServices, setBusinessServices] = useState<Service[]>([]);
     const [businessStaff, setBusinessStaff] = useState<Staff[]>([]);
@@ -61,9 +65,6 @@ export default function BookingsPage() {
     const [filterDate, setFilterDate] = useState("");
 
     const [searchQuery, setSearchQuery] = useState("");
-    const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
-    const [bookingToReject, setBookingToReject] = useState<string | null>(null);
-    const [bookingToApprove, setBookingToApprove] = useState<string | null>(null);
 
     // Applied filters (only update when "Apply" is clicked)
     const [appliedFilters, setAppliedFilters] = useState({
@@ -137,7 +138,21 @@ export default function BookingsPage() {
         fetchBookings();
     }, [fetchBookings]);
 
-
+    const {
+        bookingToCancel,
+        bookingToApprove,
+        bookingToReject,
+        handleConfirm,
+        handleCancel,
+        handleApproveCancellation,
+        handleRejectCancellation,
+        confirmCancel,
+        confirmApproveCancellation,
+        confirmRejectCancellation,
+        clearCancel,
+        clearApprove,
+        clearReject,
+    } = useBookingOwnerActions({ businessId, onDone: fetchBookings });
 
     // Filtered bookings based on active tab + applied filters
     const filteredBookings = useMemo(() => {
@@ -214,68 +229,12 @@ export default function BookingsPage() {
         appliedFilters.date !== "" ||
         appliedFilters.search !== "";
 
-    const handleConfirm = async (id: string) => {
-        try {
-            await bookingService.confirmBooking(id, businessId!, { notes: "Handled from dashboard" });
-            fetchBookings();
-        } catch (error) {
-            console.error("Error confirming booking:", error);
-        }
-    };
-
-    const handleCancel = (id: string) => {
-        setBookingToCancel(id);
-    };
-
-    const handleApproveCancellation = (id: string) => {
-        setBookingToApprove(id);
-    };
-
-    const handleRejectCancellation = (id: string) => {
-        setBookingToReject(id);
-    };
-
-    const confirmCancel = async () => {
-        if (!bookingToCancel) return;
-        try {
-            await bookingService.cancelBooking(bookingToCancel, { reason: "Cancelled by business owner" });
-            fetchBookings();
-            toaster.create({ title: "Booking Cancelled", type: "success" });
-        } catch (error) {
-            console.error("Error cancelling booking:", error);
-            toaster.create({ title: "Cancellation Failed", description: "Could not cancel booking", type: "error" });
-        } finally {
-            setBookingToCancel(null);
-        }
-    };
-
-    const confirmApproveCancellation = async () => {
-        if (!bookingToApprove || !businessId) return;
-        try {
-            await bookingService.cancellationDecision(bookingToApprove, businessId, { approve: true, reason: "Cancellation request approved by business." });
-            fetchBookings();
-            toaster.create({ title: "Cancellation Approved", description: "The customer has been notified.", type: "success" });
-        } catch (error) {
-            console.error("Error approving cancellation:", error);
-            toaster.create({ title: "Action Failed", description: "Could not approve cancellation request.", type: "error" });
-        } finally {
-            setBookingToApprove(null);
-        }
-    };
-
-    const confirmRejectCancellation = async () => {
-        if (!bookingToReject || !businessId) return;
-        try {
-            await bookingService.cancellationDecision(bookingToReject, businessId, { approve: false, reason: "Outside cancellation window." });
-            fetchBookings();
-            toaster.create({ title: "Request Rejected", description: "The booking remains active.", type: "success" });
-        } catch (error) {
-            console.error("Error rejecting cancellation:", error);
-            toaster.create({ title: "Action Failed", description: "Could not reject cancellation request.", type: "error" });
-        } finally {
-            setBookingToReject(null);
-        }
-    };
+    const activeFilterCount = [
+        appliedFilters.service !== "all",
+        appliedFilters.staff !== "all",
+        appliedFilters.date !== "",
+        appliedFilters.search !== "",
+    ].filter(Boolean).length;
 
     const statsConfig = [
         {
@@ -380,7 +339,23 @@ export default function BookingsPage() {
                 </Button> */}
             </div>
 
+            {/* Stats — mobile: compact 2-up grid */}
+            <div className="lg:hidden grid grid-cols-2 gap-3 mb-6">
+                {statsConfig.map((stat, index) => (
+                    <div key={index} className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-gray-100">
+                        <div className="flex items-start justify-between gap-2">
+                            <p className="text-[11px] font-medium leading-tight text-gray-500">{stat.label}</p>
+                            <div className={cn("shrink-0 rounded-lg p-1.5", stat.iconBg)}>
+                                <stat.icon className={cn("h-3.5 w-3.5", stat.iconColor)} />
+                            </div>
+                        </div>
+                        <p className="mt-2 text-[20px] font-bold leading-none text-gray-900">{stat.value}</p>
+                    </div>
+                ))}
+            </div>
+
             {/* Stats Grid */}
+            <div className="hidden lg:block">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {statsConfig.map((stat, index) => (
                     <Card key={index} className="border-none shadow-sm hover:shadow-md ring-1 ring-gray-100 bg-white">
@@ -398,9 +373,11 @@ export default function BookingsPage() {
                     </Card>
                 ))}
             </div>
+            </div>
 
             {/* Tabs & Filters */}
             <div className="space-y-6 mb-8">
+                <div className="hidden lg:block">
                 <div className="flex items-center gap-6 sm:gap-8 border-b border-gray-200 overflow-x-auto no-scrollbar">
                     {["Upcoming", "Completed", "Pending Cancellations", "Canceled"].map((tab) => (
                         <button
@@ -422,7 +399,31 @@ export default function BookingsPage() {
                         </button>
                     ))}
                 </div>
+                </div>
 
+                {/* Tabs — mobile: same underline treatment, scrolled, no bell icon */}
+                <div className="lg:hidden scroll-row gap-5 border-b border-gray-200 -mx-4 px-4">
+                    {["Upcoming", "Completed", "Pending Cancellations", "Canceled"].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={cn(
+                                "relative shrink-0 whitespace-nowrap pb-3 text-[13px] font-semibold transition-colors",
+                                activeTab === tab ? "text-[#F59E0B]" : "text-gray-400"
+                            )}
+                        >
+                            {tab}
+                            <span className="ml-1 text-[11px]">
+                                ({tabCount[tab.toLowerCase() as keyof typeof tabCount]})
+                            </span>
+                            {activeTab === tab && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B]" />
+                            )}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="hidden lg:block">
                 <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-6">
                     <h2 className="text-lg font-bold text-gray-900">
                         Filter Bookings <span className="text-sm font-normal text-gray-500 ml-2">Filter by service, staff, delivery type, or date</span>
@@ -545,8 +546,70 @@ export default function BookingsPage() {
                         )}
                     </div>
                 </div>
+                </div>
+
+                {/* Filters — mobile: icon button opening a Sheet with the same
+                    controls, plus the active-filter chips as a scroll row */}
+                <div className="lg:hidden flex items-center gap-2">
+                    <button
+                        onClick={() => setIsFilterSheetOpen(true)}
+                        className="h-10 shrink-0 flex items-center gap-1.5 rounded-xl bg-white px-3 text-[12px] font-semibold text-gray-600 shadow-sm ring-1 ring-gray-100"
+                    >
+                        <Filter className="h-4 w-4" />
+                        Filters
+                        {activeFilterCount > 0 && (
+                            <span className="ml-0.5 rounded-full bg-[#F59E0B] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                {activeFilterCount}
+                            </span>
+                        )}
+                    </button>
+
+                    {hasActiveFilters ? (
+                        <div className="scroll-row min-w-0 gap-2">
+                            {appliedFilters.service !== "all" && (
+                                <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
+                                    {appliedFilters.service}
+                                    <X className="h-3 w-3" onClick={() => {
+                                        setFilterService("all");
+                                        setAppliedFilters(prev => ({ ...prev, service: "all" }));
+                                    }} />
+                                </span>
+                            )}
+                            {appliedFilters.staff !== "all" && (
+                                <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700">
+                                    {appliedFilters.staff}
+                                    <X className="h-3 w-3" onClick={() => {
+                                        setFilterStaff("all");
+                                        setAppliedFilters(prev => ({ ...prev, staff: "all" }));
+                                    }} />
+                                </span>
+                            )}
+                            {appliedFilters.date && (
+                                <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-[11px] font-medium text-purple-700">
+                                    {new Date(appliedFilters.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    <X className="h-3 w-3" onClick={() => {
+                                        setFilterDate("");
+                                        setAppliedFilters(prev => ({ ...prev, date: "" }));
+                                    }} />
+                                </span>
+                            )}
+                            {appliedFilters.search && (
+                                <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700">
+                                    &quot;{appliedFilters.search}&quot;
+                                    <X className="h-3 w-3" onClick={() => {
+                                        setSearchQuery("");
+                                        setAppliedFilters(prev => ({ ...prev, search: "" }));
+                                    }} />
+                                </span>
+                            )}
+                        </div>
+                    ) : (
+                        <p className="truncate text-[11px] text-gray-400"></p>
+                    )}
+                </div>
 
                 {/* Search */}
+                <div className="hidden lg:block">
                 <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
@@ -557,12 +620,37 @@ export default function BookingsPage() {
                         className="pl-12 h-14 bg-white border-gray-100 shadow-sm rounded-xl focus-visible:ring-[#F59E0B]"
                     />
                 </div>
+                </div>
 
                 {/* Booking Cards Grid */}
                 {isLoading ? (
-                    <div className="flex h-64 items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-[#F59E0B]" />
-                    </div>
+                    <>
+                        <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <Card key={i} className="border-none shadow-sm ring-1 ring-gray-100 overflow-hidden">
+                                    <CardContent className="p-0">
+                                        <Skeleton className="h-[140px] w-full rounded-none" />
+                                        <div className="p-6 space-y-4">
+                                            <Skeleton className="h-4 w-2/3" />
+                                            <Skeleton className="h-3 w-1/2" />
+                                            <Skeleton className="h-3 w-1/3" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                        <div className="lg:hidden space-y-3">
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="rounded-2xl bg-white border border-gray-100 p-4 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <Skeleton className="h-3.5 w-1/2" />
+                                        <Skeleton className="h-5 w-16 rounded-full" />
+                                    </div>
+                                    <Skeleton className="h-3 w-2/3" />
+                                </div>
+                            ))}
+                        </div>
+                    </>
                 ) : filteredBookings.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-gray-100 gap-4">
                         <CalendarCheck className="h-12 w-12 text-gray-200" />
@@ -585,6 +673,8 @@ export default function BookingsPage() {
                         )}
                     </div>
                 ) : (
+                    <>
+                    <div className="hidden lg:block">
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                         {filteredBookings.map((booking) => (
                             <Card key={booking.id} className="border-none shadow-sm ring-1 ring-gray-100 overflow-hidden group">
@@ -708,10 +798,28 @@ export default function BookingsPage() {
                             </Card>
                         ))}
                     </div>
+                    </div>
+
+                    {/* Booking rows — mobile: swipe-to-reveal actions */}
+                    <div className="lg:hidden space-y-3">
+                        {filteredBookings.map((booking) => (
+                            <BookingRowMobile
+                                key={booking.id}
+                                booking={booking}
+                                dateLabel={formatBookingDate(booking.bookingDate)}
+                                timeLabel={`${formatTime12h(booking.startTime)} - ${formatTime12h(booking.endTime)}`}
+                                onConfirm={handleConfirm}
+                                onCancel={handleCancel}
+                                onApproveCancellation={handleApproveCancellation}
+                                onRejectCancellation={handleRejectCancellation}
+                            />
+                        ))}
+                    </div>
+                    </>
                 )}
 
-                {/* Pagination Placeholder */}
-                <div className="flex items-center justify-center gap-2 py-8">
+                {/* Pagination Placeholder — hidden on mobile, it isn't wired up */}
+                <div className="hidden lg:flex items-center justify-center gap-2 py-8">
                     <button className="p-2 rounded-lg border border-gray-100 text-gray-400 hover:bg-gray-50 disabled:opacity-50" disabled>
                         <ChevronLeft className="h-5 w-5" />
                     </button>
@@ -722,6 +830,101 @@ export default function BookingsPage() {
                         <ChevronRight className="h-5 w-5" />
                     </button>
                 </div>
+            </div>
+
+            {/* Mobile filter sheet — same state and handlers as the desktop card */}
+            <div className="lg:hidden">
+                <Sheet
+                    open={isFilterSheetOpen}
+                    onClose={() => setIsFilterSheetOpen(false)}
+                    title="Filter Bookings"
+                    className="max-w-none"
+                    footer={
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    handleClearFilters();
+                                    setIsFilterSheetOpen(false);
+                                }}
+                                className="h-12 flex-1 rounded-xl bg-gray-100 text-[14px] font-semibold text-gray-600"
+                            >
+                                Clear
+                            </button>
+                            <button
+                                onClick={() => {
+                                    handleApplyFilters();
+                                    setIsFilterSheetOpen(false);
+                                }}
+                                className="h-12 flex-1 rounded-xl bg-[#F59E0B] text-[14px] font-bold text-white"
+                            >
+                                Apply Filters
+                            </button>
+                        </div>
+                    }
+                >
+                    <div className="space-y-4 px-4 pb-4">
+                        <div className="relative">
+                            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <Input
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Customer, service or booking ID"
+                                className="h-12 rounded-xl border-gray-100 bg-gray-50 pl-10 text-[14px] focus-visible:ring-[#F59E0B]"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Service</label>
+                            <select
+                                value={filterService}
+                                onChange={(e) => setFilterService(e.target.value)}
+                                className="mt-1.5 h-12 w-full appearance-none rounded-xl border border-transparent bg-gray-50 px-4 text-[14px] font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20"
+                            >
+                                <option value="all">All Services</option>
+                                {businessServices.map(s => (
+                                    <option key={s.id} value={s.name}>{s.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Staff</label>
+                            <select
+                                value={filterStaff}
+                                onChange={(e) => setFilterStaff(e.target.value)}
+                                className="mt-1.5 h-12 w-full appearance-none rounded-xl border border-transparent bg-gray-50 px-4 text-[14px] font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20"
+                            >
+                                <option value="all">All Staffs</option>
+                                {businessStaff.map(s => (
+                                    <option key={s.id} value={s.name}>{s.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Delivery Type</label>
+                            <select
+                                value={filterDeliveryType}
+                                onChange={(e) => setFilterDeliveryType(e.target.value)}
+                                className="mt-1.5 h-12 w-full appearance-none rounded-xl border border-transparent bg-gray-50 px-4 text-[14px] font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20"
+                            >
+                                <option value="all">All Delivery Type</option>
+                                <option value="in_location">In Location</option>
+                                <option value="home_service">Home Service</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Date</label>
+                            <input
+                                type="date"
+                                value={filterDate}
+                                onChange={(e) => setFilterDate(e.target.value)}
+                                className="mt-1.5 h-12 w-full appearance-none rounded-xl border border-transparent bg-gray-50 px-4 text-[14px] font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/20"
+                            />
+                        </div>
+                    </div>
+                </Sheet>
             </div>
 
             <CreateBookingModal
@@ -738,7 +941,7 @@ export default function BookingsPage() {
                 variant="danger"
                 confirmLabel="Cancel Booking"
                 onConfirm={confirmCancel}
-                onCancel={() => setBookingToCancel(null)}
+                onCancel={clearCancel}
             />
 
             <ConfirmModal
@@ -748,7 +951,7 @@ export default function BookingsPage() {
                 variant="danger"
                 confirmLabel="Approve & Cancel"
                 onConfirm={confirmApproveCancellation}
-                onCancel={() => setBookingToApprove(null)}
+                onCancel={clearApprove}
             />
 
             <ConfirmModal
@@ -758,7 +961,7 @@ export default function BookingsPage() {
                 variant="warning"
                 confirmLabel="Reject Request"
                 onConfirm={confirmRejectCancellation}
-                onCancel={() => setBookingToReject(null)}
+                onCancel={clearReject}
             />
         </div>
     );

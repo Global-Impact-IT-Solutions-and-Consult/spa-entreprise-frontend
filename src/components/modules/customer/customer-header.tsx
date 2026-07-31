@@ -188,7 +188,12 @@ export function CustomerHeader() {
                     )}
                 </div>
             </div>
-            <NotificationPreviewSheet open={notifSheetOpen} onClose={() => setNotifSheetOpen(false)} />
+            {/* Mobile-only: this sheet replaced nothing on desktop (it's opened
+                from the `md:hidden` bell), but gate it anyway so no Sheet can
+                ever surface at >=768px. */}
+            <div className="md:hidden">
+                <NotificationPreviewSheet open={notifSheetOpen} onClose={() => setNotifSheetOpen(false)} />
+            </div>
 
             {/* Desktop: full header, unchanged */}
             <div className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

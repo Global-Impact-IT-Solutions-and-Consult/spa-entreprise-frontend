@@ -9,7 +9,7 @@ import { PaymentSuccessSheet } from "@/components/modules/customer/payment-succe
 import { BookingCard } from "@/components/modules/bookings/booking-card";
 import { BookingCardMobile } from "@/components/modules/bookings/booking-card-mobile";
 import { Booking, bookingService } from "@/services/booking.service";
-import { Loader2, CalendarX, Lock } from "lucide-react";
+import { Loader2, CalendarX, Lock, Check } from "lucide-react";
 import { toaster } from "@/components/ui/toaster";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/button";
@@ -214,7 +214,32 @@ function MyBookingsContent() {
             <MobileFooterStrip />
             <CustomerBottomNav />
 
-            <PaymentSuccessSheet open={showPaymentSuccess} onClose={handleCloseSuccessModal} />
+            {/* Payment Success Modal — desktop, restored verbatim from db9961e^.
+                Stateless page-level block (no refs), so a CSS dual-tree is safe. */}
+            {showPaymentSuccess && (
+                <div className="fixed inset-0 z-50 hidden md:flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-[32px] p-10 max-w-sm w-full text-center shadow-2xl animate-in fade-in zoom-in duration-300">
+                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Check className="w-10 h-10 text-green-500" strokeWidth={3} />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-3 font-playfair">Payment Confirmed</h2>
+                        <p className="text-gray-500 mb-8 leading-relaxed">
+                            Your booking has been successfully secured. Check your email for details.
+                        </p>
+                        <Button
+                            onClick={handleCloseSuccessModal}
+                            className="w-full bg-[#E89D24] hover:bg-[#E5A800] text-white py-4 h-14 rounded-2xl font-bold text-lg shadow-lg shadow-yellow-500/20 transition-all active:scale-[0.98]"
+                        >
+                            Back to Bookings
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Payment success — mobile only */}
+            <div className="md:hidden">
+                <PaymentSuccessSheet open={showPaymentSuccess} onClose={handleCloseSuccessModal} />
+            </div>
         </div>
     );
 }

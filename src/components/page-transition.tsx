@@ -3,9 +3,10 @@
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-// Routes that render without header/footer/bottom-nav chrome — booking and
-// account flows one level deeper than a tab root. Matches the pattern already
-// used for hiding CustomerBottomNav on these same routes.
+// Routes one level deeper than a tab root, which get a directional slide
+// instead of a fade. This list only picks the animation class below — chrome
+// (header/footer/bottom-nav) visibility is decided independently by each
+// layout, so adding a route here changes nothing but its transition.
 const FLOW_ROUTE_PATTERNS = [
     /^\/bookings\/new/,
     /^\/bookings\/[^/]+\/cancel/,
@@ -13,6 +14,10 @@ const FLOW_ROUTE_PATTERNS = [
     /^\/reviews\//,
     /^\/payment\//,
     /^\/tip\//,
+    // Dashboard detail routes reached from the Business Profile sheet / More
+    // sheet rather than the bottom nav.
+    /^\/dashboard\/working-hours/,
+    /^\/dashboard\/business/,
 ];
 
 function isFlowRoute(pathname: string) {

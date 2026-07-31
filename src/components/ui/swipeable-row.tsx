@@ -10,6 +10,11 @@ export interface SwipeAction {
     icon: LucideIcon;
     onClick: () => void;
     className?: string;
+    // Keeps the swipe tray open after this action fires instead of the
+    // default auto-close — used for a two-tap "armed" destructive action
+    // (e.g. Delete -> "Sure?" -> Delete) where the row needs to stay open
+    // between taps.
+    keepOpen?: boolean;
 }
 
 interface SwipeableRowProps {
@@ -189,7 +194,7 @@ export function SwipeableRow({ actions, children, disabled, actionWidth = 76, cl
                             key={action.key}
                             type="button"
                             onClick={() => {
-                                setIsOpen(false);
+                                if (!action.keepOpen) setIsOpen(false);
                                 action.onClick();
                             }}
                             style={{ width: actionWidth }}

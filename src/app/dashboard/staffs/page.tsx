@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, User, Edit2, Trash2, Loader2, Scissors } from "lucide-react";
+import { Plus, User, Edit2, Trash2, Scissors } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { StaffModal } from "@/components/modules/staff/StaffModal";
+import { StaffRowMobile } from "@/components/modules/staff/staff-row-mobile";
 import { useAuthStore } from "@/store/auth.store";
 import { businessService, Staff, Service } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
@@ -160,9 +162,37 @@ export default function StaffsPage() {
             </div>
 
             {isLoading ? (
-                <div className="h-[400px] flex items-center justify-center">
-                    <Loader2 className="h-10 w-10 text-[#F59E0B] animate-spin" />
-                </div>
+                <>
+                    <div className="hidden lg:grid mt-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div key={i} className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <Skeleton className="h-14 w-14 rounded-full shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <Skeleton className="h-4 w-2/3" />
+                                        <Skeleton className="h-3 w-1/3" />
+                                    </div>
+                                </div>
+                                <Skeleton className="h-3 w-full" />
+                                <Skeleton className="h-3 w-3/4" />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="lg:hidden mt-6 space-y-3">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="rounded-2xl bg-white border border-gray-100 p-4 space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <Skeleton className="h-11 w-11 rounded-full shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <Skeleton className="h-3.5 w-1/2" />
+                                        <Skeleton className="h-3 w-1/3" />
+                                    </div>
+                                </div>
+                                <Skeleton className="h-6 w-24 rounded-full" />
+                            </div>
+                        ))}
+                    </div>
+                </>
             ) : filteredStaff.length === 0 ? (
                 <div className="mt-6 h-[400px] flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-gray-100 p-12 text-center">
                     <User className="h-16 w-16 text-gray-200 mb-4" />
@@ -179,6 +209,8 @@ export default function StaffsPage() {
                     </Button>
                 </div>
             ) : (
+                <>
+                <div className="hidden lg:block">
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredStaff.map((staff) => {
                         const staffServiceNames = services
@@ -196,12 +228,34 @@ export default function StaffsPage() {
                         );
                     })}
                 </div>
+                </div>
+
+                {/* Mobile: compact rows with swipe Edit / two-tap Remove */}
+                <div className="lg:hidden mt-6 space-y-3">
+                    {filteredStaff.map((staff) => {
+                        const staffServiceNames = services
+                            .filter(s => staff.serviceIds?.includes(s.id))
+                            .map(s => s.name);
+
+                        return (
+                            <StaffRowMobile
+                                key={staff.id}
+                                staff={staff}
+                                serviceNames={staffServiceNames}
+                                onEdit={() => setStaffToEdit(staff)}
+                                onDelete={() => handleDeleteStaff(staff.id)}
+                            />
+                        );
+                    })}
+                </div>
+                </>
             )}
 
             {/* Staff Modal (Add/Edit) */}
             {businessId && (
                 <StaffModal
                     businessId={businessId}
+                    breakpoint={1023}
                     staff={staffToEdit}
                     services={services}
                     businessTypeIcon={businessTypeIcon}

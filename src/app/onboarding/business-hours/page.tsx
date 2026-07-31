@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from '@/components/ui/select';
 import { Switch } from "@/components/ui/switch";
 import { toaster } from "@/components/ui/toaster";
+import { OnboardingCtaBar } from '@/components/modules/onboarding/onboarding-cta-bar';
 
 const DAYS = [
     { id: 'monday', label: 'Monday' },
@@ -129,11 +130,15 @@ export default function BusinessHoursPage() {
         }
     };
 
+    // Mirrors handleContinue's only guard — a missing businessId. Drives the
+    // mobile CTA's disabled state only; the desktop button is untouched.
+    const isStepValid = Boolean(businessId);
+
     return (
         <div className="w-full max-w-[1100px]">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 md:p-12">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 md:p-12">
                 <div className="mb-10">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Set Up Working Hours</h1>
+                    <h1 className="text-[22px] md:text-3xl font-bold text-gray-900 mb-2">Set Up Working Hours</h1>
                     <p className="text-gray-500 font-medium">Select days you open and hours of the day you will be available</p>
                 </div>
 
@@ -157,25 +162,25 @@ export default function BusinessHoursPage() {
 
                                 {/* From */}
                                 <div className="flex items-center gap-3 px-5">
-                                    <span className="text-sm text-gray-400 w-10">From</span>
+                                    <span className="text-[13px] text-gray-400 w-10">From</span>
                                     <Select
                                         disabled={isDisabled}
                                         value={dayData.open}
                                         onChange={(e) => handleTimeChange(day.id, 'open', e.target.value)}
                                         options={TIME_SLOTS}
-                                        className="h-10 rounded-lg border-gray-200 flex-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="h-12 md:h-10 rounded-lg border-gray-200 flex-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                 </div>
 
                                 {/* To */}
                                 <div className="flex items-center gap-3 px-5">
-                                    <span className="text-sm text-gray-400 w-10">To</span>
+                                    <span className="text-[13px] text-gray-400 w-10">To</span>
                                     <Select
                                         disabled={isDisabled}
                                         value={dayData.close}
                                         onChange={(e) => handleTimeChange(day.id, 'close', e.target.value)}
                                         options={TIME_SLOTS}
-                                        className="h-10 rounded-lg border-gray-200 flex-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="h-12 md:h-10 rounded-lg border-gray-200 flex-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                 </div>
 
@@ -199,7 +204,7 @@ export default function BusinessHoursPage() {
                 </div>
             </div>
 
-            <div className="flex justify-between mt-12">
+            <div className="hidden md:flex justify-between mt-12">
                 <Button
                     variant="outline"
                     className="h-[56px] px-10 border-gray-200 text-gray-500 font-bold rounded-lg flex items-center gap-2 hover:bg-gray-50"
@@ -217,6 +222,13 @@ export default function BusinessHoursPage() {
                     {!isLoading && <FiArrowRight className="h-5 w-5" />}
                 </Button>
             </div>
+
+            <OnboardingCtaBar
+                label="Continue"
+                onClick={handleContinue}
+                disabled={!isStepValid}
+                isLoading={isLoading}
+            />
         </div>
     );
 }
