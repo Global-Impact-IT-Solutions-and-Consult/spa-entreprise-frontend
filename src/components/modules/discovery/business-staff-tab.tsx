@@ -88,11 +88,11 @@ function StaffCard({ member }: { member: Staff }) {
 
 export function BusinessStaffTab({ staffs }: BusinessStaffTabProps) {
     return (
-        <div className="space-y-10">
+        <div className="space-y-4 md:space-y-10">
             {staffs.length === 0 && <p className="text-center text-gray-500 text-sm">No staff found</p>}
-            {staffs.length > 0 && <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Meet Our Staffs</h2>}
+            {staffs.length > 0 && <h2 className="text-[17px] md:text-3xl font-bold text-gray-900 tracking-tight">Meet Our Staffs</h2>}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                 {staffs.map((member) => (<StaffCard key={member.id} member={member} />))}
             </div>
         </div>

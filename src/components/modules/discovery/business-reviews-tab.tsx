@@ -28,14 +28,14 @@ interface BusinessReviewsTabProps {
 export function BusinessReviewsTab({ rating, totalReviews, ratingDistribution, reviews }: BusinessReviewsTabProps) {
     return (
         <div className="space-y-10">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10">
-                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Customer Review</h2>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-4 md:mb-10">
+                <h2 className="text-[17px] md:text-3xl font-bold text-gray-900 tracking-tight">Customer Review</h2>
             </div>
 
             {/* Summary Box */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-8 md:p-10 shadow-sm flex flex-col md:flex-row items-center gap-12">
+            <div className="bg-white rounded-3xl border border-gray-100 p-5 md:p-10 shadow-sm flex flex-col md:flex-row items-center gap-6 md:gap-12">
                 <div className="flex flex-col items-center text-center">
-                    <div className="text-7xl font-bold text-gray-900 mb-4">{rating}</div>
+                    <div className="text-4xl md:text-7xl font-bold text-gray-900 mb-2 md:mb-4">{rating}</div>
                     <div className="flex items-center gap-1.5 mb-2">
                         {[1, 2, 3, 4, 5].map((s) => (
                             <Star
@@ -66,17 +66,17 @@ export function BusinessReviewsTab({ rating, totalReviews, ratingDistribution, r
             {/* Review List */}
             <div className="space-y-6">
                 {reviews.map((review) => (
-                    <div key={review.id} className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm transition-all hover:shadow-md">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="w-14 h-14 border-2 border-white shadow-sm">
+                    <div key={review.id} className="bg-white rounded-3xl border border-gray-100 p-4 md:p-8 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center justify-between mb-4 md:mb-6">
+                            <div className="flex items-center gap-3 md:gap-4">
+                                <Avatar className="w-11 h-11 md:w-14 md:h-14 border-2 border-white shadow-sm">
                                     <AvatarImage src={review.userAvatar} />
                                     <AvatarFallback className="bg-gray-100 font-bold text-gray-600">
                                         {review.userName.split(' ').map(n => n[0]).join('')}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <h4 className="text-lg font-bold text-gray-900">{review.userName}</h4>
+                                    <h4 className="text-sm md:text-lg font-bold text-gray-900">{review.userName}</h4>
                                     <div className="flex items-center gap-1">
                                         {[1, 2, 3, 4, 5].map((s) => (
                                             <Star

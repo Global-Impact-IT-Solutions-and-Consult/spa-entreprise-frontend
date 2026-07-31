@@ -48,10 +48,10 @@ export function BusinessInfoSidebar({ business }: BusinessSidebarProps) {
     }).filter(Boolean) as { day: string; time: string; isToday?: boolean }[] : []);
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-4 md:space-y-8">
             {/* Contact & Info Card */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-6 md:p-8 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Contact & Information</h3>
+            <div className="bg-white rounded-3xl border border-gray-100 p-4 md:p-8 shadow-sm">
+                <h3 className="text-[17px] md:text-xl font-bold text-gray-900 mb-4 md:mb-6">Contact & Information</h3>
 
                 <div className="space-y-6">
                     {address && (
@@ -104,8 +104,8 @@ export function BusinessInfoSidebar({ business }: BusinessSidebarProps) {
             </div>
 
             {/* Business Hours Card */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-6 md:p-8 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Business Hours</h3>
+            <div className="bg-white rounded-3xl border border-gray-100 p-4 md:p-8 shadow-sm">
+                <h3 className="text-[17px] md:text-xl font-bold text-gray-900 mb-4 md:mb-6">Business Hours</h3>
 
                 <div className="space-y-4">
                     {displayHours.map((hour, idx) => (
@@ -124,8 +124,8 @@ export function BusinessInfoSidebar({ business }: BusinessSidebarProps) {
 
             {/* Socials */}
             {(business.facebookUrl || business.instagramUrl || business.twitterUrl) && (
-                <div className="bg-white rounded-3xl border border-gray-100 p-6 md:p-8 shadow-sm">
-                    <h3 className="text-xl font-bold text-gray-900 mb-6">Follow Us</h3>
+                <div className="bg-white rounded-3xl border border-gray-100 p-4 md:p-8 shadow-sm">
+                    <h3 className="text-[17px] md:text-xl font-bold text-gray-900 mb-4 md:mb-6">Follow Us</h3>
                     <div className="flex gap-4">
                         {business.instagramUrl && (
                             <a 

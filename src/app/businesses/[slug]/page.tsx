@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { MobileFooterStrip } from "@/components/modules/customer/mobile-footer-strip";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { BusinessHeader } from "@/components/modules/discovery/business-header";
 import { BusinessInfoSidebar } from "@/components/modules/discovery/business-info-sidebar";
 import { ServiceCard } from "@/components/modules/discovery/service-card";
@@ -104,9 +106,9 @@ export default function BusinessDetailsPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen flex flex-col bg-white pb-20 md:pb-0">
                 <CustomerHeader />
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
                     <Skeleton className="h-[400px] w-full rounded-3xl mb-12" />
                     <div className="flex flex-col lg:flex-row gap-12">
                         <div className="flex-1 space-y-8">
@@ -121,16 +123,20 @@ export default function BusinessDetailsPage() {
                         </aside>
                     </div>
                 </div>
-                <CustomerFooter />
+                <div className="hidden md:block">
+                    <CustomerFooter />
+                </div>
+                <MobileFooterStrip />
+                <CustomerBottomNav />
             </div>
         );
     }
 
     if (error || !business) {
         return (
-            <div className="min-h-screen bg-gray-50/10">
+            <div className="min-h-screen flex flex-col bg-gray-50/10 pb-20 md:pb-0">
                 <CustomerHeader />
-                <main className="max-w-7xl mx-auto px-4 py-20 text-center">
+                <main className="flex-1 max-w-7xl mx-auto px-4 py-20 text-center w-full">
                     <div className="bg-white p-12 rounded-3xl shadow-sm max-w-md mx-auto">
                         <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-6" />
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h2>
@@ -143,7 +149,11 @@ export default function BusinessDetailsPage() {
                         </Button>
                     </div>
                 </main>
-                <CustomerFooter />
+                <div className="hidden md:block">
+                    <CustomerFooter />
+                </div>
+                <MobileFooterStrip />
+                <CustomerBottomNav />
             </div>
         );
     }
@@ -208,21 +218,40 @@ export default function BusinessDetailsPage() {
     }));
 
     return (
-        <div className="min-h-screen bg-gray-50/10">
+        <div className="min-h-screen flex flex-col bg-gray-50/10 pb-20 md:pb-0">
             <CustomerHeader />
 
-            <BusinessHeader 
+            <BusinessHeader
                 business={transformedBusiness} 
                 onShareClick={() => setIsShareModalOpen(true)}
             />
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-20">
+            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-20 w-full">
                 <div className="flex flex-col lg:flex-row gap-12">
 
                     {/* Main Content Area */}
                     <div className="flex-1 min-w-0">
-                        {/* Tabs */}
-                        <div className="bg-gray-100/50 p-1.5 rounded-md flex gap-1 mb-10 w-full overflow-x-auto no-scrollbar">
+                        {/* Tabs — mobile: underline style, matching the rest of the app */}
+                        <div className="md:hidden scroll-row gap-6 -mx-4 px-4 mb-6 border-b border-gray-200">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`shrink-0 whitespace-nowrap pb-3 text-sm font-bold transition-colors relative ${activeTab === tab
+                                        ? "text-[#E89D24]"
+                                        : "text-gray-500 hover:text-gray-700"
+                                        }`}
+                                >
+                                    {tab}
+                                    {activeTab === tab && (
+                                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E89D24] rounded-t-full" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Tabs — desktop, unchanged */}
+                        <div className="hidden md:flex bg-gray-100/50 p-1.5 rounded-md gap-1 mb-10 w-full overflow-x-auto no-scrollbar">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab}
@@ -240,7 +269,7 @@ export default function BusinessDetailsPage() {
                         {/* Render Active Tab Content */}
                         {activeTab === "Services" && (
                             <div>
-                                <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-8">Our Services</h2>
+                                <h2 className="text-[17px] md:text-3xl font-bold text-gray-900 tracking-tight mb-4 md:mb-8">Our Services</h2>
                                 {services.length > 0 ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         {services.map((service) => (
@@ -299,7 +328,11 @@ export default function BusinessDetailsPage() {
                 </div>
             </main>
 
-            <CustomerFooter />
+            <div className="hidden md:block">
+                <CustomerFooter />
+            </div>
+            <MobileFooterStrip />
+            <CustomerBottomNav />
 
             {/* Share Modal */}
             <ShareBusinessModal

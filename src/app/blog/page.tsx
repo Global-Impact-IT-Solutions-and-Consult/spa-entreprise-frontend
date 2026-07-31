@@ -5,7 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Calendar, Search } from 'lucide-react';
 import { CustomerFooter } from '@/components/modules/customer/customer-footer';
+import { MobileFooterStrip } from '@/components/modules/customer/mobile-footer-strip';
 import { CustomerHeader } from '@/components/modules/customer/customer-header';
+import { CustomerBottomNav } from '@/components/modules/customer/customer-bottom-nav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { blogService, type BlogPost } from '@/services/blog.service';
@@ -45,9 +47,9 @@ export default function BlogPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] text-gray-900">
+    <div className="min-h-screen flex flex-col bg-[#F9FAFB] text-gray-900 pb-20 md:pb-0">
       <CustomerHeader />
-      <main>
+      <main className="flex-1">
         <section className="border-b border-gray-200 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
             <p className="text-sm font-semibold uppercase tracking-wide text-[#E89D24]">
@@ -146,7 +148,11 @@ export default function BlogPage() {
           )}
         </section>
       </main>
-      <CustomerFooter />
+      <div className="hidden md:block">
+        <CustomerFooter />
+      </div>
+      <MobileFooterStrip />
+      <CustomerBottomNav />
     </div>
   );
 }

@@ -1,3 +1,20 @@
+import type { Booking } from "@/services/booking.service";
+
+// Shared between the desktop and mobile booking cards so their notion of
+// "this booking is done/settled" can't drift.
+export function isPastOrCancelled(status: Booking["status"]): boolean {
+    return status === "completed" || status === "cancelled" || status === "cancellation_pending_approval";
+}
+
+export const BOOKING_STATUS_TONE: Record<Booking["status"], string> = {
+    confirmed: "bg-emerald-50 text-emerald-600",
+    pending_payment: "bg-amber-50 text-amber-600",
+    completed: "bg-gray-100 text-gray-500",
+    cancelled: "bg-red-50 text-red-600",
+    expired: "bg-red-50 text-red-600",
+    cancellation_pending_approval: "bg-orange-50 text-orange-600",
+};
+
 /**
  * Generates an array of time strings (e.g., ["9:00AM", "10:00AM"]) based on open/close times and an interval.
  * 

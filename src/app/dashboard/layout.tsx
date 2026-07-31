@@ -4,15 +4,21 @@ import { useAuthStore } from '@/store/auth.store';
 import { Sidebar } from '@/components/modules/Sidebar';
 import { MobileBottomNav } from '@/components/modules/MobileBottomNav';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell, Clock, X, Info, CheckCircle2, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Bell, Clock, X, Info, CheckCircle2, Loader2, Store, Settings, LogOut } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { authService, UserNotification } from '@/services/auth.service';
 import { businessService } from '@/services/business.service';
 import { notificationService } from '@/services/notification.service';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+import { isBusinessPending, businessStatusBadge } from '@/lib/dashboard-status';
+import { DashboardMobileHero } from '@/components/dashboard/dashboard-mobile-hero';
+import { BusinessProfileSheet } from '@/components/dashboard/business-profile-sheet';
+import { useLogout } from '@/hooks/use-logout';
 
 export default function DashboardLayout({
   children,
@@ -22,9 +28,31 @@ export default function DashboardLayout({
   const { user, updateUser } = useAuthStore();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const business = user?.businesses?.[0];
-  const status = business?.status?.toLowerCase();
-  const isPending = status === 'pending_approval' || status === 'pending';
+  const isPending = isBusinessPending(business?.status);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
+  // The navy hero + rounded content sheet are the mobile treatment for the
+  // dashboard home route only; every other dashboard route keeps its existing
+  // chrome untouched on all breakpoints.
+  const pathname = usePathname();
+  const isHome = pathname === '/dashboard';
+  const [isBusinessProfileOpen, setIsBusinessProfileOpen] = useState(false);
+
+  // Desktop: the header avatar opens a dropdown instead of the mobile Sheet.
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const { handleLogout, isLoggingOut } = useLogout();
+  const badge = businessStatusBadge(business?.status);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const [activeTab, setActiveTab] = useState('All');
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
@@ -162,12 +190,79 @@ export default function DashboardLayout({
                   <span className="absolute top-2 right-2 h-2 w-2 bg-[#F59E0B] rounded-full ring-2 ring-white" />
                 )}
               </button>
-              <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#192131]">
-                <AvatarImage src={business?.profileImage || undefined} className='object-cover'/>
-                <AvatarFallback className="bg-[#F59E0B] text-white font-bold">
-                  {user?.firstName?.charAt(0) || 'D'}
-                </AvatarFallback>
-              </Avatar>
+              {/* Mobile: opens the Business Profile sheet */}
+              <button
+                onClick={() => setIsBusinessProfileOpen(true)}
+                className="lg:hidden rounded-full transition-opacity hover:opacity-80"
+              >
+                <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#192131]">
+                  <AvatarImage src={business?.profileImage || undefined} className='object-cover'/>
+                  <AvatarFallback className="bg-[#F59E0B] text-white font-bold">
+                    {user?.firstName?.charAt(0) || 'D'}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+
+              {/* Desktop: opens a dropdown menu */}
+              <div className="hidden lg:block relative" ref={profileDropdownRef}>
+                <button
+                  onClick={() => setIsProfileDropdownOpen((v) => !v)}
+                  className="rounded-full transition-opacity hover:opacity-80"
+                >
+                  <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#192131]">
+                    <AvatarImage src={business?.profileImage || undefined} className='object-cover'/>
+                    <AvatarFallback className="bg-[#F59E0B] text-white font-bold">
+                      {user?.firstName?.charAt(0) || 'D'}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+
+                {isProfileDropdownOpen && (
+                  <div className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-bold text-gray-900 line-clamp-1">
+                        {business?.businessName || 'Your Business'}
+                      </p>
+                      <span className={cn('mt-1.5 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold', badge.className)}>
+                        {badge.label}
+                      </span>
+                    </div>
+                    <Link
+                      href="/dashboard/business"
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Store className="w-4 h-4 text-gray-500" />
+                      Edit Business Profile
+                    </Link>
+                    <Link
+                      href="/dashboard/working-hours"
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      Working Hours
+                    </Link>
+                    <Link
+                      href="/dashboard/settings"
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-gray-500" />
+                      Settings
+                    </Link>
+                    <div className="border-t border-gray-100 my-1" />
+                    <button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoggingOut ? <Loader2 className="w-4 h-4 text-gray-500 animate-spin" /> : <LogOut className="w-4 h-4 text-gray-500" />}
+                      {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -228,12 +323,16 @@ export default function DashboardLayout({
                 <div className="flex-1 lg:max-h-[520px] overflow-y-auto px-6 py-2 custom-scrollbar">
                   <div className="space-y-4 pb-6">
                     {isFetchingNotifications ? (
-                      <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-100 border-t-[#F59E0B]" />
-                        <p className="mt-4 text-xs text-gray-400 font-medium italic">
-                          Fetching notifications...
-                        </p>
-                      </div>
+                      [1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className="bg-white p-5 rounded-md border border-gray-50 shadow-sm flex flex-col gap-2"
+                        >
+                          <Skeleton className="h-3.5 w-2/3" />
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-3 w-1/3 mt-1" />
+                        </div>
+                      ))
                     ) : filteredNotifications.length > 0 ? (
                       filteredNotifications.map((notif) => {
                         const date = new Date(notif.createdAt);
@@ -327,8 +426,18 @@ export default function DashboardLayout({
           )}
         </header>
 
+        {isHome && (
+          <DashboardMobileHero onAvatarClick={() => setIsBusinessProfileOpen(true)} />
+        )}
+
         {isPending && (
-          <div className="bg-amber-50 border-b border-amber-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 lg:px-8 py-2">
+          <div className={cn(
+            "bg-amber-50 border-b border-amber-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 lg:px-8 py-2",
+            // On mobile home the hero's status badge plus the in-page
+            // verification banner already say this — the strip is redundant
+            // there and would push the hero's rounded sheet off-screen.
+            isHome && 'max-lg:hidden',
+          )}>
             <div className="flex items-center gap-2 flex-wrap">
               <Clock className="h-4 w-4 text-[#F59E0B] shrink-0" />
               <span className="text-sm font-bold text-amber-700">
@@ -347,10 +456,19 @@ export default function DashboardLayout({
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8">{children}</main>
+        <main className={cn(
+          "flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8",
+          // Gray rounded sheet lifted over the navy hero (mobile home only).
+          isHome && 'max-lg:rounded-t-2xl max-lg:-mt-4 max-lg:bg-gray-50',
+        )}>{children}</main>
       </div>
 
       <MobileBottomNav />
+
+      <BusinessProfileSheet
+        open={isBusinessProfileOpen}
+        onClose={() => setIsBusinessProfileOpen(false)}
+      />
     </div>
   );
 }

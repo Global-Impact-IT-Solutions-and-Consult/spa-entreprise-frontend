@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Trash2, AlertTriangle, Loader2, X, AlertCircle, Eye, EyeOff } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { Button } from "@/components/ui/button";
 import { userService } from "@/services/user.service";
 import { useAuthStore } from "@/store/auth.store";
@@ -58,9 +58,15 @@ export function DeleteAccountModal({ open, onClose }: DeleteAccountModalProps) {
     };
 
     return (
-        <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-            <DialogContent className="sm:max-w-[480px] p-8 rounded-[24px] border border-red-100 shadow-xl bg-white">
-                {/* Header */}
+        <ResponsiveModal
+            open={open}
+            onClose={onClose}
+            title="Delete Account"
+            className="border-t-4 border-red-100"
+            // Desktop tree restored verbatim from the pre-Sheet-migration
+            // Dialog markup (db9961e^).
+            desktopContentClassName="sm:max-w-[480px] p-8 rounded-[24px] border border-red-100 shadow-xl bg-white"
+            desktopHeader={
                 <div className="space-y-2 mb-2">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center">
@@ -75,10 +81,47 @@ export function DeleteAccountModal({ open, onClose }: DeleteAccountModalProps) {
                         </div>
                     </div>
                 </div>
+            }
+            footer={
+                <div className="flex flex-col gap-3">
+                    <Button
+                        onClick={handleDeleteAccount}
+                        disabled={isLoading || confirmationText !== "DELETE"}
+                        className="w-full h-[52px] bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-all"
+                    >
+                        {isLoading ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <>
+                                <Trash2 className="w-5 h-5" />
+                                Delete My Account
+                            </>
+                        )}
+                    </Button>
+                    <button
+                        onClick={onClose}
+                        className="w-full h-12 font-medium text-gray-500 hover:text-gray-800 transition-colors text-base"
+                    >
+                        Cancel, keep my account
+                    </button>
+                </div>
+            }
+        >
+            {/* `md:contents` dissolves this mobile padding wrapper on the
+                desktop branch so the form sits directly in `DialogContent`'s
+                grid, exactly as it did pre-migration. */}
+            <div className="p-6 md:contents">
+                {/* Mobile-only — on desktop this warning lives in the restored
+                    `desktopHeader` block above instead. */}
+                <div className="md:hidden p-4 px-2 mb-4 bg-red-50 border-l-4 border-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <p className="text-sm text-red-700">
+                        Are you sure you want to Delete this account?
+                    </p>
+                </div>
 
                 {/* Form */}
                 <div className="space-y-4">
-
                     <div className="space-y-2">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700">Confirm by typing <span className="text-red-600">DELETE</span></label>
@@ -113,31 +156,8 @@ export function DeleteAccountModal({ open, onClose }: DeleteAccountModalProps) {
                     </div>
 
                     <p className="text-xs text-gray-500">This action will soft delete your account, and permanently delete after 30 days from deleteion </p>
-
-                    <div className="flex flex-col gap-3">
-                        <Button
-                            onClick={handleDeleteAccount}
-                            disabled={isLoading || confirmationText !== "DELETE"}
-                            className="w-full h-[52px] bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-all"
-                        >
-                            {isLoading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <>
-                                    <Trash2 className="w-5 h-5" />
-                                    Delete My Account
-                                </>
-                            )}
-                        </Button>
-                        <button
-                            onClick={onClose}
-                            className="w-full h-12 font-medium text-gray-500 hover:text-gray-800 transition-colors text-base"
-                        >
-                            Cancel, keep my account
-                        </button>
-                    </div>
                 </div>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </ResponsiveModal>
     );
 }

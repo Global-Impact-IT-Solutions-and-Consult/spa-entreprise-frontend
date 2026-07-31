@@ -16,6 +16,7 @@ import { StaffModal } from '@/components/modules/staff/StaffModal';
 import { cn } from '@/lib/utils';
 import { Scissors } from 'lucide-react';
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { OnboardingCtaBar } from '@/components/modules/onboarding/onboarding-cta-bar';
 
 // Staff Card Component
 interface StaffCardProps {
@@ -201,12 +202,16 @@ export default function StaffsPage() {
         }
     };
 
+    // Mirrors handleFinish's existing guard (at least one service must exist);
+    // staff itself is optional, hence the "Skip for now" CTA label below.
+    const isStepValid = services.length > 0;
+
     return (
         <div className="w-full max-w-[1100px]">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 md:p-12 min-h-[600px] flex flex-col">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 md:p-12 min-h-[600px] flex flex-col">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Add a staff</h1>
+                        <h1 className="text-[22px] md:text-3xl font-bold text-gray-900 mb-2">Add a staff</h1>
                         <p className="text-gray-500 font-medium">Add staffs to services</p>
                     </div>
                     <Button
@@ -254,7 +259,7 @@ export default function StaffsPage() {
                 )}
             </div>
 
-            <div className="flex justify-between mt-12">
+            <div className="hidden md:flex justify-between mt-12">
                 <Button
                     variant="outline"
                     className="h-[56px] px-10 border-gray-200 text-gray-500 font-bold rounded-lg flex items-center gap-2 hover:bg-gray-50"
@@ -273,10 +278,19 @@ export default function StaffsPage() {
                 </Button>
             </div>
 
+            <OnboardingCtaBar
+                label={staffs.length === 0 ? "Skip for now" : "Continue"}
+                onClick={handleFinish}
+                disabled={!isStepValid}
+                isLoading={isLoading}
+                hint={staffs.length === 0 ? "Adding staff is optional — you can do this later" : undefined}
+            />
+
             {/* Staff Modal (Add/Edit) */}
             {businessId && (
                 <StaffModal
                     businessId={businessId}
+                    breakpoint={767}
                     staff={staffToEdit}
                     services={services}
                     businessTypeIcon={businessTypeIcon}

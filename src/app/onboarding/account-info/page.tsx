@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiArrowRight, FiCheck } from 'react-icons/fi';
-import { Loader2, CreditCard } from 'lucide-react';
+import { Loader2, CreditCard, Lock } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
 import CustomInput from '@/components/ui/InputGroup';
@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { toaster } from "@/components/ui/toaster";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService } from '@/services/business.service';
+import { OnboardingCtaBar } from '@/components/modules/onboarding/onboarding-cta-bar';
 
 const NIGERIAN_BANKS = [
     { label: "Access Bank", value: "Access Bank" },
@@ -119,13 +120,7 @@ export default function AccountInfoPage() {
                 sortCode: formData.sortCode,
             });
 
-            toaster.create({
-                title: "Onboarding Complete!",
-                description: "Your business profile is set up. Waiting for admin approval.",
-                type: "success"
-            });
-            
-            router.push('/dashboard');
+            router.push('/onboarding/complete');
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } } };
             toaster.create({
@@ -138,6 +133,11 @@ export default function AccountInfoPage() {
         }
     };
 
+    // Mirrors handleFinish's existing field guard exactly.
+    const isStepValid = Boolean(
+        businessId && formData.accountName && formData.accountNumber && formData.bankName
+    );
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -148,10 +148,10 @@ export default function AccountInfoPage() {
 
     return (
         <div className="w-full max-w-[1100px]">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 md:p-12 min-h-[500px] flex flex-col items-center">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 md:p-12 min-h-[500px] flex flex-col items-center">
                 <div className="w-full max-w-[600px]">
                     <div className="mb-10">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Add Account</h1>
+                        <h1 className="text-[22px] md:text-3xl font-bold text-gray-900 mb-2">Add Account</h1>
                         <p className="text-gray-500 font-medium">Add your business account detal</p>
                     </div>
 
@@ -162,7 +162,7 @@ export default function AccountInfoPage() {
                             options={NIGERIAN_BANKS}
                             value={formData.bankName}
                             onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                            className="h-[56px] rounded-lg border-gray-400"
+                            className="h-12 md:h-[56px] rounded-lg border-gray-400"
                         />
 
                         <CustomInput
@@ -170,7 +170,8 @@ export default function AccountInfoPage() {
                             placeholder="12345678"
                             value={formData.accountNumber}
                             onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                            className="h-[56px]"
+                            className="h-12 md:h-[56px]"
+                            labelClassName="text-[13px]"
                         />
 
                         <CustomInput
@@ -178,8 +179,17 @@ export default function AccountInfoPage() {
                             placeholder="John Doe"
                             value={formData.accountName}
                             onChange={(e) => setFormData({ ...formData, accountName: e.target.value })}
-                            className="h-[56px]"
+                            className="h-12 md:h-[56px]"
+                            labelClassName="text-[13px]"
                         />
+
+                        {/* Reassurance note — decorative, no logic attached */}
+                        <div className="flex items-start gap-2">
+                            <Lock className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
+                            <p className="text-[11px] text-gray-400 leading-relaxed">
+                                Your account details are encrypted and only used to pay out your earnings.
+                            </p>
+                        </div>
 
                         <div className="pt-4">
                             <Button
@@ -194,7 +204,7 @@ export default function AccountInfoPage() {
                 </div>
             </div>
 
-            <div className="flex justify-between mt-12">
+            <div className="hidden md:flex justify-between mt-12">
                 <Button
                     variant="outline"
                     className="h-[56px] px-10 border-gray-200 text-gray-500 font-bold rounded-lg flex items-center gap-2 hover:bg-gray-50"
@@ -212,6 +222,13 @@ export default function AccountInfoPage() {
                     {!isSaving && <FiArrowRight className="h-5 w-5" />}
                 </Button>
             </div>
+
+            <OnboardingCtaBar
+                label="Finish & Submit"
+                onClick={handleFinish}
+                disabled={!isStepValid}
+                isLoading={isSaving}
+            />
         </div>
     );
 }

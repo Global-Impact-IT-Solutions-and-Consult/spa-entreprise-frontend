@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { User, Camera, Lock, Shield, AlertTriangle, Trash2, ChevronRight, Loader2, Bell, Calendar, CreditCard, Info } from "lucide-react";
+import { User, Camera, Lock, Shield, AlertTriangle, Trash2, Loader2, Bell, Calendar, CreditCard, Info } from "lucide-react";
 import Image from "next/image";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { MobileFooterStrip } from "@/components/modules/customer/mobile-footer-strip";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { SettingsGroup, SettingsRow } from "@/components/modules/settings/settings-list";
 import { useAuthStore } from "@/store/auth.store";
 import { userService, UpdateProfileDto, SecuritySettings } from "@/services/user.service";
 import { notificationService, NotificationPreferences } from "@/services/notification.service";
@@ -167,19 +170,200 @@ export default function SettingsPage() {
         : "JD";
 
     return (
-        <div className="min-h-screen bg-gray-50/50 flex flex-col">
+        <div className="min-h-screen bg-gray-50/50 flex flex-col pb-20 md:pb-0">
             <CustomerHeader />
 
-            <main className="flex-1 py-12 max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto w-full">
-                <div className="space-y-8">
+            <main className="flex-1 py-4 md:py-12 max-w-7xl px-4 sm:px-6 lg:px-8 mx-auto w-full">
+                <div className="space-y-4 md:space-y-8">
                     {/* Page Title */}
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 font-serif">Settings</h1>
-                        <p className="text-gray-500 mt-1">Manage your personal preferences</p>
+                        <h1 className="text-[24px] md:text-3xl font-bold text-gray-900 font-serif">Settings</h1>
+                        <p className="text-gray-500 mt-1 hidden md:block">Manage your personal preferences</p>
                     </div>
 
+                    {/* Profile Information — mobile */}
+                    <div className="md:hidden bg-white rounded-[18px] shadow-sm p-4">
+                        <div className="flex flex-col items-center gap-3 mb-5">
+                            <div className="relative">
+                                <div className="w-20 h-20 rounded-full overflow-hidden bg-[#4A6CF7] flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-md relative">
+                                    {avatarPreview ? (
+                                        <Image src={avatarPreview} alt="Profile" fill className="object-cover rounded-full" />
+                                    ) : (
+                                        <span>{userInitials}</span>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="absolute bottom-0 right-0 p-1.5 bg-white rounded-full shadow-md border border-gray-100 text-amber-600"
+                                    disabled={isUploading}
+                                >
+                                    {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                                </button>
+                            </div>
+                            <p className="text-xs text-gray-400">JPG, PNG max 1MB</p>
+                        </div>
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-gray-400 ml-1">First Name</label>
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        value={formData.firstName}
+                                        onChange={handleInputChange}
+                                        placeholder="John"
+                                        className="w-full h-11 px-3 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-gray-900 font-medium text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-gray-400 ml-1">Last Name</label>
+                                    <input
+                                        type="text"
+                                        name="lastName"
+                                        value={formData.lastName}
+                                        onChange={handleInputChange}
+                                        placeholder="Doe"
+                                        className="w-full h-11 px-3 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-gray-900 font-medium text-sm"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-gray-400 ml-1">Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    disabled
+                                    placeholder="johndoe@example.com"
+                                    className="w-full h-11 px-3 rounded-md border border-gray-200 bg-gray-50 text-gray-500 font-medium cursor-not-allowed text-sm"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <PhoneNumberInput
+                                    label="Phone Number"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </div>
+                            <Button
+                                onClick={handleSaveProfile}
+                                disabled={isLoading}
+                                className="w-full h-11 bg-[#E89D24] hover:bg-[#D58C1B] text-white rounded-lg font-bold shadow-sm mt-1"
+                            >
+                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Security — mobile */}
+                    <SettingsGroup label="Security">
+                        <SettingsRow
+                            icon={Lock}
+                            iconClassName="bg-gray-100 text-gray-600"
+                            label="Password"
+                            subtitle={
+                                securitySettings?.lastLoginAt
+                                    ? `Last login: ${format(new Date(securitySettings.lastLoginAt), "MMM d, yyyy")}`
+                                    : "Password secured"
+                            }
+                            meta="Change"
+                            onClick={() => setIsPasswordModalOpen(true)}
+                        />
+                        <SettingsRow
+                            icon={Shield}
+                            iconClassName="bg-green-100 text-green-600"
+                            label="Two-Factor Authentication"
+                            subtitle={securitySettings?.mfaEnabled ? "MFA is currently enabled" : "Add extra security to your account"}
+                            trailing={
+                                <Switch
+                                    checked={securitySettings?.mfaEnabled || false}
+                                    onCheckedChange={(checked) => {
+                                        setMfaMode(checked ? "enable" : "disable");
+                                        setIsMfaModalOpen(true);
+                                    }}
+                                />
+                            }
+                        />
+                    </SettingsGroup>
+
+                    {/* Notifications — mobile */}
+                    {preferences && (
+                        <SettingsGroup label="Notifications">
+                            <SettingsRow
+                                icon={Bell}
+                                iconClassName="bg-amber-100 text-amber-600"
+                                label="Email Notifications"
+                                subtitle="Receive updates and alerts via email"
+                                trailing={
+                                    <Switch
+                                        checked={preferences.emailNotifications}
+                                        onCheckedChange={(val) => handleToggle("emailNotifications", val)}
+                                        disabled={updating === "emailNotifications"}
+                                        className="data-[state=checked]:bg-emerald-500"
+                                    />
+                                }
+                            />
+                            <SettingsRow
+                                icon={Calendar}
+                                iconClassName="bg-blue-100 text-blue-600"
+                                label="Up Coming Booking"
+                                subtitle="Let you know your next booking"
+                                trailing={
+                                    <Switch
+                                        checked={preferences.upcomingBooking}
+                                        onCheckedChange={(val) => handleToggle("upcomingBooking", val)}
+                                        disabled={updating === "upcomingBooking"}
+                                        className="data-[state=checked]:bg-emerald-500"
+                                    />
+                                }
+                            />
+                            <SettingsRow
+                                icon={CreditCard}
+                                iconClassName="bg-green-100 text-green-600"
+                                label="Payment Notifications"
+                                subtitle="When payments are received or released"
+                                trailing={
+                                    <Switch
+                                        checked={preferences.paymentNotifications}
+                                        onCheckedChange={(val) => handleToggle("paymentNotifications", val)}
+                                        disabled={updating === "paymentNotifications"}
+                                        className="data-[state=checked]:bg-emerald-500"
+                                    />
+                                }
+                            />
+                            <SettingsRow
+                                icon={Info}
+                                iconClassName="bg-gray-100 text-gray-600"
+                                label="System Alerts"
+                                subtitle="Important platform updates and maintenance"
+                                trailing={
+                                    <Switch
+                                        checked={preferences.systemAlerts}
+                                        onCheckedChange={(val) => handleToggle("systemAlerts", val)}
+                                        disabled={updating === "systemAlerts"}
+                                        className="data-[state=checked]:bg-emerald-500"
+                                    />
+                                }
+                            />
+                        </SettingsGroup>
+                    )}
+
+                    {/* Danger Zone — mobile */}
+                    <SettingsGroup label="Danger Zone">
+                        <SettingsRow
+                            icon={Trash2}
+                            iconClassName="bg-red-50 text-red-500"
+                            label="Delete Account"
+                            subtitle="Permanently remove your account and all data"
+                            tone="danger"
+                            onClick={() => setIsDeleteModalOpen(true)}
+                        />
+                    </SettingsGroup>
+
                     {/* Profile Information Section */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-8 space-y-8">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-amber-50 rounded-lg">
@@ -290,7 +474,7 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Security Section */}
-                    <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="hidden md:block bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-8 space-y-6">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-green-50 rounded-lg">
@@ -353,7 +537,7 @@ export default function SettingsPage() {
 
                     {/* Notifications Section */}
                     {preferences && (
-                        <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="hidden md:block bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
                             <div className="p-8 space-y-6">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-amber-50 rounded-lg">
@@ -450,7 +634,7 @@ export default function SettingsPage() {
                     )}
 
                     {/* Danger Zone Section */}
-                    <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="hidden md:block bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-8 space-y-6">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-red-50 rounded-lg">
@@ -481,7 +665,11 @@ export default function SettingsPage() {
                 </div>
             </main>
 
-            <CustomerFooter />
+            <div className="hidden md:block">
+                <CustomerFooter />
+            </div>
+            <MobileFooterStrip />
+            <CustomerBottomNav />
 
             <ChangePasswordModal
                 open={isPasswordModalOpen}

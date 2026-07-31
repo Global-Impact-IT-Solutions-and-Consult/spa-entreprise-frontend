@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { MobileFooterStrip } from "@/components/modules/customer/mobile-footer-strip";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { SavedBusinessCard, SavedBusinessSkeleton } from "@/components/modules/customer/saved-business-card";
 import { ServiceCard, ServiceSkeleton } from "@/components/modules/discovery/service-card";
 import { favoritesService } from "@/services/favorites.service";
@@ -100,10 +102,10 @@ export default function SavedPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F9FAFB]">
+        <div className="min-h-screen flex flex-col bg-[#F9FAFB] pb-20 md:pb-0">
             <CustomerHeader />
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 w-full">
                 {/* Page Header */}
                 <div className="mb-10">
                     <h1 className="text-3xl md:text-4xl font-black text-gray-900 font-playfair mb-3">Saved</h1>
@@ -184,7 +186,11 @@ export default function SavedPage() {
                 )}
             </main>
 
-            <CustomerFooter />
+            <div className="hidden md:block">
+                <CustomerFooter />
+            </div>
+            <MobileFooterStrip />
+            <CustomerBottomNav />
         </div>
     );
 }

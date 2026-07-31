@@ -1,13 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
-import { FiCheck, FiLogOut } from 'react-icons/fi';
-import { authService } from '@/services/auth.service';
-import { useAuthStore } from '@/store/auth.store';
-import { toaster } from '@/components/ui/toaster';
+import { FiCheck, FiChevronLeft, FiLogOut } from 'react-icons/fi';
+import { useLogout } from '@/hooks/use-logout';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
@@ -22,32 +19,17 @@ const steps = [
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { logout: logoutStore } = useAuthStore();
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const { handleLogout, isLoggingOut } = useLogout();
 
     // Determine current step index (1-based)
     const currentStepIndex = steps.findIndex(step => pathname.includes(step.path)) + 1 || 1;
+    const currentStepTitle = steps[currentStepIndex - 1]?.title ?? '';
 
-    const handleLogout = async () => {
-        setIsLoggingOut(true);
-        try {
-            await authService.logout();
-            logoutStore();
-            toaster.create({
-                title: "Logged out",
-                description: "You have been successfully logged out.",
-                type: "success"
-            });
-            router.push('/auth/login');
-        } catch (error) {
-            console.error("Logout error:", error);
-            // Even if API call fails, clear local state and redirect
-            logoutStore();
-            router.push('/auth/login');
-        } finally {
-            setIsLoggingOut(false);
-        }
-    };
+    // The completion screen is a terminal confirmation, not a wizard step —
+    // it renders chrome-free (no sidebar, no mobile step bar, no CTA bar).
+    if (pathname === '/onboarding/complete') {
+        return <>{children}</>;
+    }
 
     return (
         <div className="flex min-h-screen bg-[#F9FAFB]">
@@ -108,16 +90,52 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                {/* Mobile Header (Simplified) */}
-                <div className="md:hidden bg-[#111827] text-white p-4 flex items-center justify-between">
-                    <div className="flex items-start gap-2">
-                        <Image src="/Logo.svg" alt="iBookam Logo" width={50} height={50} />
+                {/* Mobile Header — back / step chip / logout, plus progress bar */}
+                <div className="md:hidden bg-[#111827] text-white shrink-0">
+                    <div className="flex items-center justify-between px-2 py-2.5">
+                        <button
+                            type="button"
+                            onClick={() => router.back()}
+                            aria-label="Go back"
+                            className="h-10 w-10 flex items-center justify-center rounded-lg text-white/80 hover:bg-white/10 active:bg-white/10 transition-colors"
+                        >
+                            <FiChevronLeft className="h-5 w-5" strokeWidth={2.5} />
+                        </button>
+
+                        <span className="bg-[#E59622] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
+                            Step {currentStepIndex} of {steps.length}
+                        </span>
+
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            aria-label="Logout"
+                            className="h-10 w-10 flex items-center justify-center rounded-lg text-white/80 hover:bg-red-500/20 active:bg-red-500/20 transition-colors disabled:opacity-50"
+                        >
+                            {isLoggingOut
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <FiLogOut className="h-[18px] w-[18px]" />
+                            }
+                        </button>
                     </div>
-                    <span className="text-xs font-medium bg-[#E59622] px-2 py-1 rounded">Step {currentStepIndex} of {steps.length}</span>
+
+                    {/* Progress bar */}
+                    <div className="h-1 bg-white/10">
+                        <div
+                            className="h-full bg-[#E59622] transition-all duration-300"
+                            style={{ width: `${(currentStepIndex / steps.length) * 100}%` }}
+                        />
+                    </div>
                 </div>
 
                 {/* Scrollable Content Area */}
-                <div className="flex-1 overflow-y-auto bg-[#F9FAFB] flex flex-col items-center justify-start py-12 px-4 md:px-8">
+                <div className="flex-1 overflow-y-auto bg-[#F9FAFB] flex flex-col items-center justify-start py-4 md:py-12 px-4 md:px-8 pb-28 md:pb-12">
+                    {/* Mobile loses the sidebar's step list, so the current step's
+                        title provides that context here instead. */}
+                    <div className="md:hidden w-full mb-3">
+                        <h1 className="text-[18px] font-bold text-gray-900">{currentStepTitle}</h1>
+                    </div>
                     {children}
                 </div>
             </div>

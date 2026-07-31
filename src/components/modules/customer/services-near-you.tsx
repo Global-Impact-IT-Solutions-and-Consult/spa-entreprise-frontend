@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ServiceCard, ServiceSkeleton } from "@/components/modules/discovery/service-card";
+import { ServiceCardCompact, ServiceCompactSkeleton } from "@/components/modules/discovery/service-card-compact";
 import { businessService, EnrichedService } from "@/services/business.service";
 import { useUserLocation } from "@/hooks/use-user-location";
 import { MapPin } from "lucide-react";
@@ -44,13 +45,17 @@ export function ServicesNearYou() {
 
     if (locationLoading || loading) {
         return (
-            <section className="py-12 md:py-16 bg-gray-50">
+            <section className="py-6 md:py-16 bg-gray-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between mb-8 md:mb-10">
-                        <div className="h-10 w-64 bg-gray-200 animate-pulse rounded-md" />
-                        <div className="h-6 w-20 bg-gray-200 animate-pulse rounded-md" />
+                    <div className="mb-3 md:mb-10">
+                        <div className="h-5 w-40 md:h-10 md:w-64 bg-gray-200 animate-pulse rounded-md" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="md:hidden scroll-row gap-3 -mx-4 px-4">
+                        {[1, 2, 3].map((i) => (
+                            <ServiceCompactSkeleton key={i} />
+                        ))}
+                    </div>
+                    <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[1, 2, 3, 4].map((i) => (
                             <ServiceSkeleton key={i} />
                         ))}
@@ -61,10 +66,10 @@ export function ServicesNearYou() {
     }
 
     return (
-        <section className="py-12 md:py-16 bg-gray-50">
+        <section className="py-6 md:py-16 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 md:mb-10">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 font-playfair mb-2 md:mb-0">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-3 md:mb-10">
+                    <h2 className="text-[17px] font-bold md:text-3xl text-gray-900 font-playfair mb-0 md:mb-0">
                         Services near you
                     </h2>
                     <Link href="/discover" className="text-[#E89D24] hover:text-[#E5A800] font-semibold text-sm md:text-base">
@@ -73,7 +78,7 @@ export function ServicesNearYou() {
                 </div>
 
                 {services.length === 0 ? (
-                    <div className="bg-white rounded-2xl border border-gray-100 p-8 md:p-12 text-center shadow-sm max-w-2xl mx-auto">
+                    <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-12 text-center shadow-sm max-w-2xl mx-auto">
                         <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-[#E89D24]">
                             <MapPin className="w-6 h-6" />
                         </div>
@@ -88,11 +93,18 @@ export function ServicesNearYou() {
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {services.map((service) => (
-                            <ServiceCard key={service.id} service={service} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="md:hidden scroll-row gap-3 -mx-4 px-4">
+                            {services.map((service) => (
+                                <ServiceCardCompact key={service.id} service={service} />
+                            ))}
+                        </div>
+                        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {services.map((service) => (
+                                <ServiceCard key={service.id} service={service} />
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
         </section>

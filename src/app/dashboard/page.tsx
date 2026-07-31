@@ -9,7 +9,6 @@ import {
     Clock,
     CalendarClock,
     Calendar,
-    Loader2,
     TrendingUp,
     Home,
     MapPin,
@@ -20,13 +19,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { businessService, DashboardData, PaymentOverviewData } from "@/services/business.service";
 import { PaymentOverview } from "@/components/dashboard/PaymentOverview";
+import { isBusinessPending } from "@/lib/dashboard-status";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
     const { user } = useAuthStore();
     const business = user?.businesses?.[0];
     const businessId = business?.id;
-    const status = business?.status?.toLowerCase();
-    const isPending = status === 'pending_approval' || status === 'pending';
+    const isPending = isBusinessPending(business?.status);
 
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [paymentData, setPaymentData] = useState<PaymentOverviewData | null>(null);
@@ -70,6 +70,10 @@ export default function DashboardPage() {
         Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed",
         Thursday: "Thu", Friday: "Fri", Saturday: "Sat", Sunday: "Sun"
     };
+
+    // Mobile highlights today's bar instead of desktop's highest-bar treatment.
+    const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const hasWeeklyRevenue = !!dashboardData?.weeklyRevenue?.length;
 
     const statsData = dashboardData ? [
         {
@@ -120,8 +124,87 @@ export default function DashboardPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-[#F59E0B]" />
+            <div className="space-y-8">
+                {/* Stat cards */}
+                <div className="lg:hidden scroll-row gap-3 -mx-4 px-4">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="w-[150px] shrink-0 rounded-2xl bg-white p-3.5 shadow-sm space-y-2.5">
+                            <Skeleton className="h-3 w-3/4" />
+                            <Skeleton className="h-6 w-1/2" />
+                            <Skeleton className="h-2.5 w-full" />
+                        </div>
+                    ))}
+                </div>
+                <div className="hidden lg:grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    {[1, 2, 3, 4].map((i) => (
+                        <Card key={i} className="border-none shadow-sm bg-white">
+                            <CardContent className="p-6 space-y-3">
+                                <Skeleton className="h-3 w-1/2" />
+                                <Skeleton className="h-7 w-2/3" />
+                                <Skeleton className="h-3 w-1/3" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                <div className="grid gap-8 lg:grid-cols-4">
+                    {/* Weekly revenue chart */}
+                    <div className="hidden lg:block lg:col-span-2">
+                        <Card className="border-none shadow-sm bg-white">
+                            <CardContent className="p-4 sm:p-6 lg:p-8 space-y-8">
+                                <Skeleton className="h-5 w-1/3" />
+                                <div className="flex h-64 items-end gap-4">
+                                    {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                                        <Skeleton key={i} className="flex-1" style={{ height: `${30 + (i % 4) * 15}%` }} />
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div className="lg:hidden rounded-2xl bg-white p-4 shadow-sm space-y-4">
+                        <Skeleton className="h-4 w-1/3" />
+                        <div className="flex h-32 items-end gap-2">
+                            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                                <Skeleton key={i} className="flex-1" style={{ height: `${30 + (i % 4) * 15}%` }} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Upcoming bookings */}
+                    <div className="hidden lg:block space-y-4 lg:col-span-2">
+                        <Skeleton className="h-5 w-1/3" />
+                        <div className="space-y-4">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-50">
+                                    <div className="flex-1 space-y-2">
+                                        <Skeleton className="h-3.5 w-1/2" />
+                                        <Skeleton className="h-3 w-2/3" />
+                                    </div>
+                                    <Skeleton className="h-10 w-20 rounded-lg shrink-0" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="lg:hidden space-y-2">
+                        <Skeleton className="h-4 w-1/3 mb-1" />
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
+                                <div className="min-w-0 flex-1 space-y-2">
+                                    <Skeleton className="h-3.5 w-1/2" />
+                                    <Skeleton className="h-3 w-2/3" />
+                                </div>
+                                <Skeleton className="h-9 w-16 rounded-full shrink-0" />
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Payment overview */}
+                    <div className="col-span-full rounded-2xl bg-white p-6 shadow-sm space-y-4">
+                        <Skeleton className="h-4 w-1/4" />
+                        <Skeleton className="h-8 w-1/3" />
+                        <Skeleton className="h-3 w-full" />
+                    </div>
+                </div>
             </div>
         );
     }
@@ -129,8 +212,8 @@ export default function DashboardPage() {
     if (isPending) {
         return (
             <div className="space-y-6">
-                {/* Pending Alert */}
-                <div className="rounded-xl bg-[#FDF8E6] p-6 border border-[#FBECC5]">
+                {/* Pending Alert — desktop/tablet (unchanged) */}
+                <div className="hidden lg:block rounded-xl bg-[#FDF8E6] p-6 border border-[#FBECC5]">
                     <div className="flex items-start gap-4">
                         <div className="mt-1">
                             <Clock className="h-6 w-6 text-[#F59E0B]" />
@@ -145,6 +228,28 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
+                {/* Pending Alert — mobile: compact banner + Contact Support */}
+                <div className="lg:hidden rounded-2xl bg-[#FDF8E6] border border-[#FBECC5] p-4">
+                    <div className="flex items-start gap-3">
+                        <Clock className="h-5 w-5 text-[#F59E0B] shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                            <h2 className="text-[15px] font-bold text-[#F59E0B] leading-snug">
+                                Business Verification in Progress
+                            </h2>
+                            <p className="mt-1 text-[12px] text-gray-600 leading-relaxed">
+                                You can keep adding services and staff while you wait. Bookings stay
+                                locked until an admin verifies your business.
+                            </p>
+                            <Link
+                                href="/dashboard/contact-support"
+                                className="mt-3 inline-flex h-9 items-center rounded-xl border border-amber-200 bg-white px-3 text-[12px] font-bold text-amber-700"
+                            >
+                                Contact Support
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Payment Overview (Replacement for Quick Actions) */}
                 {paymentData && <PaymentOverview data={paymentData} />}
             </div>
@@ -153,39 +258,62 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
-            {/* Greeting — mobile/tablet only, desktop shows this in the header */}
-            <div className="lg:hidden my-5 lg:my-0">
-                <h1 className="text-xl font-bold text-gray-900 leading-tight">Dashboard</h1>
-                <p className="text-xs text-gray-500">Welcome Back {user?.firstName}!</p>
+            {/* Stat cards — mobile: horizontal scroll row (the greeting that used
+                to sit here is now the navy hero in dashboard/layout.tsx) */}
+            <div className="lg:hidden scroll-row gap-3 -mx-4 px-4">
+                {statsData.map((stat, i) => (
+                    <div
+                        key={i}
+                        className="w-[150px] shrink-0 rounded-2xl bg-white p-3.5 shadow-sm"
+                    >
+                        <div className="flex items-start justify-between gap-2">
+                            <p className="text-[11px] font-medium text-gray-400 leading-tight">{stat.label}</p>
+                            <div className={cn("rounded-lg p-1.5 shrink-0", stat.iconBg)}>
+                                <stat.icon className={cn("h-3.5 w-3.5", stat.iconColor)} strokeWidth={2.5} />
+                            </div>
+                        </div>
+                        <h3 className="mt-2 text-[22px] font-bold text-gray-900 tracking-tight leading-none">
+                            {stat.value}
+                        </h3>
+                        {stat.change && (
+                            <p className={cn("mt-2 text-[10px] font-medium flex items-center gap-1", stat.changeColor)}>
+                                {stat.changeIcon && <stat.changeIcon className="h-3 w-3 shrink-0" />}
+                                <span className="line-clamp-1">{stat.change}</span>
+                            </p>
+                        )}
+                    </div>
+                ))}
             </div>
 
             {/* Stats Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {statsData.map((stat, i) => (
-                    <Card key={i} className="border-none shadow-sm bg-white hover:shadow-md transition-all">
-                        <CardContent className="p-6">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-gray-400">{stat.label}</p>
-                                    <h3 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{stat.value}</h3>
+            <div className="hidden lg:block">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    {statsData.map((stat, i) => (
+                        <Card key={i} className="border-none shadow-sm bg-white hover:shadow-md transition-all">
+                            <CardContent className="p-6">
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-gray-400">{stat.label}</p>
+                                        <h3 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{stat.value}</h3>
+                                    </div>
+                                    <div className={cn("rounded-lg p-2.5", stat.iconBg)}>
+                                        <stat.icon className={cn("h-4 w-4", stat.iconColor)} strokeWidth={2.5} />
+                                    </div>
                                 </div>
-                                <div className={cn("rounded-lg p-2.5", stat.iconBg)}>
-                                    <stat.icon className={cn("h-4 w-4", stat.iconColor)} strokeWidth={2.5} />
-                                </div>
-                            </div>
-                            <p className={cn("mt-4 text-[10px] font-medium flex items-center gap-1", stat.changeColor)}>
-                                {stat.changeIcon && <stat.changeIcon className="h-3 w-3" />}
-                                {stat.change}
-                            </p>
-                        </CardContent>
-                    </Card>
-                ))}
+                                <p className={cn("mt-4 text-[10px] font-medium flex items-center gap-1", stat.changeColor)}>
+                                    {stat.changeIcon && <stat.changeIcon className="h-3 w-3" />}
+                                    {stat.change}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
             </div>
 
             {/* Middle Section: Chart & Bookings */}
             <div className="grid gap-8 lg:grid-cols-4">
-                {/* Weekly Revenue Chart */}
-                <div className="lg:col-span-2 space-y-6">
+                {/* Weekly Revenue Chart — desktop/tablet (unchanged) */}
+                <div className="hidden lg:block lg:col-span-2 space-y-6">
                     <Card className="border-none shadow-sm overflow-hidden bg-white hover:shadow-md transition-all">
                         <CardContent className="p-4 sm:p-6 lg:p-8">
                             <div className="flex items-center justify-between mb-8">
@@ -243,8 +371,56 @@ export default function DashboardPage() {
                     </Card>
                 </div>
 
-                {/* Upcoming Bookings */}
-                <div className="space-y-4 lg:col-span-2">
+                {/* Weekly Revenue Chart — mobile: no hover tooltip, no clipped
+                    Y-axis labels, today's bar highlighted in amber */}
+                <div className="lg:hidden rounded-2xl bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-[15px] font-bold text-gray-900">Weekly Revenue</h2>
+                        <span className="text-[11px] font-medium text-gray-400">This Week</span>
+                    </div>
+
+                    {hasWeeklyRevenue ? (
+                        <>
+                            <div className="flex items-end gap-2">
+                                {dashboardData?.weeklyRevenue.map((item, i) => {
+                                    const heightPercent = Math.max((item.revenue / maxRevenue) * 100, 4);
+                                    const isToday = item.day.toLowerCase() === todayName;
+                                    return (
+                                        <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                                            <div className="w-full h-32 flex items-end">
+                                                <div
+                                                    className={cn(
+                                                        "w-full rounded-md",
+                                                        isToday ? "bg-[#F59E0B]" : "bg-gray-100"
+                                                    )}
+                                                    style={{ height: `${heightPercent}%` }}
+                                                />
+                                            </div>
+                                            <span
+                                                className={cn(
+                                                    "text-[10px] font-medium",
+                                                    isToday ? "text-[#F59E0B] font-bold" : "text-gray-400"
+                                                )}
+                                            >
+                                                {dayAbbreviations[item.day] || item.day.slice(0, 3)}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <p className="mt-3 text-[11px] text-gray-400">
+                                Peak this week <span className="font-semibold text-gray-600">₦{maxRevenue.toLocaleString()}</span>
+                            </p>
+                        </>
+                    ) : (
+                        <div className="h-32 flex items-center justify-center text-[13px] text-gray-400">
+                            No revenue data yet
+                        </div>
+                    )}
+                </div>
+
+                {/* Upcoming Bookings — desktop/tablet (unchanged) */}
+                <div className="hidden lg:block space-y-4 lg:col-span-2">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold text-gray-900">Upcoming Bookings</h2>
                         <Link href="/dashboard/bookings" className="text-xs font-medium text-[#F59E0B] hover:underline">View All</Link>
@@ -307,7 +483,58 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
+                {/* Upcoming Bookings — mobile: read-only preview list. No swipe
+                    actions and no action buttons here by design; every booking
+                    action lives on /dashboard/bookings. */}
+                <div className="lg:hidden">
+                    <div className="flex items-center justify-between mb-3">
+                        <h2 className="text-[15px] font-bold text-gray-900">Upcoming Bookings</h2>
+                        <Link href="/dashboard/bookings" className="text-[11px] font-semibold text-[#F59E0B]">
+                            View All
+                        </Link>
+                    </div>
 
+                    <div className="space-y-2">
+                        {!dashboardData?.upcomingBookings || dashboardData.upcomingBookings.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center rounded-2xl bg-white p-6 text-center shadow-sm">
+                                <Calendar className="h-7 w-7 text-gray-200 mb-2" />
+                                <p className="text-[13px] text-gray-400">No upcoming bookings</p>
+                            </div>
+                        ) : (
+                            dashboardData.upcomingBookings.slice(0, 5).map((booking) => (
+                                <div
+                                    key={booking.id}
+                                    className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm"
+                                >
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[14px] font-bold text-gray-900 line-clamp-1">
+                                            {booking.customerName}
+                                        </p>
+                                        <p className="mt-0.5 text-[11px] text-gray-400 line-clamp-1">
+                                            {booking.serviceName} · {booking.startTime}
+                                            {booking.duration ? ` · ${booking.duration} mins` : ""}
+                                        </p>
+                                    </div>
+                                    <div className="shrink-0 text-right">
+                                        <span
+                                            className={cn(
+                                                "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize",
+                                                booking.status === "confirmed"
+                                                    ? "bg-[#1A1F2C] text-white"
+                                                    : "bg-orange-50 text-[#F59E0B]"
+                                            )}
+                                        >
+                                            {booking.status.replaceAll("_", " ")}
+                                        </span>
+                                        <p className="mt-1 text-[13px] font-bold text-gray-900">
+                                            ₦{booking.price.toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
 
                 {/* Payment Overview (Replacement for Quick Actions) */}
                 {paymentData && (

@@ -3,7 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { MobileFooterStrip } from "@/components/modules/customer/mobile-footer-strip";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
+import { PaymentSuccessSheet } from "@/components/modules/customer/payment-success-sheet";
 import { BookingCard } from "@/components/modules/bookings/booking-card";
+import { BookingCardMobile } from "@/components/modules/bookings/booking-card-mobile";
 import { Booking, bookingService } from "@/services/booking.service";
 import { Loader2, CalendarX, Lock, Check } from "lucide-react";
 import { toaster } from "@/components/ui/toaster";
@@ -12,6 +16,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+
+const MOBILE_TAB_LABEL: Record<string, string> = {
+    "Pending Cancellations": "Pending",
+};
 
 function MyBookingsContent() {
     const searchParams = useSearchParams();
@@ -24,6 +33,7 @@ function MyBookingsContent() {
     const [totalBookings, setTotalBookings] = useState(0);
     const [limit, setLimit] = useState(12); // Use 12 items as default limit for 3-col grid
     const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+    const isMobile = useIsMobile();
 
     useEffect(() => {
         if (searchParams.get("payment_success") === "true") {
@@ -36,7 +46,7 @@ function MyBookingsContent() {
         router.replace("/my-bookings");
     };
 
-    const tabs = ["Upcoming", "History", "Pending Cancellations", "Canceled"];
+    const tabs: Array<"Upcoming" | "History" | "Pending Cancellations" | "Canceled"> = ["Upcoming", "History", "Pending Cancellations", "Canceled"];
 
     const fetchBookings = useCallback(async (isLoadMore = false, currentLimit = limit) => {
         if (isLoadMore) {
@@ -87,22 +97,43 @@ function MyBookingsContent() {
         }
     }, [fetchBookings, isAuthenticated]);
 
+    const hasSwipeableUpcoming = isMobile && activeTab === "Upcoming" && bookings.length > 0;
+
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen flex flex-col bg-white pb-20 md:pb-0">
             <CustomerHeader />
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2 font-playfair">My Bookings</h1>
-                    <p className="text-gray-600">Manage your upcoming appointments and view booking history</p>
+            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-12 w-full">
+                <div className="mb-4 md:mb-8">
+                    <h1 className="text-[24px] md:text-3xl font-bold text-gray-900 mb-1 md:mb-2 font-playfair">My Bookings</h1>
+                    <p className="text-gray-600 hidden md:block">Manage your upcoming appointments and view booking history</p>
                 </div>
 
-                {/* Tabs */}
-                <div className="bg-gray-50 p-1.5 rounded-2xl flex w-full md:w-auto mb-8 overflow-x-auto no-scrollbar">
+                {/* Tabs — mobile: underline style, matching Notifications */}
+                <div className="md:hidden scroll-row gap-6 -mx-4 px-4 mb-4 border-b border-gray-200">
                     {tabs.map((tab) => (
                         <button
                             key={tab}
-                            onClick={() => setActiveTab(tab as any)}
+                            onClick={() => setActiveTab(tab)}
+                            className={`shrink-0 whitespace-nowrap pb-3 text-sm font-bold transition-colors relative ${activeTab === tab
+                                ? "text-[#E89D24]"
+                                : "text-gray-500 hover:text-gray-700"
+                                }`}
+                        >
+                            {MOBILE_TAB_LABEL[tab] || tab}
+                            {activeTab === tab && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E89D24] rounded-t-full" />
+                            )}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tabs — desktop, unchanged */}
+                <div className="hidden md:flex bg-gray-50 p-1.5 rounded-2xl w-full md:w-auto mb-8 overflow-x-auto no-scrollbar">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
                             className={`shrink-0 whitespace-nowrap px-6 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === tab
                                 ? "bg-[#E89D24] text-white shadow-sm"
                                 : "text-gray-500 hover:text-gray-700"
@@ -115,29 +146,44 @@ function MyBookingsContent() {
 
                 {/* Content */}
                 {!isAuthenticated ? (
-                    <div className="flex flex-col items-center justify-center py-20">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-6 font-playfair">Sign In to view Bookings</h2>
+                    <div className="flex flex-col items-center justify-center py-10 md:py-20 text-center px-4">
+                        <h2 className="text-xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6 font-playfair">Sign In to view Bookings</h2>
                     </div>
                 ) : isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20">
                         <Loader2 className="w-10 h-10 text-[#E89D24] animate-spin mb-4" />
                         <p className="text-gray-500 font-medium">Loading your bookings...</p>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {bookings.length > 0 ? (
-                            bookings.map((booking) => (
-                                <BookingCard key={booking.id} booking={booking} onCancelSuccess={() => fetchBookings()} />
-                            ))
-                        ) : (
-                            <div className="col-span-full py-20 text-center">
-                                <div className="bg-gray-50 rounded-3xl p-12 max-w-md mx-auto flex flex-col items-center">
-                                    <CalendarX className="w-12 h-12 text-gray-300 mb-4" />
-                                    <p className="text-gray-500 font-medium">No {activeTab.toLowerCase()} bookings found.</p>
-                                </div>
-                            </div>
-                        )}
+                ) : bookings.length === 0 ? (
+                    <div className="py-10 md:py-20 text-center">
+                        <div className="bg-gray-50 md:rounded-3xl p-6 md:p-12 max-w-md mx-auto flex flex-col items-center">
+                            <CalendarX className="w-10 h-10 md:w-12 md:h-12 text-gray-300 mb-3 md:mb-4" />
+                            <p className="text-[13px] md:text-base text-gray-500 font-medium">
+                                Nothing here yet
+                            </p>
+                            <p className="text-[12px] text-gray-400 mt-1 md:hidden">
+                                Your {activeTab.toLowerCase()} bookings will show up here.
+                            </p>
+                        </div>
                     </div>
+                ) : isMobile === false ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {bookings.map((booking) => (
+                            <BookingCard key={booking.id} booking={booking} onCancelSuccess={() => fetchBookings()} />
+                        ))}
+                    </div>
+                ) : isMobile === true ? (
+                    <div className="space-y-3">
+                        {bookings.map((booking) => (
+                            <BookingCardMobile key={booking.id} booking={booking} />
+                        ))}
+                    </div>
+                ) : null}
+
+                {hasSwipeableUpcoming && (
+                    <p className="text-[11px] text-gray-300 text-center mt-4 font-medium">
+                        Swipe a booking left to reschedule or cancel
+                    </p>
                 )}
 
                 {/* Pagination / Load More */}
@@ -147,7 +193,7 @@ function MyBookingsContent() {
                             variant="outline"
                             disabled={isLoadingMore}
                             onClick={handleLoadMore}
-                            className="h-12 px-10 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition-colors min-w-[200px]"
+                            className="h-11 w-full md:h-12 md:w-auto md:px-10 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition-colors md:min-w-[200px]"
                         >
                             {isLoadingMore ? (
                                 <>
@@ -162,11 +208,16 @@ function MyBookingsContent() {
                 )}
             </main>
 
-            <CustomerFooter />
+            <div className="hidden md:block">
+                <CustomerFooter />
+            </div>
+            <MobileFooterStrip />
+            <CustomerBottomNav />
 
-            {/* Payment Success Modal */}
+            {/* Payment Success Modal — desktop, restored verbatim from db9961e^.
+                Stateless page-level block (no refs), so a CSS dual-tree is safe. */}
             {showPaymentSuccess && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 hidden md:flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
                     <div className="bg-white rounded-[32px] p-10 max-w-sm w-full text-center shadow-2xl animate-in fade-in zoom-in duration-300">
                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Check className="w-10 h-10 text-green-500" strokeWidth={3} />
@@ -184,6 +235,11 @@ function MyBookingsContent() {
                     </div>
                 </div>
             )}
+
+            {/* Payment success — mobile only */}
+            <div className="md:hidden">
+                <PaymentSuccessSheet open={showPaymentSuccess} onClose={handleCloseSuccessModal} />
+            </div>
         </div>
     );
 }

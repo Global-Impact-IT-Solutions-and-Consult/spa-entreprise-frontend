@@ -6,7 +6,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { State, City, IState, ICity } from "country-state-city";
 import { CustomerHeader } from "@/components/modules/customer/customer-header";
 import { CustomerFooter } from "@/components/modules/customer/customer-footer";
+import { MobileFooterStrip } from "@/components/modules/customer/mobile-footer-strip";
+import { CustomerBottomNav } from "@/components/modules/customer/customer-bottom-nav";
 import { BusinessDirectoryCard } from "@/components/modules/discovery/business-directory-card";
+import { BusinessRowCard } from "@/components/modules/discovery/business-row-card";
 import { businessService, BusinessType, isBusinessOpen } from "@/services/business.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from '@/store/auth.store';
@@ -244,10 +247,10 @@ function BusinessDirectoryContent() {
     const hasMore = meta ? meta.page < meta.totalPages : false;
 
     return (
-        <div className="min-h-screen bg-[#F9FAFB]">
+        <div className="min-h-screen flex flex-col bg-[#F9FAFB] pb-20 md:pb-0">
             <CustomerHeader />
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 w-full">
                 {/* Header Section */}
                 <div className="mb-10">
                     <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight font-playfair">Business Directory</h1>
@@ -256,8 +259,52 @@ function BusinessDirectoryContent() {
                     </p>
                 </div>
 
-                {/* Filter Container */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-12">
+                {/* Mobile: search bar + filter icon + single-line pills */}
+                <div className="md:hidden mb-6">
+                    <div className="flex gap-2">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search Business name"
+                                value={tempFilters.search}
+                                onChange={(e) => setTempFilters(prev => ({ ...prev, search: e.target.value }))}
+                                onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
+                                onBlur={() => tempFilters.search !== filters.search && handleApplyFilters()}
+                                className="w-full h-11 pl-10 pr-3 rounded-[14px] bg-white shadow-sm text-sm focus:outline-none"
+                            />
+                        </div>
+                        <button
+                            onClick={() => setShowAdvanced(true)}
+                            className="w-11 h-11 rounded-[14px] bg-white shadow-sm grid place-items-center shrink-0"
+                        >
+                            <SlidersHorizontal className="w-4 h-4 text-gray-600" />
+                        </button>
+                    </div>
+                    <div className="scroll-row gap-6 -mx-4 px-4 mt-3 border-b border-gray-200">
+                        {[
+                            { id: "All Services", label: "All Services" },
+                            { id: "Saved", label: "Saved" },
+                        ].map((filter) => (
+                            <button
+                                key={filter.id}
+                                onClick={() => setActiveFilter(filter.id)}
+                                className={`shrink-0 whitespace-nowrap pb-3 text-sm font-bold transition-colors relative ${activeFilter === filter.id
+                                    ? "text-[#E89D24]"
+                                    : "text-gray-500 hover:text-gray-700"
+                                    }`}
+                            >
+                                {filter.label}
+                                {activeFilter === filter.id && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E89D24] rounded-t-full" />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Filter Container — desktop */}
+                <div className="hidden md:block bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-12">
                     {/* Search Bar */}
                     <div className="flex flex-col lg:flex-row gap-4 mb-8 border border-gray-200 rounded-xl p-2 focus-within:ring-2 focus-within:ring-[#E89D24] transition-all">
                         <div className="flex-1 relative">
@@ -356,19 +403,48 @@ function BusinessDirectoryContent() {
                 </div>
 
                 {/* Grid Header */}
-                <div className="flex items-center justify-between mb-10">
-                    <h2 className="text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-0 mb-3 md:mb-10">
+                    <h2 className="text-[17px] md:text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
                         {filters.search ? `Search Results for "${filters.search}"` : "All Businesses"}
                     </h2>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-[11px] md:text-sm font-medium text-gray-500">
                         {loading ? "Searching..." : meta ? `${meta.total} results found` : "0 results found"}
                     </p>
                 </div>
 
-                {/* Business Grid */}
+                {/* Business Grid — mobile: compact rows */}
                 {
                     loading && businesses.length === 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                        <div className="md:hidden space-y-3 mb-8">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="flex items-center gap-3 bg-white rounded-2xl shadow-sm p-3">
+                                    <Skeleton className="w-[76px] h-[76px] rounded-[14px] shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <Skeleton className="h-4 w-2/3" />
+                                        <Skeleton className="h-3 w-1/3" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : businesses.length > 0 ? (
+                        <div className="md:hidden space-y-3 mb-8">
+                            {businesses.map((business: any) => (
+                                <BusinessRowCard
+                                    key={business.id}
+                                    business={{
+                                        ...business,
+                                        isVerified: business.status === 'APPROVED',
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    ) : null
+                }
+
+                {/* Business Grid — desktop */}
+                {
+                    loading && businesses.length === 0 ? (
+                        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
                             {[1, 2, 3, 4, 5, 6].map((i) => (
                                 <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm p-4 h-[400px]">
                                     <Skeleton className="h-48 w-full rounded-xl mb-4" />
@@ -386,7 +462,7 @@ function BusinessDirectoryContent() {
                             ))}
                         </div>
                     ) : businesses.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
                             {businesses.map((business: any) => (
                                 <BusinessDirectoryCard
                                     key={business.id}
@@ -399,14 +475,14 @@ function BusinessDirectoryContent() {
                             ))}
                         </div>
                     ) : (
-                        <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
-                            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        <div className="py-10 md:py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200 px-4">
+                            <Building2 className="w-10 h-10 md:w-16 md:h-16 text-gray-300 mx-auto mb-3 md:mb-4" />
+                            <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1.5 md:mb-2">
                                 {activeFilter === "Saved" ? (
                                     !isAuthenticated ? "Sign in to view saved businesses" : "No saved businesses yet"
                                 ) : "No businesses found"}
                             </h3>
-                            <p className="text-gray-500">
+                            <p className="text-[13px] md:text-base text-gray-500">
                                 {activeFilter === "Saved" ? (
                                     !isAuthenticated
                                         ? "Log in to your account so you can save and access your favorite businesses here."
@@ -415,7 +491,7 @@ function BusinessDirectoryContent() {
                             </p>
                             {activeFilter === "Saved" && !isAuthenticated ? (
                                 <Link href="/auth/login">
-                                    <Button className="mt-6 rounded-xl h-12 px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold shadow-lg shadow-yellow-500/20">
+                                    <Button className="mt-6 rounded-xl h-11 w-full md:w-auto md:h-12 md:px-8 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold shadow-lg shadow-yellow-500/20">
                                         Login to Account
                                     </Button>
                                 </Link>
@@ -434,7 +510,7 @@ function BusinessDirectoryContent() {
                                 variant="outline"
                                 disabled={loadingMore}
                                 onClick={handleLoadMore}
-                                className="h-12 px-10 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition-colors min-w-[200px]"
+                                className="h-11 w-full md:h-12 md:w-auto md:px-10 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition-colors md:min-w-[200px]"
                             >
                                 {loadingMore ? (
                                     <>
@@ -454,10 +530,26 @@ function BusinessDirectoryContent() {
                     onClose={() => setShowAdvanced(false)}
                     initialFilters={advancedFilters}
                     onApply={(newFilters) => setAdvancedFilters(newFilters)}
+                    locationFilters={{
+                        state: tempFilters.state,
+                        city: tempFilters.city,
+                        category: tempFilters.category,
+                    }}
+                    onLocationChange={(next) => {
+                        setTempFilters(prev => ({ ...prev, state: next.state, city: next.city, category: next.category }));
+                        setFilters(prev => ({ ...prev, state: next.state, city: next.city, category: next.category }));
+                    }}
+                    states={states}
+                    categories={businessTypes.map(t => ({ id: t.code, name: t.name }))}
+                    allCategoriesLabel="All Businesses"
                 />
             </main >
  
-            <CustomerFooter />
+            <div className="hidden md:block">
+                <CustomerFooter />
+            </div>
+            <MobileFooterStrip />
+            <CustomerBottomNav />
         </div >
     );
 }

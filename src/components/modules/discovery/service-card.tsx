@@ -4,14 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Heart, Clock, MapPin, Star, Store, House } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { favoritesService } from "@/services/favorites.service";
-import { useAuthStore } from "@/store/auth.store";
-import { useFavoritesStore } from "@/store/favorites.store";
-import { toaster } from "@/components/ui/toaster";
 import { getFallbackImage } from "@/lib/image.utils";
+import { useServiceActions } from "@/hooks/use-service-actions";
 import { AuthRequiredModal } from "./auth-required-modal";
 
 interface ServiceCardProps {
@@ -39,70 +34,19 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const [isLoading, setIsLoading] = useState(false);
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const { isAuthenticated } = useAuthStore();
-    const { serviceIds: favoriteServiceIds, addService, removeService } = useFavoritesStore();
-    
-    const isFavorite = favoriteServiceIds.includes(service.id);
+    const {
+        isFavorite,
+        isFavLoading,
+        handleFavoriteToggle,
+        handleBooking,
+        authModalOpen,
+        setAuthModalOpen,
+        businessProfilePath,
+        isAtDestination,
+        handleCardClick,
+    } = useServiceActions(service);
 
-    const businessId = service.businessId;
     const rating = typeof service.rating === 'string' ? parseFloat(service.rating) : service.rating;
-
-
-
-    const handleFavoriteToggle = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!isAuthenticated) {
-            setIsAuthModalOpen(true);
-            return;
-        }
-
-        if (!service.id) return;
-
-        setIsLoading(true);
-        try {
-            if (isFavorite) {
-                await favoritesService.removeServiceFavorite(service.id);
-                removeService(service.id);
-                toaster.create({ title: "Removed from favorites", type: "success" });
-            } else {
-                await favoritesService.addFavorite({ serviceId: service.id });
-                addService(service.id);
-                toaster.create({ title: "Added to favorites", type: "success" });
-            }
-        } catch (error) {
-            console.error('Failed to toggle favorite status:', error);
-            toaster.create({ title: "Failed to update favorite status", type: "error" });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleBooking = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!isAuthenticated) {
-            setIsAuthModalOpen(true);
-            return;
-        }
-
-        router.push(`/bookings/new?serviceId=${service.id}&businessId=${businessId}`);
-    };
-
-    const businessSlug = service.businessSlug || businessId;
-    const businessProfilePath = `/businesses/${businessSlug}`;
-    const isAtDestination = pathname === businessProfilePath;
-
-    const handleCardClick = () => {
-        if (isAtDestination) return;
-        router.push(businessProfilePath);
-    };
 
     return (
         <div 
@@ -124,10 +68,10 @@ export function ServiceCard({ service }: ServiceCardProps) {
                 </div>
                 <button
                     onClick={handleFavoriteToggle}
-                    disabled={isLoading}
+                    disabled={isFavLoading}
                     className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-sm hover:bg-white transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'} ${isLoading ? 'animate-pulse' : ''}`} />
+                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'} ${isFavLoading ? 'animate-pulse' : ''}`} />
                 </button>
             </div>
 
@@ -198,8 +142,8 @@ export function ServiceCard({ service }: ServiceCardProps) {
             </div>
 
             <AuthRequiredModal 
-                isOpen={isAuthModalOpen} 
-                onClose={setIsAuthModalOpen} 
+                isOpen={authModalOpen}
+                onClose={setAuthModalOpen}
                 title="Sign In to Book"
                 description="Sign in or create an account to book this service. Managing your appointments is easier with an account!"
             />

@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { businessService, Service } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
 import { ServiceCard } from "@/components/modules/services/ServiceCard";
+import { ServiceRowMobile } from "@/components/modules/services/service-row-mobile";
 import { CreateServiceModal } from "@/components/modules/services/CreateServiceModal";
 import { EditServiceModal } from "@/components/modules/services/EditServiceModal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -118,11 +119,20 @@ export default function ManageServicesPage() {
             {/* Content */}
             <div className="space-y-6 mt-8">
                 {isLoading ? (
+                    <>
+                    <div className="hidden lg:block">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
                         {[1, 2, 3].map(i => (
                             <div key={i} className="h-64 bg-gray-100 rounded-xl" />
                         ))}
                     </div>
+                    </div>
+                    <div className="lg:hidden space-y-3 animate-pulse">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="h-[92px] bg-gray-100 rounded-2xl" />
+                        ))}
+                    </div>
+                    </>
                 ) : displayedServices.length === 0 && !isRefetching ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200 text-center">
                         <div className="p-4 bg-gray-50 rounded-full mb-4">
@@ -132,6 +142,8 @@ export default function ManageServicesPage() {
                         <p className="text-gray-500">Add your first service to get started</p>
                     </div>
                 ) : (
+                    <>
+                    <div className="hidden lg:block">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {displayedServices.map((service, index) => (
                             <ServiceCard
@@ -146,6 +158,23 @@ export default function ManageServicesPage() {
                             <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
                         )}
                     </div>
+                    </div>
+
+                    {/* Mobile: compact rows with swipe Edit / two-tap Delete */}
+                    <div className="lg:hidden space-y-3">
+                        {displayedServices.map((service, index) => (
+                            <ServiceRowMobile
+                                key={service.id || `service-mobile-${index}`}
+                                service={service}
+                                onEdit={() => setServiceToEdit(service)}
+                                onDelete={() => handleDeleteService(service.id)}
+                            />
+                        ))}
+                        {isRefetching && (
+                            <div className="h-[92px] bg-gray-100 rounded-2xl animate-pulse" />
+                        )}
+                    </div>
+                    </>
                 )}
 
             </div>
@@ -153,6 +182,7 @@ export default function ManageServicesPage() {
             {businessId && (
                 <CreateServiceModal
                     businessId={businessId}
+                    breakpoint={1023}
                     isOpen={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
                     onSuccess={() => {
@@ -166,6 +196,7 @@ export default function ManageServicesPage() {
             {businessId && (
                 <EditServiceModal
                     businessId={businessId}
+                    breakpoint={1023}
                     service={serviceToEdit}
                     isOpen={!!serviceToEdit}
                     onClose={() => setServiceToEdit(null)}

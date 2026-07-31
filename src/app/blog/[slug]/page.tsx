@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { CustomerFooter } from '@/components/modules/customer/customer-footer';
+import { MobileFooterStrip } from '@/components/modules/customer/mobile-footer-strip';
 import { CustomerHeader } from '@/components/modules/customer/customer-header';
+import { CustomerBottomNav } from '@/components/modules/customer/customer-bottom-nav';
 import { blogService, type BlogPost } from '@/services/blog.service';
 
 function formatDate(value?: string | null) {
@@ -40,9 +42,9 @@ export default function BlogDetailPage() {
   }, [params.slug]);
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] text-gray-900">
+    <div className="min-h-screen flex flex-col bg-[#F9FAFB] text-gray-900 pb-20 md:pb-0">
       <CustomerHeader />
-      <main>
+      <main className="flex-1">
         {loading ? (
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div className="h-96 animate-pulse rounded-lg bg-white" />
@@ -109,7 +111,11 @@ export default function BlogDetailPage() {
           </>
         )}
       </main>
-      <CustomerFooter />
+      <div className="hidden md:block">
+        <CustomerFooter />
+      </div>
+      <MobileFooterStrip />
+      <CustomerBottomNav />
     </div>
   );
 }
