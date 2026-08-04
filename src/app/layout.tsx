@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { PwaRegister } from '@/components/pwa-register';
 import { PageTransition } from '@/components/page-transition';
 import { OfflineBanner } from '@/components/offline-banner';
+import { InstallPrompt } from '@/components/install-prompt';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -51,6 +52,7 @@ export default function RootLayout({
           <OfflineBanner />
           <Toaster />
           <PwaRegister />
+          <InstallPrompt />
         </Providers>
         {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
       </body>
