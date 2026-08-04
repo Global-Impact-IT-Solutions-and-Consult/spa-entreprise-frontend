@@ -33,6 +33,7 @@ export const viewport: Viewport = {
   themeColor: '#E89D24',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 };
 
 const gaId = process.env.NEXT_PUBLIC_GA_ID;
