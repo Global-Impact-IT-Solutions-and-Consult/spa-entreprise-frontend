@@ -21,6 +21,9 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { OnboardingCtaBar } from '@/components/modules/onboarding/onboarding-cta-bar';
 import { GiShop } from 'react-icons/gi';
 import { Store } from 'lucide-react';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { isNetworkError } from '@/lib/api';
+import { OfflineFallback } from '@/components/offline-fallback';
 
 interface ServiceCardProps {
     service: Service;
@@ -115,6 +118,7 @@ export default function ServicesPage() {
     const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
     const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
     const isMobile = useIsMobile();
+    const isOnline = useOnlineStatus();
 
     // Form State
     const [serviceName, setServiceName] = useState('');
@@ -159,11 +163,13 @@ export default function ServicesPage() {
             } catch (error) {
                 const err = error as { response?: { data?: { message?: string } } };
                 console.error("Failed to fetch data", err);
-                toaster.create({
-                    title: "Error",
-                    description: err.response?.data?.message || "Failed to load services",
-                    type: "error"
-                });
+                if (!isNetworkError(error)) {
+                    toaster.create({
+                        title: "Error",
+                        description: err.response?.data?.message || "Failed to load services",
+                        type: "error"
+                    });
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -638,6 +644,8 @@ export default function ServicesPage() {
                     <div className="flex-1 flex items-center justify-center">
                         <div className="text-gray-500">Loading services...</div>
                     </div>
+                ) : !isOnline && services.length === 0 && !isRefetching ? (
+                    <OfflineFallback message="Your services will appear here once you're back online." />
                 ) : services.length === 0 && !isRefetching ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center py-20 grayscale opacity-40">
                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">

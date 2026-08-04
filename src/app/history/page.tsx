@@ -14,6 +14,9 @@ import { toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import { History, LayoutGrid, Store, Clock } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { isNetworkError } from "@/lib/api";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 export default function HistoryPage() {
     const { isAuthenticated } = useAuthStore();
@@ -21,6 +24,7 @@ export default function HistoryPage() {
     const [historyServices, setHistoryServices] = useState<any[]>([]);
     const [historyBusinesses, setHistoryBusinesses] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const isOnline = useOnlineStatus();
 
     const fetchHistory = async () => {
         if (!isAuthenticated) return;
@@ -79,7 +83,9 @@ export default function HistoryPage() {
 
         } catch (error) {
             console.error("Failed to fetch history", error);
-            toaster.create({ title: "Error", description: "Failed to load history.", type: "error" });
+            if (!isNetworkError(error)) {
+                toaster.create({ title: "Error", description: "Failed to load history.", type: "error" });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -140,6 +146,8 @@ export default function HistoryPage() {
                             activeTab === "services" ? <HistoryServiceSkeleton key={i} /> : <HistoryBusinessSkeleton key={i} />
                         ))}
                     </div>
+                ) : !isOnline && (activeTab === "services" ? historyServices : historyBusinesses).length === 0 ? (
+                    <OfflineFallback message="Your booking and visit history will appear here once you're back online." />
                 ) : (activeTab === "services" ? historyServices : historyBusinesses).length === 0 ? (
                     <div className="py-24 flex flex-col items-center justify-center text-center bg-white rounded-[2rem] border border-dashed border-gray-200 shadow-sm">
                         <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-6">

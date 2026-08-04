@@ -15,6 +15,9 @@ import { Label } from "@/components/ui/label";
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { businessService, UpdateProfileDto } from '@/services/business.service';
 import { OnboardingCtaBar } from '@/components/modules/onboarding/onboarding-cta-bar';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { isNetworkError } from '@/lib/api';
+import { OfflineFallback } from '@/components/offline-fallback';
 
 // Define the option type for the Select component
 interface SelectOption {
@@ -31,6 +34,7 @@ export default function BusinessInfoPage() {
         { label: "Select business type", value: "" }
     ]);
     const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+    const isOnline = useOnlineStatus();
 
     // Get all countries
     const allCountries = Country.getAllCountries();
@@ -185,11 +189,13 @@ export default function BusinessInfoPage() {
                 ]);
             } catch (error) {
                 console.error('Failed to fetch business types:', error);
-                toaster.create({
-                    title: "Error",
-                    description: "Failed to load business categories. Please refresh the page.",
-                    type: "error"
-                });
+                if (!isNetworkError(error)) {
+                    toaster.create({
+                        title: "Error",
+                        description: "Failed to load business categories. Please refresh the page.",
+                        type: "error"
+                    });
+                }
             } finally {
                 setIsLoadingTypes(false);
             }
@@ -364,6 +370,16 @@ export default function BusinessInfoPage() {
         return (
             <div className="w-full max-w-[900px] flex items-center justify-center min-h-[400px]">
                 <div className="text-gray-500">Loading...</div>
+            </div>
+        );
+    }
+
+    // Business Type is a required dropdown — if it failed to load while
+    // offline, the form is unusable rather than merely missing prefill data.
+    if (!isLoadingTypes && !isOnline && businessTypes.length <= 1) {
+        return (
+            <div className="w-full max-w-[900px]">
+                <OfflineFallback message="This step needs a connection to load business categories." />
             </div>
         );
     }

@@ -16,6 +16,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { determineOnboardingStep } from '@/lib/onboarding-utils';
 import { handleApiError } from '@/lib/api';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import Image from 'next/image';
 
 function LoginContent() {
@@ -27,7 +28,8 @@ function LoginContent() {
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    
+    const isOnline = useOnlineStatus();
+
     // MFA State
     const [isMfaStep, setIsMfaStep] = useState(false);
     const [mfaCode, setMfaCode] = useState<string[]>(Array(6).fill(""));
@@ -262,9 +264,9 @@ function LoginContent() {
                             size="lg"
                             className="w-full h-[56px] rounded-lg bg-[#E59622] text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white mt-4"
                             onClick={handleLogin}
-                            disabled={isLoading}
+                            disabled={isLoading || !isOnline}
                         >
-                            {isLoading ? "Signing in..." : "Sign In"}
+                            {isLoading ? "Signing in..." : !isOnline ? "You're offline" : "Sign In"}
                         </Button>
 
                         <SocialButtons />
@@ -327,9 +329,9 @@ function LoginContent() {
                             size="lg"
                             className="w-full h-[56px] rounded-lg bg-[#E59622] text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white mt-4"
                             onClick={handleLogin}
-                            disabled={isLoading}
+                            disabled={isLoading || !isOnline}
                         >
-                            {isLoading ? "Verifying..." : "Verify & Login"}
+                            {isLoading ? "Verifying..." : !isOnline ? "You're offline" : "Verify & Login"}
                         </Button>
                         <button
                             onClick={() => {

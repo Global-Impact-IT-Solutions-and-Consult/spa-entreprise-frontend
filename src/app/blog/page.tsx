@@ -11,6 +11,8 @@ import { CustomerBottomNav } from '@/components/modules/customer/customer-bottom
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { blogService, type BlogPost } from '@/services/blog.service';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { OfflineFallback } from '@/components/offline-fallback';
 
 function formatDate(value?: string | null) {
   if (!value) return '';
@@ -25,6 +27,7 @@ export default function BlogPage() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const isOnline = useOnlineStatus();
 
   const loadBlogs = async () => {
     setLoading(true);
@@ -97,6 +100,8 @@ export default function BlogPage() {
                 />
               ))}
             </div>
+          ) : !isOnline && blogs.length === 0 ? (
+            <OfflineFallback message="Articles will appear here once you're back online." />
           ) : blogs.length === 0 ? (
             <div className="rounded-lg border border-gray-200 bg-white p-10 text-center">
               <h2 className="text-xl font-bold text-gray-950">

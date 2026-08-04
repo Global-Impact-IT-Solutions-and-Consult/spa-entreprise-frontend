@@ -17,6 +17,8 @@ import { useFavoritesStore } from '@/store/favorites.store';
 import { favoritesService } from "@/services/favorites.service";
 import Link from "next/link";
 import { AdvanceFilterModal, AdvancedFiltersState } from "@/components/modules/discovery/advance-filter-modal";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 function DiscoverContent() {
     const searchParams = useSearchParams();
@@ -31,6 +33,7 @@ function DiscoverContent() {
 
     const { isAuthenticated } = useAuthStore();
     const { setServiceIds: setFavoriteServiceIds, setBusinessIds: setFavoriteBusinessIds, clear: clearFavorites } = useFavoritesStore();
+    const isOnline = useOnlineStatus();
 
     // Filter State
     const [activeFilter, setActiveFilter] = useState(searchParams.get("type") || "All Services");
@@ -448,6 +451,10 @@ function DiscoverContent() {
                         {results.map((service) => (
                             <ServiceCard key={service.id} service={service} />
                         ))}
+                    </div>
+                ) : !isOnline ? (
+                    <div className="py-10 md:py-20 mb-8 md:mb-0">
+                        <OfflineFallback message="Services will appear here once you're back online." />
                     </div>
                 ) : (
                     <div className="py-10 md:py-20 mb-8 md:mb-0 text-center bg-white rounded-2xl border border-dashed border-gray-200 px-4">

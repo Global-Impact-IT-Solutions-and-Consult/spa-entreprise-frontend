@@ -13,6 +13,9 @@ import { businessService, Staff } from "@/services/business.service";
 import Image from "next/image";
 import { getFallbackImage } from "@/lib/image.utils";
 import { BiChat } from "react-icons/bi";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { isNetworkError } from "@/lib/api";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 type CancelStep = 'details' | 'success' | 'cancelled';
 
@@ -32,6 +35,7 @@ export default function CancellationPage() {
     const [canCancel, setCanCancel] = useState(true);
     const [timeRemainingMinutes, setTimeRemainingMinutes] = useState<string | number | null>(null);
     const [isBeforeStart, setIsBeforeStart] = useState(false);
+    const isOnline = useOnlineStatus();
 
     // Helper functions for formatting
     const formatTime12h = (time24: string) => {
@@ -155,11 +159,13 @@ export default function CancellationPage() {
                 }
             } catch (error) {
                 console.error("Failed to fetch booking", error);
-                toaster.create({
-                    title: "Error",
-                    description: "Failed to load appointment details.",
-                    type: "error"
-                });
+                if (!isNetworkError(error)) {
+                    toaster.create({
+                        title: "Error",
+                        description: "Failed to load appointment details.",
+                        type: "error"
+                    });
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -210,6 +216,14 @@ export default function CancellationPage() {
         return (
             <div className="min-h-screen bg-white flex flex-col items-center justify-center">
                 <Loader2 className="w-10 h-10 animate-spin text-[#E89D24]" />
+            </div>
+        );
+    }
+
+    if (!isOnline && !booking) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center text-center px-4">
+                <OfflineFallback message="Your appointment details will appear here once you're back online." />
             </div>
         );
     }

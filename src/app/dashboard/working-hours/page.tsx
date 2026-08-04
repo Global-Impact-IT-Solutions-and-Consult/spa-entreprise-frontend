@@ -10,6 +10,9 @@ import { useAuthStore } from "@/store/auth.store";
 import { businessService } from "@/services/business.service";
 import type { OperatingHours } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { OfflineFallback } from "@/components/offline-fallback";
+import { isNetworkError } from "@/lib/api";
 
 const DAYS = [
     { id: 'monday', label: 'Monday' },
@@ -50,6 +53,7 @@ export default function WorkingHoursPage() {
     const [schedule, setSchedule] = useState<Schedule>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const isOnline = useOnlineStatus();
 
     useEffect(() => {
         const fetchBusinessData = async () => {
@@ -74,7 +78,9 @@ export default function WorkingHoursPage() {
                 setSchedule(initialSchedule);
             } catch (error) {
                 console.error("Failed to fetch business hours:", error);
-                toaster.create({ title: "Error", description: "Failed to load working hours", type: "error" });
+                if (!isNetworkError(error)) {
+                    toaster.create({ title: "Error", description: "Failed to load working hours", type: "error" });
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -134,6 +140,14 @@ export default function WorkingHoursPage() {
         return (
             <div className="h-[400px] flex items-center justify-center">
                 <Loader2 className="h-10 w-10 text-[#F59E0B] animate-spin" />
+            </div>
+        );
+    }
+
+    if (!isOnline && Object.keys(schedule).length === 0) {
+        return (
+            <div className="h-[400px] flex items-center justify-center">
+                <OfflineFallback message="Your working hours will appear here once you're back online." />
             </div>
         );
     }

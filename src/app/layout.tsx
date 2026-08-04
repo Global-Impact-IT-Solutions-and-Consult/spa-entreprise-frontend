@@ -6,6 +6,7 @@ import { Providers } from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { PwaRegister } from '@/components/pwa-register';
 import { PageTransition } from '@/components/page-transition';
+import { OfflineBanner } from '@/components/offline-banner';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -46,6 +47,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${playfair.variable} antialiased`}>
         <Providers>
           <PageTransition>{children}</PageTransition>
+          <OfflineBanner />
           <Toaster />
           <PwaRegister />
         </Providers>

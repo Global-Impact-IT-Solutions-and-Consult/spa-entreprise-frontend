@@ -13,6 +13,9 @@ import { toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/store/favorites.store";
 import { Bookmark, Heart, Grid3X3, Store } from "lucide-react";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { isNetworkError } from "@/lib/api";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 export default function SavedPage() {
     const { isAuthenticated } = useAuthStore();
@@ -20,6 +23,7 @@ export default function SavedPage() {
     const [savedBusinesses, setSavedBusinesses] = useState<any[]>([]);
     const [savedServices, setSavedServices] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const isOnline = useOnlineStatus();
 
     const { serviceIds, businessIds, setServiceIds, setBusinessIds, removeBusiness, removeService } = useFavoritesStore();
 
@@ -81,7 +85,9 @@ export default function SavedPage() {
             setServiceIds(servIds);
         } catch (error) {
             console.error("Failed to fetch favorites", error);
-            toaster.create({ title: "Error", description: "Failed to load saved items.", type: "error" });
+            if (!isNetworkError(error)) {
+                toaster.create({ title: "Error", description: "Failed to load saved items.", type: "error" });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -147,6 +153,8 @@ export default function SavedPage() {
                             activeTab === "businesses" ? <SavedBusinessSkeleton key={i} /> : <ServiceSkeleton key={i} />
                         ))}
                     </div>
+                ) : !isOnline && (activeTab === "businesses" ? filteredSavedBusinesses : filteredSavedServices).length === 0 ? (
+                    <OfflineFallback message="Your saved items will appear here once you're back online." />
                 ) : (activeTab === "businesses" ? filteredSavedBusinesses : filteredSavedServices).length === 0 ? (
                     <div className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-3xl border border-dashed border-gray-200 shadow-sm">
                         <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-6">

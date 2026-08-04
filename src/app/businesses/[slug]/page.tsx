@@ -19,6 +19,7 @@ import { Loader2, AlertCircle, Share2, Copy, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getFallbackImage } from "@/lib/image.utils";
 import { ShareBusinessModal } from "@/components/modules/discovery/share-business-modal";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -42,6 +43,7 @@ export default function BusinessDetailsPage() {
     const [businessUrl, setBusinessUrl] = useState("");
     const [fetchedProfileImage, setFetchedProfileImage] = useState<string | null>(null);
     const [fetchedCoverImage, setFetchedCoverImage] = useState<string | null>(null);
+    const isOnline = useOnlineStatus();
 
     const tabs = ["Services", "About", "Reviews", "Gallery", "Staff"];
 
@@ -140,7 +142,11 @@ export default function BusinessDetailsPage() {
                     <div className="bg-white p-12 rounded-3xl shadow-sm max-w-md mx-auto">
                         <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-6" />
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h2>
-                        <p className="text-gray-600 mb-8">{error || "Business not found."}</p>
+                        <p className="text-gray-600 mb-8">
+                            {!isOnline
+                                ? "You're offline — check your connection and try again."
+                                : (error || "Business not found.")}
+                        </p>
                         <Button
                             onClick={() => window.location.href = '/discover'}
                             className="bg-[#E89D24] hover:bg-[#E5A800] text-white px-8 py-3 rounded-xl font-bold"

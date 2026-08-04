@@ -18,6 +18,8 @@ import { favoritesService } from "@/services/favorites.service";
 import { Heart, Store, Home, SlidersHorizontal, MapPin, Search, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdvanceFilterModal, AdvancedFiltersState } from "@/components/modules/discovery/advance-filter-modal";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 function BusinessDirectoryContent() {
     const searchParams = useSearchParams();
@@ -37,6 +39,7 @@ function BusinessDirectoryContent() {
     
     const { isAuthenticated } = useAuthStore();
     const { setServiceIds: setFavoriteServiceIds, setBusinessIds: setFavoriteBusinessIds, clear: clearFavorites } = useFavoritesStore();
+    const isOnline = useOnlineStatus();
 
     // Filter State for Pills
     const [activeFilter, setActiveFilter] = useState(searchParams.get("type") || "All Services");
@@ -473,6 +476,10 @@ function BusinessDirectoryContent() {
                                     }}
                                 />
                             ))}
+                        </div>
+                    ) : !isOnline ? (
+                        <div className="py-10 md:py-20">
+                            <OfflineFallback message="Businesses will appear here once you're back online." />
                         </div>
                     ) : (
                         <div className="py-10 md:py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200 px-4">

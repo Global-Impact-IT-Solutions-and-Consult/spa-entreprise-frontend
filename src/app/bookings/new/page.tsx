@@ -16,6 +16,9 @@ import { paymentService } from "@/services/payment.service";
 import { Business, Service, Staff } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
 import { useAuthStore } from "@/store/auth.store";
+import { handleApiError, isNetworkError } from "@/lib/api";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 const formatTime12h = (time24: string) => {
     if (!time24) return "";
@@ -39,6 +42,7 @@ function BookingContent() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false);
     const [paymentStatusText, setPaymentStatusText] = useState("");
+    const isOnline = useOnlineStatus();
 
     // Data state
     const [business, setBusiness] = useState<Business | null>(null);
@@ -85,7 +89,9 @@ function BookingContent() {
                 }
             } catch (error) {
                 console.error("Error fetching booking data:", error);
-                toaster.create({ title: "Error", description: "Failed to load booking details.", type: "error" });
+                if (!isNetworkError(error)) {
+                    toaster.create({ title: "Error", description: "Failed to load booking details.", type: "error" });
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -200,12 +206,8 @@ function BookingContent() {
                 router.push("/my-bookings");
             }
 
-        } catch (error: any) {
-            toaster.create({
-                title: "Booking Failed",
-                description: error.response?.data?.message || "An unexpected error occurred.",
-                type: "error"
-            });
+        } catch (error) {
+            handleApiError(error, "Booking Failed");
             setIsSubmitting(false);
             setPaymentStatusText("");
         }
@@ -218,6 +220,14 @@ function BookingContent() {
                     <Loader2 className="w-12 h-12 text-[#E89D24] animate-spin mx-auto mb-4" />
                     <p className="text-gray-500 font-medium">Preparing your booking experience...</p>
                 </div>
+            </div>
+        );
+    }
+
+    if (!isOnline && (!business || !service)) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <OfflineFallback message="Your booking details will appear here once you're back online." />
             </div>
         );
     }
@@ -553,7 +563,7 @@ function BookingContent() {
 
                                 <Button
                                     onClick={handleConfirmBooking}
-                                    disabled={isSubmitting || !selectedSlot || (deliveryType === 'home_service' && !homeServiceAddress.trim())}
+                                    disabled={isSubmitting || !selectedSlot || !isOnline || (deliveryType === 'home_service' && !homeServiceAddress.trim())}
                                     className="w-full h-12 bg-[#E89D24] hover:bg-[#E5A800] text-white font-bold text-sm rounded-lg transition-all active:scale-[0.98]"
                                 >
                                     {isSubmitting ? (
@@ -561,6 +571,8 @@ function BookingContent() {
                                             <Loader2 className="w-5 h-5 animate-spin" />
                                             {paymentStatusText || "Book Now"}
                                         </div>
+                                    ) : !isOnline ? (
+                                        "You're offline"
                                     ) : (
                                         "Book Now"
                                     )}
