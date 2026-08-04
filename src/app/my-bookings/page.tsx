@@ -17,6 +17,10 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { isNetworkError } from "@/lib/api";
+import { CachedDataBadge } from "@/components/cached-data-badge";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 const MOBILE_TAB_LABEL: Record<string, string> = {
     "Pending Cancellations": "Pending",
@@ -34,6 +38,7 @@ function MyBookingsContent() {
     const [limit, setLimit] = useState(12); // Use 12 items as default limit for 3-col grid
     const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
     const isMobile = useIsMobile();
+    const isOnline = useOnlineStatus();
 
     useEffect(() => {
         if (searchParams.get("payment_success") === "true") {
@@ -67,11 +72,16 @@ function MyBookingsContent() {
             setTotalBookings(response.meta?.total || 0);
         } catch (error) {
             console.error("Error fetching bookings:", error);
-            toaster.create({
-                title: "Error",
-                description: "Failed to load your bookings. Please try again.",
-                type: "error"
-            });
+            // Network failures already surface via the offline banner + this
+            // page's own offline fallback — a generic error toast on top is
+            // redundant noise. Real server errors still get one.
+            if (!isNetworkError(error)) {
+                toaster.create({
+                    title: "Error",
+                    description: "Failed to load your bookings. Please try again.",
+                    type: "error"
+                });
+            }
         } finally {
             setIsLoading(false);
             setIsLoadingMore(false);
@@ -105,7 +115,10 @@ function MyBookingsContent() {
 
             <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-12 w-full">
                 <div className="mb-4 md:mb-8">
-                    <h1 className="text-[24px] md:text-3xl font-bold text-gray-900 mb-1 md:mb-2 font-playfair">My Bookings</h1>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="text-[24px] md:text-3xl font-bold text-gray-900 mb-1 md:mb-2 font-playfair">My Bookings</h1>
+                        {!isOnline && bookings.length > 0 && <CachedDataBadge />}
+                    </div>
                     <p className="text-gray-600 hidden md:block">Manage your upcoming appointments and view booking history</p>
                 </div>
 
@@ -154,6 +167,8 @@ function MyBookingsContent() {
                         <Loader2 className="w-10 h-10 text-[#E89D24] animate-spin mb-4" />
                         <p className="text-gray-500 font-medium">Loading your bookings...</p>
                     </div>
+                ) : !isOnline && bookings.length === 0 ? (
+                    <OfflineFallback message="Your bookings will appear here once you're back online." />
                 ) : bookings.length === 0 ? (
                     <div className="py-10 md:py-20 text-center">
                         <div className="bg-gray-50 md:rounded-3xl p-6 md:p-12 max-w-md mx-auto flex flex-col items-center">

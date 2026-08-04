@@ -47,17 +47,39 @@ export function normalizeApiMessage(data: unknown): string {
 }
 
 /**
+ * True when a request was sent but never got a response (offline, DNS
+ * failure, CORS, timeout) — axios's signature for "the network itself
+ * failed," as opposed to a server-returned error.
+ */
+export function isNetworkError(error: unknown): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const err = error as any;
+    return !err?.response && !!err?.request;
+}
+
+/**
  * High-level error handler that parses an API error and shows a toaster notification.
  * @param error - The error object from a catch block (usually Axios error)
  * @param title - Optional title for the toaster notification
  */
 export function handleApiError(error: unknown, title: string = "Error") {
+    // Surface one clear, consistent message for network failures instead of
+    // whatever generic fallback normalizeApiMessage(undefined) would give.
+    if (isNetworkError(error)) {
+        toaster.create({
+            title: "You're offline",
+            description: "Check your connection and try again.",
+            type: "error",
+        });
+        return;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (error as any)?.response?.data;
     const message = normalizeApiMessage(data);
-    toaster.create({ 
-        title, 
-        description: message, 
-        type: "error" 
+    toaster.create({
+        title,
+        description: message,
+        type: "error"
     });
 }

@@ -6,6 +6,8 @@ import { Providers } from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { PwaRegister } from '@/components/pwa-register';
 import { PageTransition } from '@/components/page-transition';
+import { OfflineBanner } from '@/components/offline-banner';
+import { InstallPrompt } from '@/components/install-prompt';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -32,6 +34,7 @@ export const viewport: Viewport = {
   themeColor: '#E89D24',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 };
 
 const gaId = process.env.NEXT_PUBLIC_GA_ID;
@@ -46,8 +49,10 @@ export default function RootLayout({
       <body className={`${inter.variable} ${playfair.variable} antialiased`}>
         <Providers>
           <PageTransition>{children}</PageTransition>
+          <OfflineBanner />
           <Toaster />
           <PwaRegister />
+          <InstallPrompt />
         </Providers>
         {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
       </body>

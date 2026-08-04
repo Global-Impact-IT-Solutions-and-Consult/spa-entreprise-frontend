@@ -32,6 +32,9 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useBookingOwnerActions } from "@/hooks/use-booking-owner-actions";
 import { Sheet } from "@/components/ui/sheet";
 import { BookingRowMobile } from "@/components/dashboard/booking-row-mobile";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { CachedDataBadge } from "@/components/cached-data-badge";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 export default function BookingsPage() {
     const { user } = useAuthStore();
@@ -45,6 +48,7 @@ export default function BookingsPage() {
     const [businessServices, setBusinessServices] = useState<Service[]>([]);
     const [businessStaff, setBusinessStaff] = useState<Staff[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const isOnline = useOnlineStatus();
     const [stats, setStats] = useState({
         pending: 0,
         confirmedToday: 0,
@@ -327,7 +331,10 @@ export default function BookingsPage() {
         <div className="">
             <div className="flex items-end justify-between mb-8">
                 <div className="my-5 md:my-0">
-                    <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Bookings Management</h1>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Bookings Management</h1>
+                        {!isOnline && allBookings.length > 0 && <CachedDataBadge />}
+                    </div>
                     <p className="text-gray-500 mt-1 text-sm  sm:text-base">Manage appointments, track bookings, and handle scheduling for your business</p>
                 </div>
                 {/* <Button
@@ -651,6 +658,8 @@ export default function BookingsPage() {
                             ))}
                         </div>
                     </>
+                ) : !isOnline && allBookings.length === 0 ? (
+                    <OfflineFallback message="Your bookings will appear here once you're back online." />
                 ) : filteredBookings.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-gray-100 gap-4">
                         <CalendarCheck className="h-12 w-12 text-gray-200" />

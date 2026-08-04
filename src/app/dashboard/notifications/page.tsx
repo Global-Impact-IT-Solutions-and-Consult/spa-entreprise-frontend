@@ -6,6 +6,8 @@ import { Bell, CalendarPlus, ClipboardCheck, Tag, Zap, Loader2, Calendar, Star, 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notificationService, UserNotification } from "@/services/notification.service";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 const TABS = ["All Notifications", "Bookings", "System Updates"];
 
@@ -35,6 +37,7 @@ export default function DashboardNotificationsPage() {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [markingAll, setMarkingAll] = useState(false);
+    const isOnline = useOnlineStatus();
 
     const renderNotificationActions = (notif: UserNotification) => {
         if (notif.read) return null;
@@ -248,13 +251,17 @@ export default function DashboardNotificationsPage() {
             ) : (
                 <div className="space-y-4 pt-2">
                     {filteredNotifications.length === 0 ? (
-                        <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
-                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Bell className="w-5 h-5 text-gray-400" />
+                        !isOnline && notifications.length === 0 ? (
+                            <OfflineFallback message="Your notifications will appear here once you're back online." />
+                        ) : (
+                            <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
+                                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Bell className="w-5 h-5 text-gray-400" />
+                                </div>
+                                <h3 className="font-bold text-gray-900">No notifications found</h3>
+                                <p className="text-sm text-gray-500 mt-1">There are no {activeTab.toLowerCase() == 'all notifications' ? 'notifications' : `${activeTab.toLowerCase()} notifications`} to show right now.</p>
                             </div>
-                            <h3 className="font-bold text-gray-900">No notifications found</h3>
-                            <p className="text-sm text-gray-500 mt-1">There are no {activeTab.toLowerCase() == 'all notifications' ? 'notifications' : `${activeTab.toLowerCase()} notifications`} to show right now.</p>
-                        </div>
+                        )
                     ) : (
                         filteredNotifications.map((notif) => (
                             <div

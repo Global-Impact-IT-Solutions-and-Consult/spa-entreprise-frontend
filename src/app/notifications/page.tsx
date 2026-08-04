@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notificationService, UserNotification } from "@/services/notification.service";
 import { formatTimeAgo, getIconForType, getBgForType } from "@/lib/notification-utils";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 
 const TABS = ["All Notifications", "Bookings", "Offers", "System Updates"];
@@ -23,6 +25,7 @@ export default function NotificationsPage() {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [markingAll, setMarkingAll] = useState(false);
+    const isOnline = useOnlineStatus();
     const renderNotificationActions = (notif: UserNotification) => {
         if (notif.type === "service_completion" && notif.metadata?.bookingId) {
             return (
@@ -183,7 +186,9 @@ export default function NotificationsPage() {
                         </div>
                     ) : (
                         <div className="space-y-4 pt-2">
-                            {filteredNotifications.length === 0 ? (
+                            {!isOnline && filteredNotifications.length === 0 ? (
+                                <OfflineFallback message="Your notifications will appear here once you're back online." />
+                            ) : filteredNotifications.length === 0 ? (
                                 <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
                                     <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <Bell className="w-5 h-5 text-gray-400" />

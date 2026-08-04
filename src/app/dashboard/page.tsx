@@ -21,6 +21,9 @@ import { businessService, DashboardData, PaymentOverviewData } from "@/services/
 import { PaymentOverview } from "@/components/dashboard/PaymentOverview";
 import { isBusinessPending } from "@/lib/dashboard-status";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { CachedDataBadge } from "@/components/cached-data-badge";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 export default function DashboardPage() {
     const { user } = useAuthStore();
@@ -31,6 +34,7 @@ export default function DashboardPage() {
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [paymentData, setPaymentData] = useState<PaymentOverviewData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const isOnline = useOnlineStatus();
 
     useEffect(() => {
         if (businessId && !isPending) {
@@ -209,6 +213,10 @@ export default function DashboardPage() {
         );
     }
 
+    if (!isOnline && !dashboardData && !isPending) {
+        return <OfflineFallback message="Your dashboard will appear here once you're back online." />;
+    }
+
     if (isPending) {
         return (
             <div className="space-y-6">
@@ -258,6 +266,11 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
+            {!isOnline && dashboardData && (
+                <div className="-mb-4">
+                    <CachedDataBadge />
+                </div>
+            )}
             {/* Stat cards — mobile: horizontal scroll row (the greeting that used
                 to sit here is now the navy hero in dashboard/layout.tsx) */}
             <div className="lg:hidden scroll-row gap-3 -mx-4 px-4">

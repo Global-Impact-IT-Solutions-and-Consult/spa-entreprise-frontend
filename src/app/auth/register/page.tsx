@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { handleApiError } from '@/lib/api';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import Image from 'next/image';
 
 type AccountType = 'customer' | 'business';
@@ -31,6 +32,7 @@ export default function RegisterPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const isOnline = useOnlineStatus();
 
     const [strength, setStrength] = useState({
         length: false,
@@ -250,9 +252,9 @@ export default function RegisterPage() {
                     size="lg"
                     className="w-full h-[56px] rounded-lg bg-[#E59622] text-lg font-bold hover:bg-[#d48a1f] transition-colors text-white mt-2"
                     onClick={handleRegister}
-                    disabled={isLoading || !acceptedTerms}
+                    disabled={isLoading || !acceptedTerms || !isOnline}
                 >
-                    {isLoading ? "Creating..." : "Create Account"}
+                    {isLoading ? "Creating..." : !isOnline ? "You're offline" : "Create Account"}
                 </Button>
 
                 <SocialButtons />

@@ -17,6 +17,9 @@ import { cn } from '@/lib/utils';
 import { Scissors } from 'lucide-react';
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { OnboardingCtaBar } from '@/components/modules/onboarding/onboarding-cta-bar';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { isNetworkError } from '@/lib/api';
+import { OfflineFallback } from '@/components/offline-fallback';
 
 // Staff Card Component
 interface StaffCardProps {
@@ -104,6 +107,7 @@ export default function StaffsPage() {
     const [staffToDelete, setStaffToDelete] = useState<string | null>(null);
     const [staffToEdit, setStaffToEdit] = useState<Staff | null>(null);
     const [businessTypeIcon, setBusinessTypeIcon] = useState<string | undefined>(undefined);
+    const isOnline = useOnlineStatus();
 
     // Form state
     const [newStaff, setNewStaff] = useState({
@@ -135,11 +139,13 @@ export default function StaffsPage() {
             } catch (error) {
                 const err = error as { response?: { data?: { message?: string } } };
                 console.error("Failed to load data", err);
-                toaster.create({
-                    title: "Error",
-                    description: err.response?.data?.message || "Failed to load data",
-                    type: "error"
-                });
+                if (!isNetworkError(error)) {
+                    toaster.create({
+                        title: "Error",
+                        description: err.response?.data?.message || "Failed to load data",
+                        type: "error"
+                    });
+                }
             } finally {
                 setIsLoadingData(false);
             }
@@ -228,6 +234,8 @@ export default function StaffsPage() {
                     <div className="flex-1 flex items-center justify-center">
                         <div className="text-gray-500">Loading staff...</div>
                     </div>
+                ) : !isOnline && staffs.length === 0 ? (
+                    <OfflineFallback message="Your staff will appear here once you're back online." />
                 ) : staffs.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center py-20">
                         <div className="text-gray-500 mb-4">No staff found. Please add staff.</div>

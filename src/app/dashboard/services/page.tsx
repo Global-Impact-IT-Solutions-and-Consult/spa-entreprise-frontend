@@ -11,6 +11,9 @@ import { ServiceRowMobile } from "@/components/modules/services/service-row-mobi
 import { CreateServiceModal } from "@/components/modules/services/CreateServiceModal";
 import { EditServiceModal } from "@/components/modules/services/EditServiceModal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { OfflineFallback } from "@/components/offline-fallback";
+import { isNetworkError } from "@/lib/api";
 
 export default function ManageServicesPage() {
     const { user } = useAuthStore();
@@ -24,6 +27,7 @@ export default function ManageServicesPage() {
     const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
+    const isOnline = useOnlineStatus();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -46,11 +50,13 @@ export default function ManageServicesPage() {
             } catch (error) {
                 const err = error as { response?: { data?: { message?: string } } };
                 console.error("Failed to fetch services", err);
-                toaster.create({
-                    title: "Error",
-                    description: "Failed to load services",
-                    type: "error"
-                });
+                if (!isNetworkError(error)) {
+                    toaster.create({
+                        title: "Error",
+                        description: "Failed to load services",
+                        type: "error"
+                    });
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -134,13 +140,17 @@ export default function ManageServicesPage() {
                     </div>
                     </>
                 ) : displayedServices.length === 0 && !isRefetching ? (
-                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200 text-center">
-                        <div className="p-4 bg-gray-50 rounded-full mb-4">
-                            <Plus className="h-8 w-8 text-gray-400" />
+                    !isOnline ? (
+                        <OfflineFallback message="Your services will appear here once you're back online." />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200 text-center">
+                            <div className="p-4 bg-gray-50 rounded-full mb-4">
+                                <Plus className="h-8 w-8 text-gray-400" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900">No services found</h3>
+                            <p className="text-gray-500">Add your first service to get started</p>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900">No services found</h3>
-                        <p className="text-gray-500">Add your first service to get started</p>
-                    </div>
+                    )
                 ) : (
                     <>
                     <div className="hidden lg:block">

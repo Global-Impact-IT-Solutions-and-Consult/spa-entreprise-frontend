@@ -11,6 +11,9 @@ import Link from "next/link";
 import { bookingService } from "@/services/booking.service";
 import { bookingPublicService, TimeSlot } from "@/services/booking-public.service";
 import Image from "next/image";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { isNetworkError } from "@/lib/api";
+import { OfflineFallback } from "@/components/offline-fallback";
 
 export default function ReschedulePage() {
     const params = useParams();
@@ -27,6 +30,7 @@ export default function ReschedulePage() {
 
     const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
     const [isSlotsLoading, setIsSlotsLoading] = useState(false);
+    const isOnline = useOnlineStatus();
 
     // Helper functions for formatting
     const formatTime12h = (time24: string) => {
@@ -75,7 +79,9 @@ export default function ReschedulePage() {
                 }
             } catch (error) {
                 console.error("Failed to fetch booking", error);
-                toaster.create({ title: "Error", description: "Failed to load booking details.", type: "error" });
+                if (!isNetworkError(error)) {
+                    toaster.create({ title: "Error", description: "Failed to load booking details.", type: "error" });
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -154,6 +160,14 @@ export default function ReschedulePage() {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
                 <Loader2 className="w-10 h-10 animate-spin text-[#E89D24]" />
+            </div>
+        );
+    }
+
+    if (!isOnline && !booking) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center text-center px-4">
+                <OfflineFallback message="Your booking details will appear here once you're back online." />
             </div>
         );
     }

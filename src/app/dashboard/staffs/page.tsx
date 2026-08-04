@@ -10,6 +10,9 @@ import { useAuthStore } from "@/store/auth.store";
 import { businessService, Staff, Service } from "@/services/business.service";
 import { toaster } from "@/components/ui/toaster";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { OfflineFallback } from "@/components/offline-fallback";
+import { isNetworkError } from "@/lib/api";
 
 // Staff Card Component for Dashboard
 interface StaffDashboardCardProps {
@@ -92,6 +95,7 @@ export default function StaffsPage() {
     const [searchQuery] = useState("");
     const [staffToDelete, setStaffToDelete] = useState<string | null>(null);
     const [staffToEdit, setStaffToEdit] = useState<Staff | null>(null);
+    const isOnline = useOnlineStatus();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -109,7 +113,9 @@ export default function StaffsPage() {
             } catch (error) {
                 const err = error as { response?: { data?: { message?: string } } };
                 console.error("Failed to fetch staff data", err);
-                toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to load staff data", type: "error" });
+                if (!isNetworkError(error)) {
+                    toaster.create({ title: "Error", description: err.response?.data?.message || "Failed to load staff data", type: "error" });
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -194,20 +200,26 @@ export default function StaffsPage() {
                     </div>
                 </>
             ) : filteredStaff.length === 0 ? (
-                <div className="mt-6 h-[400px] flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-gray-100 p-12 text-center">
-                    <User className="h-16 w-16 text-gray-200 mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900">No staffs found</h3>
-                    <p className="text-gray-500 mt-2 max-w-sm">
-                        You haven&apos;t added any staff members yet or no results match your search.
-                    </p>
-                    <Button
-                        variant="link"
-                        onClick={() => setIsModalOpen(true)}
-                        className="text-[#F59E0B] font-bold mt-4"
-                    >
-                        Add your first staff member
-                    </Button>
-                </div>
+                !isOnline ? (
+                    <div className="mt-6">
+                        <OfflineFallback message="Your staff will appear here once you're back online." />
+                    </div>
+                ) : (
+                    <div className="mt-6 h-[400px] flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-gray-100 p-12 text-center">
+                        <User className="h-16 w-16 text-gray-200 mb-4" />
+                        <h3 className="text-xl font-bold text-gray-900">No staffs found</h3>
+                        <p className="text-gray-500 mt-2 max-w-sm">
+                            You haven&apos;t added any staff members yet or no results match your search.
+                        </p>
+                        <Button
+                            variant="link"
+                            onClick={() => setIsModalOpen(true)}
+                            className="text-[#F59E0B] font-bold mt-4"
+                        >
+                            Add your first staff member
+                        </Button>
+                    </div>
+                )
             ) : (
                 <>
                 <div className="hidden lg:block">

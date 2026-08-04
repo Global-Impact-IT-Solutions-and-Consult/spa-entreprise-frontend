@@ -17,6 +17,8 @@ import { useAuthStore } from "@/store/auth.store";
 import { businessService, Service, Staff } from "@/services/business.service";
 import { bookingService } from "@/services/booking.service";
 import { toaster } from "@/components/ui/toaster";
+import { handleApiError } from "@/lib/api";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 interface CreateBookingModalProps {
     isOpen: boolean;
@@ -32,6 +34,7 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
     const [staffs, setStaffs] = useState<Staff[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const isOnline = useOnlineStatus();
 
     const [selectedService, setSelectedService] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -105,13 +108,8 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
             onSuccess?.();
             onClose();
         } catch (error) {
-            const err = error as { response?: { data?: { message?: string } } };
-            console.error("Error creating booking:", err);
-            toaster.create({
-                title: "Booking Failed",
-                description: err.response?.data?.message || "Failed to create booking. Please try again.",
-                type: "error"
-            });
+            console.error("Error creating booking:", error);
+            handleApiError(error, "Booking Failed");
         } finally {
             setIsSubmitting(false);
         }
@@ -272,10 +270,16 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
                     </Button>
                     <Button
                         onClick={handleCreate}
-                        disabled={isSubmitting || isLoading}
+                        disabled={isSubmitting || isLoading || !isOnline}
                         className="h-12 px-8 w-full sm:w-auto bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl shadow-lg transition-all active:scale-95"
                     >
-                        {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Booking"}
+                        {isSubmitting ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : !isOnline ? (
+                            "You're offline"
+                        ) : (
+                            "Create Booking"
+                        )}
                     </Button>
                 </div>
             </DialogContent>

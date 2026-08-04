@@ -12,6 +12,8 @@ import { businessService } from '@/services/business.service';
 import { toaster } from '@/components/ui/toaster';
 import Image from 'next/image';
 import { BiInfoCircle } from 'react-icons/bi';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { OfflineFallback } from '@/components/offline-fallback';
 
 type TabType = 'profile' | 'company' | 'notifications';
 
@@ -415,6 +417,7 @@ function CompanySettingTab() {
         accountName: '', accountNumber: '', bankName: '', sortCode: '',
     });
     const [originalData, setOriginalData] = useState(paymentData);
+    const isOnline = useOnlineStatus();
 
     const hasData = !!(paymentData.accountName || paymentData.accountNumber || paymentData.bankName);
 
@@ -490,6 +493,17 @@ function CompanySettingTab() {
 
     // ── Empty state ───────────────────────────────────────────────────────────────
     if (!showForm && !hasData) {
+        // Fetch failed silently, so an offline user would otherwise see the
+        // "no payment method added" empty state, which is misleading — it
+        // reads as "you haven't set this up" rather than "we couldn't load it".
+        if (!isOnline) {
+            return (
+                <div className="space-y-6">
+                    {header}
+                    <OfflineFallback message="Your payout details will appear here once you're back online." />
+                </div>
+            );
+        }
         return (
             <div className="space-y-6">
                 {header}
