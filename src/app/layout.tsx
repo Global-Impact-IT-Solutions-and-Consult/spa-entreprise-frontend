@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
-import { GoogleAnalytics } from '@next/third-parties/google';
 import './globals.css';
 import { Providers } from './providers';
 import { Toaster } from '@/components/ui/toaster';
@@ -8,6 +7,7 @@ import { PwaRegister } from '@/components/pwa-register';
 import { PageTransition } from '@/components/page-transition';
 import { OfflineBanner } from '@/components/offline-banner';
 import { InstallPrompt } from '@/components/install-prompt';
+import { CookieConsent } from '@/components/cookie-consent';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -54,7 +54,7 @@ export default function RootLayout({
           <PwaRegister />
           <InstallPrompt />
         </Providers>
-        {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
+        <CookieConsent gaId={gaId} />
       </body>
     </html>
   );

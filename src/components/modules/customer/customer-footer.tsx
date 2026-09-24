@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import axios from "axios";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Facebook, Twitter, Instagram, Loader2 } from "lucide-react";
 import { miscService } from "@/services/misc.service";
 import { toaster } from "@/components/ui/toaster";
 import Image from "next/image";
+import { OPEN_COOKIE_SETTINGS_EVENT } from "@/components/cookie-consent";
 
 export function CustomerFooter() {
     const [email, setEmail] = useState("");
@@ -31,12 +33,13 @@ export function CustomerFooter() {
             await miscService.subscribeNewsletter(email);
             toaster.create({ title: "Subscribed Successfully!", description: "Thank you for subscribing to our newsletter.", type: "success" });
             setEmail("");
-        } catch (error: Error | unknown) {
+        } catch (error: unknown) {
             console.error("Newsletter error:", error);
-            const err = error as any;
             toaster.create({
                 title: "Subscription Failed",
-                description: err?.response?.data?.message || "Something went wrong. Please try again.",
+                description: axios.isAxiosError(error)
+                    ? error.response?.data?.message || "Something went wrong. Please try again."
+                    : "Something went wrong. Please try again.",
                 type: "error"
             });
         } finally {
@@ -102,6 +105,15 @@ export function CustomerFooter() {
                                 <Link href="/terms" className="text-gray-300 hover:text-[#E89D24] text-sm transition">
                                     Terms of Service
                                 </Link>
+                            </li>
+                            <li>
+                                <button
+                                    type="button"
+                                    onClick={() => window.dispatchEvent(new Event(OPEN_COOKIE_SETTINGS_EVENT))}
+                                    className="text-gray-300 hover:text-[#E89D24] text-sm transition"
+                                >
+                                    Cookie Settings
+                                </button>
                             </li>
                         </ul>
                     </div>

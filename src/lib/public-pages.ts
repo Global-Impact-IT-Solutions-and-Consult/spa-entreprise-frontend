@@ -120,6 +120,18 @@ export const faqPage: PublicPageConfig = {
             title: "How do I contact support?",
             body: "Use the Contact Us page. The message is sent to the support team and saved so the team can track replies.",
         },
+        {
+            title: "How are payments and refunds handled?",
+            body: "Payments are processed through iBookam's payment provider. Cancellation eligibility, fees, approval, and refund timing depend on the booking status and the applicable cancellation terms shown during the booking flow.",
+        },
+        {
+            title: "Does iBookam use cookies?",
+            body: "iBookam uses essential browser storage for sign-in, security, preferences, and core features. Optional analytics is only enabled after you accept it, and you can change that choice from Cookie Settings in the footer.",
+        },
+        {
+            title: "How can I delete my account or request my data?",
+            body: "Use the account settings available to you or contact support. Account deletion starts a limited recovery period before permanent cleanup, although some transaction, booking, audit, fraud-prevention, or legal records may need to be retained.",
+        },
     ],
 };
 
@@ -127,28 +139,44 @@ export const privacyPage: PublicPageConfig = {
     eyebrow: "Privacy Policy",
     title: "How iBookam handles personal and business information",
     description:
-        "This page summarizes the information iBookam uses to run bookings, accounts, payments, support, safety, and business operations.",
+        "Effective 23 September 2026. This policy explains how iBookam collects and uses information when customers, businesses, staff, and visitors use our marketplace.",
     primaryAction: { label: "Contact privacy support", href: "/contact" },
     sections: [
         {
             title: "Information we collect",
-            body: "We collect account details, contact information, booking information, service and business profile data, support messages, device/session details, and payment-related references needed to provide the platform.",
+            body: "We collect information you provide, including your name, email address, phone number, account credentials, profile details, booking details, reviews, support messages, notification choices, and business, staff, service, pricing, availability, gallery, and verification information. For home services, booking information may include the service address and access instructions.",
         },
         {
-            title: "How we use information",
-            body: "We use information to create accounts, verify users, show relevant businesses and services, manage bookings, process payments, send notifications, prevent abuse, support customers, and improve the platform.",
+            title: "Payments, uploads, and technical data",
+            body: "Payment providers process payment details; iBookam receives transaction references, amounts, status, refund information, and related records rather than full card details. We also process images and documents you upload, approximate or selected location, IP address, device and browser information, security logs, and site activity needed to operate and protect the service.",
         },
         {
-            title: "Sharing and access",
-            body: "We share booking details with the customer and business involved in the appointment. Admins may access operational records where needed for support, safety, fraud prevention, and compliance.",
+            title: "How and why we use information",
+            body: "We use information to provide and secure accounts; verify users and businesses; display and personalise listings; match searches by location and availability; create and manage bookings; process payments, tips, cancellations, and refunds; send service, email, SMS, and push notifications; respond to support requests; prevent fraud and abuse; enforce our terms; meet legal obligations; and improve iBookam. Depending on the activity, we rely on your consent, performance of our agreement, legal obligations, or our legitimate interests in running a safe marketplace.",
         },
         {
-            title: "Retention and deletion",
-            body: "We retain records needed for account, booking, support, audit, legal, and operational purposes. Deleted accounts may be soft deleted first before permanent cleanup where the system requires a waiting period.",
+            title: "Who receives information",
+            body: "We share the information needed to fulfil a booking between the customer, the relevant business, and assigned staff. We also use vetted service providers for payments, hosting, media storage, email, SMS, analytics, and technical operations. Administrators may access records for support, safety, fraud prevention, disputes, and compliance. We may disclose information where legally required or as part of a business transfer, and we do not sell personal information.",
         },
         {
-            title: "Your choices",
-            body: "You can update your profile, manage notifications where available, and contact support for account or privacy requests.",
+            title: "Cookies and browser storage",
+            body: "Essential cookies and local storage support authentication, security, session management, location preferences, offline features, and installation prompts. Google Analytics is optional and is not loaded until you choose Accept analytics. You can reject it on your first visit or reopen Cookie Settings from the footer; rejecting analytics does not prevent the core service from working.",
+        },
+        {
+            title: "Retention and account deletion",
+            body: "We keep information only as long as needed for the purposes described here. When you request account deletion, we use a seven-day soft-deletion period before eligible account and business-profile data is permanently removed. We may retain limited booking, payment, refund, support, security, fraud-prevention, audit, or legal records where required, with access restricted to the relevant purpose.",
+        },
+        {
+            title: "Your rights and choices",
+            body: "Subject to applicable law, including the Nigeria Data Protection Act 2023, you may ask to access, correct, delete, restrict, or obtain a copy of your personal data, object to certain processing, withdraw consent, or complain to the Nigeria Data Protection Commission. You can update some details and notification choices in the product, change optional analytics through Cookie Settings, or contact us for other privacy requests. Withdrawing consent does not affect earlier lawful processing.",
+        },
+        {
+            title: "Security, children, and international processing",
+            body: "We use reasonable technical and organisational safeguards, but no online service can guarantee absolute security. iBookam is not intended for children under 18, and users must be legally able to enter a binding agreement. Some providers may process information outside Nigeria; where this occurs, we use appropriate contractual or legal safeguards.",
+        },
+        {
+            title: "Contact and policy updates",
+            body: "For privacy questions or rights requests, use the Contact Us page and select the relevant subject. We may update this policy as the platform, providers, or law changes; material updates will be communicated through the site or other appropriate channels, and the effective date above will be revised.",
         },
     ],
 };
@@ -157,13 +185,17 @@ export const termsPage: PublicPageConfig = {
     eyebrow: "Terms of Service",
     title: "The rules for using iBookam",
     description:
-        "These terms explain the basic responsibilities for customers, businesses, and administrators using the iBookam platform.",
+        "Effective 23 September 2026. These terms govern how customers, business owners, and staff use the iBookam beauty and wellness marketplace.",
     primaryAction: { label: "Create an account", href: "/auth/register" },
     secondaryAction: { label: "Contact support", href: "/contact" },
     sections: [
         {
-            title: "Platform role",
-            body: "iBookam helps customers discover and book services from independent wellness and beauty businesses. Businesses are responsible for the accuracy, quality, pricing, and delivery of their services.",
+            title: "Agreement and eligibility",
+            body: "By creating an account, listing a business, making a booking, or otherwise using iBookam, you agree to these terms and our Privacy Policy. You must be at least 18 years old and legally able to enter a binding agreement. You are responsible for accurate account information, protecting your credentials, and activity under your account.",
+        },
+        {
+            title: "iBookam's role",
+            body: "iBookam is a marketplace that helps customers discover and book services from independent beauty and wellness businesses. Unless expressly stated otherwise, iBookam is not the provider or employer of listed businesses or staff and does not control the manner in which services are performed. Businesses remain responsible for service quality, safety, licensing, pricing, descriptions, availability, and fulfilment.",
         },
         {
             title: "Customer responsibilities",
@@ -171,15 +203,35 @@ export const termsPage: PublicPageConfig = {
         },
         {
             title: "Business responsibilities",
-            body: "Businesses should maintain accurate profiles, publish correct prices and availability, honor accepted bookings, protect customer information, and comply with applicable laws.",
+            body: "Businesses must have authority to operate and list their services; maintain accurate profiles, prices, delivery methods, staff, qualifications, locations, images, and availability; honour accepted bookings; provide services safely and professionally; protect customer information; and comply with tax, employment, consumer-protection, licensing, health, and other applicable obligations.",
         },
         {
             title: "Payments, cancellations, and disputes",
-            body: "Payment, refund, cancellation, and dispute handling may depend on the booking status, business policies, payment provider rules, and the evidence available to support.",
+            body: "Prices and applicable charges are shown during booking. Payments and tips may be processed by a third-party payment provider and are subject to that provider's terms. Cancellation eligibility, fees, approvals, and refund amounts depend on booking timing, status, the applicable policy shown in the booking flow, and payment-provider rules. Refund processing times may depend on the relevant bank or provider. Contact support promptly if a charge or service is disputed.",
+        },
+        {
+            title: "Home services and safety",
+            body: "For home services, customers must provide a safe and accurate service location and businesses must confirm that assigned staff can fulfil the appointment. Each party is responsible for reasonable personal safety, respectful conduct, and compliance with the Safety Guidelines. Users should report suspected fraud, harassment, abuse, unsafe conduct, or misleading listings promptly.",
+        },
+        {
+            title: "Reviews, images, and other content",
+            body: "You retain ownership of content you submit but grant iBookam a worldwide, non-exclusive, royalty-free licence to host, store, reproduce, display, format, and distribute it as needed to operate and promote the platform. You must have the necessary rights and permissions and must not upload unlawful, deceptive, infringing, abusive, or privacy-violating content. Reviews must reflect genuine experiences.",
+        },
+        {
+            title: "Acceptable use",
+            body: "You may not misuse accounts, impersonate others, scrape or disrupt the service, bypass security or payment flows, introduce malicious code, make fraudulent bookings or payments, harvest personal information, or use iBookam for unlawful, harmful, or misleading activity.",
         },
         {
             title: "Account enforcement",
-            body: "iBookam may restrict, suspend, or remove accounts, listings, content, or bookings that appear unsafe, fraudulent, abusive, misleading, or harmful to the platform.",
+            body: "iBookam may investigate and restrict, suspend, ban, or remove accounts, businesses, listings, content, or bookings where reasonably necessary for safety, suspected fraud, legal compliance, repeated complaints, non-payment, or a breach of these terms. Where appropriate, we may notify affected users and provide a route to contact support. You may request account deletion, subject to retention required for transactions, disputes, safety, or law.",
+        },
+        {
+            title: "Service availability and liability",
+            body: "We work to keep iBookam accurate and available, but the platform and third-party services may occasionally be interrupted or contain errors. To the extent permitted by law, iBookam is not liable for indirect or consequential losses or for the acts, omissions, quality, or safety of independent service providers. Nothing in these terms excludes rights or liability that cannot legally be excluded, including applicable consumer rights.",
+        },
+        {
+            title: "Changes, governing law, and contact",
+            body: "We may update these terms as the service or law changes. Material changes will be communicated through the platform or other appropriate channels, and continued use after they take effect means you accept the revised terms. These terms are governed by the laws of the Federal Republic of Nigeria. Before starting formal proceedings, please contact support so we can try to resolve the issue promptly.",
         },
     ],
 };
